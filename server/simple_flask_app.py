@@ -627,7 +627,7 @@ def admin_config():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-@app.route('/admin/test-llm', methods=['POST'])
+@app.route('/api/admin/test-llm', methods=['POST'])
 def test_llm():
     """Tester la connexion LLM"""
     try:
@@ -650,19 +650,47 @@ def test_llm():
 def test_openai(config):
     """Tester la connexion OpenAI"""
     try:
-        api_key = config.get('openai_api_key', '')
+        import os
+        
+        # Utiliser la clé API de l'environnement ou de la configuration
+        api_key = config.get('openai_api_key', '') or os.getenv('OPENAI_API_KEY')
         if not api_key:
             return jsonify({'success': False, 'error': 'Clé API OpenAI manquante'}), 400
         
-        # Simuler un test de connexion réussi pour la démo
-        return jsonify({
-            'success': True, 
-            'message': 'Connexion OpenAI réussie',
-            'model': config.get('openai_model', 'gpt-4o')
-        })
-        
+        # Test avec la vraie API OpenAI
+        try:
+            import openai
+            
+            client = openai.OpenAI(api_key=api_key)
+            model = config.get('openai_model', 'gpt-4o')
+            
+            # Test simple avec une requête basique
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{'role': 'user', 'content': 'Test de connexion - répondez simplement "OK"'}],
+                max_tokens=10
+            )
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Connexion OpenAI réussie avec {model}',
+                'model': model,
+                'response': response.choices[0].message.content.strip()
+            })
+            
+        except openai.AuthenticationError:
+            return jsonify({'success': False, 'error': 'Clé API OpenAI invalide'}), 400
+        except openai.RateLimitError:
+            return jsonify({'success': False, 'error': 'Limite de taux dépassée'}), 400
+        except openai.APIError as e:
+            return jsonify({'success': False, 'error': f'Erreur API OpenAI: {str(e)}'}), 400
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Erreur OpenAI: {str(e)}'}), 400
+            
+    except ImportError:
+        return jsonify({'success': False, 'error': 'Module OpenAI non installé'}), 400
     except Exception as e:
-        return jsonify({'success': False, 'error': f'Erreur OpenAI: {str(e)}'}), 400
+        return jsonify({'success': False, 'error': f'Erreur inattendue: {str(e)}'}), 500
 
 def test_ollama(config):
     """Tester la connexion Ollama"""
@@ -699,7 +727,7 @@ def test_openrouter(config):
     except Exception as e:
         return jsonify({'success': False, 'error': f'Erreur OpenRouter: {str(e)}'}), 400
 
-@app.route('/admin/system-status', methods=['GET'])
+@app.route('/api/admin/system-status', methods=['GET'])
 def system_status():
     """Obtenir le statut du système"""
     try:

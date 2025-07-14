@@ -586,5 +586,78 @@ def get_prescription_statistics():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/prescriptions/validate/<threat_id>', methods=['POST'])
+def validate_prediction(threat_id):
+    """Valider une prédiction pour l'auto-apprentissage"""
+    try:
+        data = request.get_json()
+        actual_outcome = data.get('actual_outcome', False)
+        
+        result = prescription_service.validate_prediction(threat_id, actual_outcome)
+        
+        if 'error' in result:
+            return jsonify(result), 400
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/collection-requests', methods=['GET'])
+def get_collection_requests():
+    """Récupérer les requêtes de collecte générées"""
+    try:
+        requests = prescription_service.get_collection_requests()
+        return jsonify({'collection_requests': requests})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/trends', methods=['GET'])
+def get_prediction_trends():
+    """Obtenir les tendances de prédiction"""
+    try:
+        trends = prescription_service.get_prediction_trends()
+        return jsonify({'trends': trends})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/signals', methods=['GET'])
+def get_signal_analysis():
+    """Analyse des signaux faibles et forts"""
+    try:
+        # Simulation d'analyse de signaux
+        signals = {
+            'weak_signals': [
+                {
+                    'id': 'signal_001',
+                    'description': 'Augmentation des mentions de coordination',
+                    'score': 0.35,
+                    'confidence': 0.6,
+                    'entities': ['Groupe A', 'Secteur Nord'],
+                    'trend': 'increasing'
+                },
+                {
+                    'id': 'signal_002',
+                    'description': 'Changement de patterns de communication',
+                    'score': 0.42,
+                    'confidence': 0.7,
+                    'entities': ['Source B', 'Réseau C'],
+                    'trend': 'stable'
+                }
+            ],
+            'strong_signals': [
+                {
+                    'id': 'signal_003',
+                    'description': 'Mentions répétées d\'opération imminente',
+                    'score': 0.85,
+                    'confidence': 0.9,
+                    'entities': ['Groupe X', 'Tombouctou'],
+                    'trend': 'increasing'
+                }
+            ]
+        }
+        return jsonify(signals)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

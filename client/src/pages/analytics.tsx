@@ -1,323 +1,385 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
-import { dashboardApi } from "@/lib/api";
-import { BarChart, LineChart, PieChart, TrendingUp, Download, Filter } from "lucide-react";
+import { 
+  Activity, 
+  TrendingUp, 
+  TrendingDown, 
+  Minus, 
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Brain,
+  Target,
+  Eye,
+  Database
+} from "lucide-react";
+
+interface Signal {
+  id: string;
+  description: string;
+  score: number;
+  confidence: number;
+  entities: string[];
+  trend: 'increasing' | 'decreasing' | 'stable';
+}
+
+interface PredictionTrend {
+  recent_trend: number;
+  overall_trend: number;
+  current_score: number;
+  volatility: number;
+}
+
+interface CollectionRequest {
+  id: string;
+  objective: string;
+  collection_type: string;
+  urgency: string;
+  created_at: string;
+  status: string;
+}
 
 export default function Analytics() {
-  const { data: stats } = useQuery({
-    queryKey: ['/api/dashboard/stats'],
-    queryFn: dashboardApi.getStats,
-    refetchInterval: 30000,
-  });
+  const [signals, setSignals] = useState<{
+    weak_signals: Signal[];
+    strong_signals: Signal[];
+  } | null>(null);
+  const [trends, setTrends] = useState<Record<string, PredictionTrend>>({});
+  const [collectionRequests, setCollectionRequests] = useState<CollectionRequest[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: threatEvolution } = useQuery({
-    queryKey: ['/api/threats/evolution'],
-    queryFn: dashboardApi.getThreatEvolution,
-    refetchInterval: 30000,
-  });
+  useEffect(() => {
+    fetchAnalyticsData();
+    const interval = setInterval(fetchAnalyticsData, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchAnalyticsData = async () => {
+    try {
+      const [signalsResponse, trendsResponse, requestsResponse] = await Promise.all([
+        fetch('/api/prescriptions/signals'),
+        fetch('/api/prescriptions/trends'),
+        fetch('/api/prescriptions/collection-requests')
+      ]);
+
+      if (signalsResponse.ok) {
+        const signalsData = await signalsResponse.json();
+        setSignals(signalsData);
+      }
+
+      if (trendsResponse.ok) {
+        const trendsData = await trendsResponse.json();
+        setTrends(trendsData.trends || {});
+      }
+
+      if (requestsResponse.ok) {
+        const requestsData = await requestsResponse.json();
+        setCollectionRequests(requestsData.collection_requests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validatePrediction = async (threatId: string, outcome: boolean) => {
+    try {
+      const response = await fetch(`/api/prescriptions/validate/${threatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ actual_outcome: outcome }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Validation result:', result);
+        // Refresh data after validation
+        fetchAnalyticsData();
+      }
+    } catch (error) {
+      console.error('Error validating prediction:', error);
+    }
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'increasing':
+        return <TrendingUp className="w-4 h-4 text-red-400" />;
+      case 'decreasing':
+        return <TrendingDown className="w-4 h-4 text-green-400" />;
+      default:
+        return <Minus className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getSignalColor = (score: number) => {
+    if (score >= 0.7) return 'bg-red-500 bg-opacity-20 text-red-400';
+    if (score >= 0.4) return 'bg-orange-500 bg-opacity-20 text-orange-400';
+    return 'bg-yellow-500 bg-opacity-20 text-yellow-400';
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
+      case 'high':
+        return 'bg-red-500 bg-opacity-20 text-red-400';
+      case 'medium':
+        return 'bg-yellow-500 bg-opacity-20 text-yellow-400';
+      default:
+        return 'bg-green-500 bg-opacity-20 text-green-400';
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'À l\'instant';
+    if (diffInMinutes < 60) return `${diffInMinutes}min`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+    return `${Math.floor(diffInMinutes / 1440)}j`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center space-x-2 text-gray-400">
+          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span>Chargement de l'analyse prédictive...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Analytics</h1>
-          <p className="text-gray-400">Analyse avancée des menaces et métriques d'intelligence</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" className="border-slate-700 text-gray-300 hover:bg-slate-800">
-            <Filter className="w-4 h-4 mr-2" />
-            Filtre
-          </Button>
-          <Button variant="outline" className="border-slate-700 text-gray-300 hover:bg-slate-800">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
+        <h1 className="text-2xl font-bold text-white">Analyse Prédictive</h1>
+        <Button
+          onClick={fetchAnalyticsData}
+          variant="outline"
+          className="border-slate-600 text-gray-300 hover:bg-slate-700"
+        >
+          <Activity className="w-4 h-4 mr-2" />
+          Actualiser
+        </Button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Taux de Détection</p>
-                <p className="text-2xl font-bold text-white">94.2%</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Précision</p>
-                <p className="text-2xl font-bold text-white">91.7%</p>
-              </div>
-              <BarChart className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Temps de Réponse</p>
-                <p className="text-2xl font-bold text-white">320ms</p>
-              </div>
-              <LineChart className="w-8 h-8 text-orange-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-dark-surface border-dark-border">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Model Accuracy</p>
-                <p className="text-2xl font-bold text-white">96.8%</p>
-              </div>
-              <PieChart className="w-8 h-8 text-accent-orange" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Analytics Tabs */}
-      <Tabs defaultValue="performance" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-dark-surface">
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="patterns">Threat Patterns</TabsTrigger>
-          <TabsTrigger value="sources">Data Sources</TabsTrigger>
-          <TabsTrigger value="ml">ML Models</TabsTrigger>
+      <Tabs defaultValue="signals" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-800">
+          <TabsTrigger value="signals" className="text-gray-300">
+            <Target className="w-4 h-4 mr-2" />
+            Signaux
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="text-gray-300">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Tendances
+          </TabsTrigger>
+          <TabsTrigger value="collection" className="text-gray-300">
+            <Database className="w-4 h-4 mr-2" />
+            Collecte
+          </TabsTrigger>
+          <TabsTrigger value="validation" className="text-gray-300">
+            <Brain className="w-4 h-4 mr-2" />
+            Validation
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="performance" className="space-y-6">
+        <TabsContent value="signals" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-dark-surface border-dark-border">
+            {/* Signaux Faibles */}
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white">Model Performance Metrics</CardTitle>
+                <CardTitle className="text-white flex items-center">
+                  <Eye className="w-5 h-5 mr-2 text-yellow-400" />
+                  Signaux Faibles
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Precision</span>
-                    <span className="text-white font-mono">0.917</span>
+              <CardContent className="space-y-4">
+                {signals?.weak_signals?.map((signal) => (
+                  <div key={signal.id} className="p-4 bg-slate-700 rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-white font-medium">{signal.description}</p>
+                      {getTrendIcon(signal.trend)}
+                    </div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Badge className={getSignalColor(signal.score)}>
+                        Score: {signal.score.toFixed(2)}
+                      </Badge>
+                      <Badge className="bg-blue-500 bg-opacity-20 text-blue-400">
+                        Confiance: {signal.confidence.toFixed(2)}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {signal.entities.map((entity, index) => (
+                        <Badge key={index} variant="outline" className="text-xs text-gray-400">
+                          {entity}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Recall</span>
-                    <span className="text-white font-mono">0.942</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">F1-Score</span>
-                    <span className="text-white font-mono">0.929</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">AUC-ROC</span>
-                    <span className="text-white font-mono">0.968</span>
-                  </div>
-                </div>
+                ))}
               </CardContent>
             </Card>
 
-            <Card className="bg-dark-surface border-dark-border">
+            {/* Signaux Forts */}
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle className="text-white">Response Time Distribution</CardTitle>
+                <CardTitle className="text-white flex items-center">
+                  <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
+                  Signaux Forts
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">P50 (Median)</span>
-                    <span className="text-white font-mono">180ms</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">P90</span>
-                    <span className="text-white font-mono">320ms</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">P95</span>
-                    <span className="text-white font-mono">385ms</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">P99</span>
-                    <span className="text-white font-mono">450ms</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="bg-dark-surface border-dark-border">
-            <CardHeader>
-              <CardTitle className="text-white">Weekly Performance Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <TrendingUp className="w-12 h-12 mx-auto mb-4" />
-                  <p>Performance trends visualization</p>
-                  <p className="text-sm">Chart integration coming soon</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="patterns" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-dark-surface border-dark-border">
-              <CardHeader>
-                <CardTitle className="text-white">Threat Types Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">APT Activities</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 h-2 bg-dark-elevated rounded-full">
-                        <div className="w-3/4 h-full bg-error rounded-full" />
-                      </div>
-                      <span className="text-white font-mono">45%</span>
+              <CardContent className="space-y-4">
+                {signals?.strong_signals?.map((signal) => (
+                  <div key={signal.id} className="p-4 bg-slate-700 rounded-lg border-l-4 border-red-500">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-white font-medium">{signal.description}</p>
+                      {getTrendIcon(signal.trend)}
+                    </div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Badge className={getSignalColor(signal.score)}>
+                        Score: {signal.score.toFixed(2)}
+                      </Badge>
+                      <Badge className="bg-blue-500 bg-opacity-20 text-blue-400">
+                        Confiance: {signal.confidence.toFixed(2)}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {signal.entities.map((entity, index) => (
+                        <Badge key={index} variant="outline" className="text-xs text-gray-400">
+                          {entity}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Network Intrusions</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 h-2 bg-dark-elevated rounded-full">
-                        <div className="w-1/2 h-full bg-warning rounded-full" />
-                      </div>
-                      <span className="text-white font-mono">32%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Malware</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 h-2 bg-dark-elevated rounded-full">
-                        <div className="w-1/4 h-full bg-primary rounded-full" />
-                      </div>
-                      <span className="text-white font-mono">18%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Other</span>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-24 h-2 bg-dark-elevated rounded-full">
-                        <div className="w-1/12 h-full bg-gray-400 rounded-full" />
-                      </div>
-                      <span className="text-white font-mono">5%</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-dark-surface border-dark-border">
-              <CardHeader>
-                <CardTitle className="text-white">Geographic Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">West Africa</span>
-                    <span className="text-white font-mono">38%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Middle East</span>
-                    <span className="text-white font-mono">25%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Eastern Europe</span>
-                    <span className="text-white font-mono">22%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Other Regions</span>
-                    <span className="text-white font-mono">15%</span>
-                  </div>
-                </div>
+                ))}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="sources" className="space-y-6">
-          <Card className="bg-dark-surface border-dark-border">
+        <TabsContent value="trends" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Object.entries(trends).map(([threatId, trend]) => (
+              <Card key={threatId} className="bg-slate-800 border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-white text-sm">{threatId}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 text-sm">Score actuel</span>
+                    <Badge className={getSignalColor(trend.current_score)}>
+                      {trend.current_score.toFixed(2)}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 text-sm">Tendance récente</span>
+                    <div className="flex items-center space-x-1">
+                      {trend.recent_trend > 0 ? (
+                        <TrendingUp className="w-4 h-4 text-red-400" />
+                      ) : trend.recent_trend < 0 ? (
+                        <TrendingDown className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Minus className="w-4 h-4 text-gray-400" />
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {trend.recent_trend > 0 ? '+' : ''}{trend.recent_trend.toFixed(3)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-300 text-sm">Volatilité</span>
+                    <Badge className="bg-purple-500 bg-opacity-20 text-purple-400">
+                      {trend.volatility.toFixed(3)}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="collection" className="space-y-4">
+          <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Data Source Analytics</CardTitle>
+              <CardTitle className="text-white">Requêtes de Collecte Automatisées</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-dark-elevated p-4 rounded-lg">
-                    <h4 className="font-medium text-white mb-2">STIX/TAXII</h4>
-                    <p className="text-2xl font-bold text-success">94.2%</p>
-                    <p className="text-sm text-gray-400">Reliability Score</p>
-                  </div>
-                  <div className="bg-dark-elevated p-4 rounded-lg">
-                    <h4 className="font-medium text-white mb-2">JSON Feeds</h4>
-                    <p className="text-2xl font-bold text-warning">87.6%</p>
-                    <p className="text-sm text-gray-400">Reliability Score</p>
-                  </div>
-                  <div className="bg-dark-elevated p-4 rounded-lg">
-                    <h4 className="font-medium text-white mb-2">Unstructured</h4>
-                    <p className="text-2xl font-bold text-primary">72.3%</p>
-                    <p className="text-sm text-gray-400">Reliability Score</p>
-                  </div>
-                </div>
+              <div className="space-y-4">
+                {collectionRequests.length === 0 ? (
+                  <p className="text-gray-400 text-center py-8">Aucune requête de collecte active</p>
+                ) : (
+                  collectionRequests.map((request) => (
+                    <div key={request.id} className="p-4 bg-slate-700 rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-white font-medium">{request.objective}</h3>
+                        <Badge className={getUrgencyColor(request.urgency)}>
+                          {request.urgency.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-400">
+                        <span>Type: {request.collection_type}</span>
+                        <span>Créé: {formatTimeAgo(request.created_at)}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {request.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="ml" className="space-y-6">
-          <Card className="bg-dark-surface border-dark-border">
+        <TabsContent value="validation" className="space-y-4">
+          <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Machine Learning Models</CardTitle>
+              <CardTitle className="text-white">Validation des Prédictions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-dark-elevated p-4 rounded-lg">
-                    <h4 className="font-medium text-white mb-2">BERT Intention Classifier</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Accuracy</span>
-                        <span className="text-white font-mono">91.7%</span>
+              <div className="space-y-4">
+                {Object.entries(trends).map(([threatId, trend]) => (
+                  <div key={threatId} className="p-4 bg-slate-700 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="text-white font-medium">{threatId}</h3>
+                        <p className="text-sm text-gray-400">
+                          Score prédit: {trend.current_score.toFixed(2)}
+                        </p>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Last Training</span>
-                        <span className="text-white font-mono">2h ago</span>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={() => validatePrediction(threatId, true)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Confirmé
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => validatePrediction(threatId, false)}
+                          className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                        >
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Infirmé
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  <div className="bg-dark-elevated p-4 rounded-lg">
-                    <h4 className="font-medium text-white mb-2">Random Forest Scorer</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Accuracy</span>
-                        <span className="text-white font-mono">94.2%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Last Training</span>
-                        <span className="text-white font-mono">1d ago</span>
-                      </div>
+                    <div className="text-xs text-gray-500">
+                      Utilisez ces boutons pour valider si la prédiction s'est avérée correcte
                     </div>
                   </div>
-                </div>
-
-                <div className="bg-dark-elevated p-4 rounded-lg">
-                  <h4 className="font-medium text-white mb-4">Model Performance Over Time</h4>
-                  <div className="h-32 flex items-center justify-center text-gray-400">
-                    <div className="text-center">
-                      <LineChart className="w-8 h-8 mx-auto mb-2" />
-                      <p className="text-sm">Model performance chart</p>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>

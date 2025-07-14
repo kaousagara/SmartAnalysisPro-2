@@ -88,6 +88,11 @@ function Router() {
           <Prescriptions />
         </ProtectedRoute>
       </Route>
+      <Route path="/analytics">
+        <ProtectedRoute>
+          <Analytics />
+        </ProtectedRoute>
+      </Route>
       <Route path="/reports">
         <ProtectedRoute>
           <Reports />

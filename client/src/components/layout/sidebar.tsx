@@ -7,7 +7,7 @@ const navigation = [
   { name: 'Menaces', href: '/threats', icon: AlertTriangle },
   { name: 'Ingestion', href: '/ingestion', icon: Upload },
   { name: 'Scénarios', href: '/scenarios', icon: Table },
-  { name: 'Analytics', href: '/analytics', icon: BarChart },
+  { name: 'Analyse Prédictive', href: '/analytics', icon: Brain },
   { name: 'Prescriptions', href: '/prescriptions', icon: Clipboard },
   { name: 'Rapports', href: '/reports', icon: FileText },
   { name: 'Administration', href: '/admin', icon: Settings },

@@ -48,18 +48,26 @@ Preferred communication style: Simple, everyday language.
 - **Actions**: SIGINT collection, HUMINT tasking, network monitoring
 - **Lifecycle**: Active/partial/inactive status tracking with validity windows
 
-### 4. Prescription Engine (New)
-- **Purpose**: Automated generation of actionable security recommendations
+### 4. Prescription Engine (Advanced)
+- **Purpose**: Automated generation of actionable security recommendations with predictive analytics
 - **Categories**: Security measures, investigations, mitigation actions, incident response
-- **Intelligence**: Threat-based recommendation logic with confidence scoring
-- **Capabilities**: Status tracking, action execution, resource allocation planning
+- **Intelligence**: Threat-based recommendation logic with confidence scoring and delta analysis
+- **Capabilities**: Status tracking, action execution, resource allocation planning, signal detection
 - **Integration**: Real-time generation from threat predictions and manual creation
+- **Predictive Features**: Weak/strong signal detection, trend analysis, auto-learning validation
 
 ### 5. Analytics Dashboard
 - **Real-time Metrics**: Active threats, average scores, system health
 - **Visualizations**: Threat evolution charts, severity distribution, data source status
 - **Performance Tracking**: Detection rates, false positive metrics, processing latency
 - **User Interface**: Dark theme optimized for 24/7 operations
+
+### 6. Predictive Analytics Module
+- **Signal Detection**: Automated identification of weak and strong threat signals
+- **Trend Analysis**: Real-time tracking of threat score evolution and volatility
+- **Collection Automation**: Intelligent generation of information requests based on gaps
+- **Validation System**: Human feedback integration for continuous model improvement
+- **Delta Scoring**: Reinforcement/weakening tracking for prediction confidence
 
 ## Data Flow
 
@@ -86,6 +94,11 @@ Frontend → API Gateway → Authentication → Service Layer → Database → R
 ### 5. Prescription Generation
 ```
 Threat Detection → Risk Assessment → Prescription Engine → Action Prioritization → Resource Allocation
+```
+
+### 6. Predictive Analytics
+```
+Historical Data → Signal Detection → Trend Analysis → Prediction Validation → Auto-Learning
 ```
 
 ## External Dependencies

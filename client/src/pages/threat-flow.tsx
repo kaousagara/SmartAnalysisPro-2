@@ -254,11 +254,15 @@ export default function ThreatFlow() {
               <div className="space-y-2">
                 <div className="text-sm text-gray-300 font-medium">Entités associées:</div>
                 <div className="flex flex-wrap gap-1">
-                  {selectedThreatData.entities.map((entity, index) => (
-                    <Badge key={index} variant="outline" className="text-xs text-gray-400">
-                      {entity}
-                    </Badge>
-                  ))}
+                  {selectedThreatData.entities && selectedThreatData.entities.length > 0 ? (
+                    selectedThreatData.entities.map((entity, index) => (
+                      <Badge key={index} variant="outline" className="text-xs text-gray-400">
+                        {entity}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-500">Aucune entité associée</span>
+                  )}
                 </div>
               </div>
             </CardContent>

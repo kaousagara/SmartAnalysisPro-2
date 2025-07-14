@@ -195,8 +195,45 @@ def dashboard_stats():
 @app.route('/api/threats/realtime', methods=['GET'])
 def realtime_threats():
     """Get real-time threats"""
+    # Add entities field to each threat
+    threats_with_entities = []
+    for threat in SAMPLE_THREATS[:10]:
+        threat_copy = threat.copy()
+        if 'entities' not in threat_copy:
+            # Add default entities based on threat type
+            if threat_copy['id'] == 'threat_001':
+                threat_copy['entities'] = ['entity_001', 'entity_002', 'infrastructure_critique']
+                threat_copy['name'] = 'Activité suspecte détectée'
+                threat_copy['description'] = 'Tentative d\'intrusion sur infrastructure critique'
+                threat_copy['category'] = 'cyber'
+                threat_copy['source'] = 'SIGINT'
+            elif threat_copy['id'] == 'threat_002':
+                threat_copy['entities'] = ['entity_003', 'reseau_001', 'serveur_distant']
+                threat_copy['name'] = 'Communications chiffrées'
+                threat_copy['description'] = 'Trafic réseau anormal détecté'
+                threat_copy['category'] = 'network'
+                threat_copy['source'] = 'COMINT'
+            elif threat_copy['id'] == 'threat_003':
+                threat_copy['entities'] = ['personnel_001', 'zone_sensible']
+                threat_copy['name'] = 'Mouvement de personnel'
+                threat_copy['description'] = 'Déplacement inhabituel observé'
+                threat_copy['category'] = 'physical'
+                threat_copy['source'] = 'HUMINT'
+            elif threat_copy['id'] == 'threat_004':
+                threat_copy['entities'] = ['pattern_001', 'data_cluster', 'anomalie_comportementale']
+                threat_copy['name'] = 'Analyse de données'
+                threat_copy['description'] = 'Patterns suspects identifiés'
+                threat_copy['category'] = 'intelligence'
+                threat_copy['source'] = 'OSINT'
+            else:
+                threat_copy['entities'] = ['entity_default']
+                threat_copy['category'] = threat_copy.get('category', 'unknown')
+                threat_copy['source'] = threat_copy.get('source', 'UNKNOWN')
+                threat_copy['description'] = threat_copy.get('description', 'Description non disponible')
+        threats_with_entities.append(threat_copy)
+    
     return jsonify({
-        'threats': SAMPLE_THREATS[:10]  # Return first 10 threats
+        'threats': threats_with_entities
     })
 
 @app.route('/api/threats/evolution', methods=['GET'])

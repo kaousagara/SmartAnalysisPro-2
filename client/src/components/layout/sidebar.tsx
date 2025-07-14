@@ -1,14 +1,15 @@
 import { Link, useLocation } from 'wouter';
-import { Brain, ChartLine, AlertTriangle, Upload, Table, BarChart, FileText, User } from 'lucide-react';
+import { Brain, ChartLine, AlertTriangle, Upload, Table, BarChart, FileText, User, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: ChartLine },
-  { name: 'Threat Detection', href: '/threats', icon: AlertTriangle },
-  { name: 'Data Ingestion', href: '/ingestion', icon: Upload },
-  { name: 'Scenarios', href: '/scenarios', icon: Table },
+  { name: 'Menaces', href: '/threats', icon: AlertTriangle },
+  { name: 'Ingestion', href: '/ingestion', icon: Upload },
+  { name: 'Scénarios', href: '/scenarios', icon: Table },
   { name: 'Analytics', href: '/analytics', icon: BarChart },
-  { name: 'Reports', href: '/reports', icon: FileText },
+  { name: 'Rapports', href: '/reports', icon: FileText },
+  { name: 'Administration', href: '/admin', icon: Settings },
 ];
 
 export function Sidebar() {

@@ -14,6 +14,7 @@ import Ingestion from "@/pages/ingestion";
 import Scenarios from "@/pages/scenarios";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
+import Admin from "@/pages/admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -84,6 +85,11 @@ function Router() {
       <Route path="/reports">
         <ProtectedRoute>
           <Reports />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute>
+          <Admin />
         </ProtectedRoute>
       </Route>
       <Route path="/">

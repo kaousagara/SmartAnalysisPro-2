@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { Line } from 'react-chartjs-2';
+import { useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -26,9 +27,13 @@ ChartJS.register(
   Filler
 );
 
+type TimeFilter = '24H' | '7J' | '30J';
+
 export function ThreatChart() {
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('24H');
+  
   const { data: chartData, isLoading, error } = useQuery({
-    queryKey: ['/api/threats/evolution'],
+    queryKey: ['/api/threats/evolution', timeFilter],
     queryFn: dashboardApi.getThreatEvolution,
     refetchInterval: 30000,
   });
@@ -72,37 +77,95 @@ export function ThreatChart() {
     },
   };
 
-  // Créer des données par défaut si nécessaire
-  const defaultData = {
-    labels: Array.from({ length: 24 }, (_, i) => {
-      const hour = String(i).padStart(2, '0');
-      return `${hour}:00`;
-    }),
-    datasets: [
-      {
-        label: 'Score de Menace',
-        data: Array.from({ length: 24 }, (_, i) => Math.random() * 0.8 + 0.1),
-        borderColor: '#FF6B35',
-        backgroundColor: 'rgba(255, 107, 53, 0.1)',
-        fill: true,
-        tension: 0.4
-      },
-      {
-        label: 'Baseline',
-        data: Array.from({ length: 24 }, () => 0.5),
-        borderColor: '#424242',
-        backgroundColor: 'transparent',
-        borderDash: [5, 5],
-        fill: false
-      }
-    ]
+  // Générer des données basées sur le filtre temporel
+  const generateTimeBasedData = (filter: TimeFilter) => {
+    let dataPoints: number;
+    let labels: string[];
+    
+    switch (filter) {
+      case '24H':
+        dataPoints = 24;
+        labels = Array.from({ length: 24 }, (_, i) => {
+          const hour = String(i).padStart(2, '0');
+          return `${hour}:00`;
+        });
+        break;
+      case '7J':
+        dataPoints = 7;
+        labels = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (6 - i));
+          return date.toLocaleDateString('fr-FR', { weekday: 'short' });
+        });
+        break;
+      case '30J':
+        dataPoints = 30;
+        labels = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (29 - i));
+          return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        });
+        break;
+    }
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Score de Menace',
+          data: Array.from({ length: dataPoints }, (_, i) => {
+            // Simulation de données plus réalistes selon le filtre
+            const base = 0.4 + Math.sin(i * 0.5) * 0.2;
+            const noise = (Math.random() - 0.5) * 0.1;
+            return Math.max(0, Math.min(1, base + noise));
+          }),
+          borderColor: '#FF6B35',
+          backgroundColor: 'rgba(255, 107, 53, 0.1)',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Seuil Critique',
+          data: Array.from({ length: dataPoints }, () => 0.75),
+          borderColor: '#DC2626',
+          backgroundColor: 'transparent',
+          borderDash: [5, 5],
+          fill: false
+        },
+        {
+          label: 'Baseline',
+          data: Array.from({ length: dataPoints }, () => 0.5),
+          borderColor: '#424242',
+          backgroundColor: 'transparent',
+          borderDash: [5, 5],
+          fill: false
+        }
+      ]
+    };
   };
+
+  const defaultData = generateTimeBasedData(timeFilter);
 
   if (isLoading) {
     return (
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
+            <div className="flex space-x-2">
+              {(['24H', '7J', '30J'] as TimeFilter[]).map((filter) => (
+                <Button
+                  key={filter}
+                  variant={timeFilter === filter ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTimeFilter(filter)}
+                  className="text-xs"
+                >
+                  {filter}
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-64 bg-slate-700 animate-pulse rounded" />
@@ -115,7 +178,22 @@ export function ThreatChart() {
     return (
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
+            <div className="flex space-x-2">
+              {(['24H', '7J', '30J'] as TimeFilter[]).map((filter) => (
+                <Button
+                  key={filter}
+                  variant={timeFilter === filter ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTimeFilter(filter)}
+                  className="text-xs"
+                >
+                  {filter}
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-64 flex items-center justify-center text-gray-400">
@@ -134,28 +212,18 @@ export function ThreatChart() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-blue-600 bg-opacity-20 text-blue-400 border-blue-600 hover:bg-blue-600 hover:text-white"
-            >
-              24H
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white"
-            >
-              7J
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white"
-            >
-              30J
-            </Button>
+          <div className="flex space-x-2">
+            {(['24H', '7J', '30J'] as TimeFilter[]).map((filter) => (
+              <Button
+                key={filter}
+                variant={timeFilter === filter ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeFilter(filter)}
+                className="text-xs"
+              >
+                {filter}
+              </Button>
+            ))}
           </div>
         </div>
       </CardHeader>

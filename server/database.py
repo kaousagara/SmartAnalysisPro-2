@@ -31,10 +31,19 @@ class Database:
         """Obtenir une connexion valide, reconnecter si nécessaire"""
         try:
             if self.connection is None or self.connection.closed:
+                print("Connexion fermée, reconnexion en cours...")
                 self.connect()
+            
+            # Test de la connexion
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+            cursor.close()
+            
             return self.connection
         except Exception as e:
             print(f"Erreur lors de la vérification de la connexion: {e}")
+            print("Tentative de reconnexion...")
             self.connect()
             return self.connection
     

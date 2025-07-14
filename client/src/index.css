@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Intelligence system dark theme colors */
+  --dark-bg: hsl(240, 10%, 7%);
+  --dark-surface: hsl(240, 10%, 11%);
+  --dark-elevated: hsl(240, 10%, 18%);
+  --dark-border: hsl(240, 7%, 20%);
+  --success: hsl(120, 100%, 40%);
+  --warning: hsl(38, 100%, 50%);
+  --error: hsl(0, 100%, 67%);
+  --accent-orange: hsl(14, 100%, 60%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 7%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 7%, 16%);
+  --muted-foreground: hsl(240, 5%, 65%);
+  --popover: hsl(240, 10%, 7%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 11%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 7%, 20%);
+  --input: hsl(240, 7%, 16%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 7%, 16%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 7%, 16%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 5%, 84%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Intelligence system custom styles */
+.intelligence-dashboard {
+  @apply bg-background text-foreground min-h-screen;
+}
+
+.threat-score-critical {
+  @apply text-red-400;
+}
+
+.threat-score-high {
+  @apply text-orange-400;
+}
+
+.threat-score-medium {
+  @apply text-yellow-400;
+}
+
+.threat-score-low {
+  @apply text-gray-400;
+}
+
+.status-indicator {
+  @apply w-2 h-2 rounded-full animate-pulse;
+}
+
+.status-operational {
+  @apply bg-green-400;
+}
+
+.status-warning {
+  @apply bg-yellow-400;
+}
+
+.status-error {
+  @apply bg-red-400;
+}
+
+/* Custom scrollbar for dark theme */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(240, 10%, 11%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(240, 7%, 20%);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(240, 7%, 30%);
+}
+
+/* Animation utilities */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Chart container styling */
+.chart-container {
+  @apply bg-card rounded-lg p-6;
+}
+
+.chart-container canvas {
+  @apply w-full h-64;
+}
+
+/* Threat severity badges */
+.severity-critical {
+  @apply bg-red-500 bg-opacity-20 text-red-400 border border-red-500;
+}
+
+.severity-high {
+  @apply bg-orange-500 bg-opacity-20 text-orange-400 border border-orange-500;
+}
+
+.severity-medium {
+  @apply bg-yellow-500 bg-opacity-20 text-yellow-400 border border-yellow-500;
+}
+
+.severity-low {
+  @apply bg-gray-500 bg-opacity-20 text-gray-400 border border-gray-500;
+}
+
+/* Scenario status indicators */
+.scenario-active {
+  @apply bg-red-500 bg-opacity-20 text-red-400;
+}
+
+.scenario-partial {
+  @apply bg-orange-500 bg-opacity-20 text-orange-400;
+}
+
+.scenario-inactive {
+  @apply bg-gray-500 bg-opacity-20 text-gray-400;
+}
+
+/* Data ingestion status */
+.ingestion-active {
+  @apply bg-green-500 bg-opacity-20 text-green-400;
+}
+
+.ingestion-warning {
+  @apply bg-orange-500 bg-opacity-20 text-orange-400;
+}
+
+.ingestion-error {
+  @apply bg-red-500 bg-opacity-20 text-red-400;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply bg-muted animate-pulse rounded;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    @apply grid-cols-1 gap-4;
+  }
+  
+  .stats-grid {
+    @apply grid-cols-1 sm:grid-cols-2 gap-4;
+  }
+}

@@ -613,23 +613,20 @@ class PrescriptionService:
         """Générer une explication contextuelle avec simulation LLM"""
         name = threat_data.get('name', 'Menace inconnue')
         score = threat_data.get('score', 0)
-        
-        if delta_score > 0.1:
-            trend = "renforcement"
-            action = "mobiliser"
-        elif delta_score < -0.1:
-            trend = "affaiblissement"
-            action = "valider"
-        else:
-            trend = "stabilité"
-            action = "surveiller"
-        
+
+        # Déduction de la tendance
+        trend = "en hausse" if delta_score > 0 else "en baisse"
+
+        # Déduction de l'action recommandée
+        action = "Renforcer" if score > 0.7 or delta_score > 0.1 else "Réduire"
+
         explanation = f"Analyse prédictive de '{name}' (score: {score:.2f}). "
         explanation += f"Tendance: {trend} (Δ{delta_score:+.2f}). "
         explanation += f"Centralité des entités: {entity_centrality:.2f}. "
         explanation += f"Recommandation: {action} la surveillance et intensifier la collecte."
-        
+
         return explanation
+
     
     def _update_prediction_history(self, threat_id: str, score: float, prescription_id: str):
         """Mettre à jour l'historique des prédictions"""

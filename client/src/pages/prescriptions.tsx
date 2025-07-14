@@ -96,9 +96,15 @@ export default function Prescriptions() {
 
   const executeAction = async (prescriptionId: string, actionId: string) => {
     try {
+      console.log(`Executing action ${actionId} for prescription ${prescriptionId}`);
+      
       const response = await fetch(`/api/prescriptions/${prescriptionId}/actions/${actionId}/execute`, {
         method: 'POST'
       });
+
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         setPrescriptions(prev => 
@@ -111,8 +117,15 @@ export default function Prescriptions() {
           title: "Action exécutée",
           description: "L'action a été exécutée avec succès",
         });
+      } else {
+        toast({
+          title: "Erreur",
+          description: data.error || "Impossible d'exécuter l'action",
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      console.error('Error executing action:', error);
       toast({
         title: "Erreur",
         description: "Impossible d'exécuter l'action",

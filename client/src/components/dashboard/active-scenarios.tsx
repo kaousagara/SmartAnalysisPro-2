@@ -22,8 +22,16 @@ export function ActiveScenarios() {
     classification: 'CONFIDENTIEL',
     region: 'FRANCE',
     duration: '30',
-    conditions: [],
-    actions: []
+    conditions: {
+      threat_score_threshold: false,
+      multiple_sources: false,
+      human_validation: false
+    },
+    actions: {
+      sigint_collection: false,
+      network_analysis: false,
+      report_generation: false
+    }
   });
 
   const queryClient = useQueryClient();
@@ -47,8 +55,16 @@ export function ActiveScenarios() {
         classification: 'CONFIDENTIEL', 
         region: 'FRANCE', 
         duration: '30', 
-        conditions: [], 
-        actions: [] 
+        conditions: {
+          threat_score_threshold: false,
+          multiple_sources: false,
+          human_validation: false
+        },
+        actions: {
+          sigint_collection: false,
+          network_analysis: false,
+          report_generation: false
+        }
       });
     },
     onError: (error) => {
@@ -57,7 +73,35 @@ export function ActiveScenarios() {
   });
 
   const handleCreateScenario = () => {
-    createScenarioMutation.mutate(newScenario);
+    // Structurer les données en JSON pour l'envoi
+    const scenarioData = {
+      name: newScenario.name,
+      description: newScenario.description,
+      priority: newScenario.priority,
+      type: newScenario.type,
+      classification: newScenario.classification,
+      region: newScenario.region,
+      duration: parseInt(newScenario.duration),
+      conditions: [
+        ...(newScenario.conditions.threat_score_threshold ? [{ type: 'threat_score', threshold: 0.7 }] : []),
+        ...(newScenario.conditions.multiple_sources ? [{ type: 'multiple_sources', min_sources: 2 }] : []),
+        ...(newScenario.conditions.human_validation ? [{ type: 'human_validation', required: true }] : [])
+      ],
+      actions: [
+        ...(newScenario.actions.sigint_collection ? [{ type: 'sigint_collection', priority: 1 }] : []),
+        ...(newScenario.actions.network_analysis ? [{ type: 'network_analysis', priority: 2 }] : []),
+        ...(newScenario.actions.report_generation ? [{ type: 'report_generation', priority: 3 }] : [])
+      ],
+      status: 'active',
+      created_at: new Date().toISOString(),
+      metadata: {
+        created_by: 'user',
+        version: '1.0'
+      }
+    };
+    
+    console.log('Données du scénario structurées:', scenarioData);
+    createScenarioMutation.mutate(scenarioData);
   };
 
   const getStatusColor = (status: string) => {
@@ -535,15 +579,48 @@ export function ActiveScenarios() {
                   </Label>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3 p-4 bg-slate-700/60 rounded-xl border border-slate-600/50 hover:bg-slate-700/80 transition-all">
-                      <input type="checkbox" className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400"
+                        checked={newScenario.conditions.threat_score_threshold}
+                        onChange={(e) => setNewScenario({
+                          ...newScenario, 
+                          conditions: {
+                            ...newScenario.conditions, 
+                            threat_score_threshold: e.target.checked
+                          }
+                        })}
+                      />
                       <span className="text-sm text-gray-200">Score de menace {'>'} 0.7</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 bg-slate-700/60 rounded-xl border border-slate-600/50 hover:bg-slate-700/80 transition-all">
-                      <input type="checkbox" className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400"
+                        checked={newScenario.conditions.multiple_sources}
+                        onChange={(e) => setNewScenario({
+                          ...newScenario, 
+                          conditions: {
+                            ...newScenario.conditions, 
+                            multiple_sources: e.target.checked
+                          }
+                        })}
+                      />
                       <span className="text-sm text-gray-200">Sources multiples confirmées</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 bg-slate-700/60 rounded-xl border border-slate-600/50 hover:bg-slate-700/80 transition-all">
-                      <input type="checkbox" className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400"
+                        checked={newScenario.conditions.human_validation}
+                        onChange={(e) => setNewScenario({
+                          ...newScenario, 
+                          conditions: {
+                            ...newScenario.conditions, 
+                            human_validation: e.target.checked
+                          }
+                        })}
+                      />
                       <span className="text-sm text-gray-200">Validation humaine requise</span>
                     </div>
                   </div>
@@ -555,15 +632,48 @@ export function ActiveScenarios() {
                   </Label>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3 p-4 bg-slate-700/60 rounded-xl border border-slate-600/50 hover:bg-slate-700/80 transition-all">
-                      <input type="checkbox" className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400"
+                        checked={newScenario.actions.sigint_collection}
+                        onChange={(e) => setNewScenario({
+                          ...newScenario, 
+                          actions: {
+                            ...newScenario.actions, 
+                            sigint_collection: e.target.checked
+                          }
+                        })}
+                      />
                       <span className="text-sm text-gray-200">Collecte SIGINT</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 bg-slate-700/60 rounded-xl border border-slate-600/50 hover:bg-slate-700/80 transition-all">
-                      <input type="checkbox" className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400"
+                        checked={newScenario.actions.network_analysis}
+                        onChange={(e) => setNewScenario({
+                          ...newScenario, 
+                          actions: {
+                            ...newScenario.actions, 
+                            network_analysis: e.target.checked
+                          }
+                        })}
+                      />
                       <span className="text-sm text-gray-200">Analyse réseau</span>
                     </div>
                     <div className="flex items-center space-x-3 p-4 bg-slate-700/60 rounded-xl border border-slate-600/50 hover:bg-slate-700/80 transition-all">
-                      <input type="checkbox" className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400" />
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-500 rounded focus:ring-blue-400"
+                        checked={newScenario.actions.report_generation}
+                        onChange={(e) => setNewScenario({
+                          ...newScenario, 
+                          actions: {
+                            ...newScenario.actions, 
+                            report_generation: e.target.checked
+                          }
+                        })}
+                      />
                       <span className="text-sm text-gray-200">Génération de rapport</span>
                     </div>
                   </div>
@@ -571,6 +681,48 @@ export function ActiveScenarios() {
               </div>
             </div>
             
+            {/* Aperçu des données JSON */}
+            <div className="bg-gradient-to-r from-slate-800/80 to-slate-700/80 backdrop-blur-sm border border-slate-600/50 rounded-2xl p-8 shadow-lg">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center mr-4">
+                  <Monitor className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-xl">Aperçu des Données</h3>
+                  <p className="text-gray-400 text-sm">Structure JSON qui sera envoyée au serveur</p>
+                </div>
+              </div>
+              <div className="bg-slate-900/80 rounded-xl p-4 border border-slate-600/50">
+                <pre className="text-xs text-green-400 font-mono overflow-x-auto">
+                  {JSON.stringify({
+                    name: newScenario.name || "CYBER-INTRUSION-XX",
+                    description: newScenario.description || "Description du scénario...",
+                    priority: newScenario.priority,
+                    type: newScenario.type,
+                    classification: newScenario.classification,
+                    region: newScenario.region,
+                    duration: parseInt(newScenario.duration) || 30,
+                    conditions: [
+                      ...(newScenario.conditions.threat_score_threshold ? [{ type: 'threat_score', threshold: 0.7 }] : []),
+                      ...(newScenario.conditions.multiple_sources ? [{ type: 'multiple_sources', min_sources: 2 }] : []),
+                      ...(newScenario.conditions.human_validation ? [{ type: 'human_validation', required: true }] : [])
+                    ],
+                    actions: [
+                      ...(newScenario.actions.sigint_collection ? [{ type: 'sigint_collection', priority: 1 }] : []),
+                      ...(newScenario.actions.network_analysis ? [{ type: 'network_analysis', priority: 2 }] : []),
+                      ...(newScenario.actions.report_generation ? [{ type: 'report_generation', priority: 3 }] : [])
+                    ],
+                    status: 'active',
+                    created_at: new Date().toISOString(),
+                    metadata: {
+                      created_by: 'user',
+                      version: '1.0'
+                    }
+                  }, null, 2)}
+                </pre>
+              </div>
+            </div>
+
             {/* Boutons d'action */}
             <div className="flex justify-between items-center pt-8 border-t border-slate-600/50">
               <div className="text-sm text-gray-400">

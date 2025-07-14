@@ -564,68 +564,7 @@ def health_check():
 
 # ===================== ADMIN ROUTES =====================
 
-@app.route('/admin/config', methods=['GET', 'POST'])
-def admin_config():
-    """Configuration d'administration"""
-    DEFAULT_CONFIG = {
-        'llm_provider': 'chatgpt',
-        'llm_config': {
-            'openai_api_key': '',
-            'openai_model': 'gpt-4o',
-            'ollama_url': 'http://localhost:11434',
-            'ollama_model': 'llama3.1:8b',
-            'openrouter_api_key': '',
-            'openrouter_model': 'anthropic/claude-3-sonnet'
-        },
-        'system_config': {
-            'threat_threshold': 0.7,
-            'alert_enabled': True,
-            'data_retention_days': 90,
-            'max_concurrent_ingestion': 10,
-            'response_timeout': 30,
-            'false_positive_threshold': 0.08
-        }
-    }
-    
-    if request.method == 'GET':
-        try:
-            config_path = 'config/admin_config.json'
-            if os.path.exists(config_path):
-                with open(config_path, 'r') as f:
-                    config = json.load(f)
-            else:
-                config = DEFAULT_CONFIG
-            
-            return jsonify({'config': config})
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    elif request.method == 'POST':
-        try:
-            data = request.get_json()
-            
-            if not data:
-                return jsonify({'error': 'Données manquantes'}), 400
-            
-            config = {
-                'llm_provider': data.get('llm_provider', 'chatgpt'),
-                'llm_config': data.get('llm_config', {}),
-                'system_config': data.get('system_config', {}),
-                'last_updated': datetime.now().isoformat()
-            }
-            
-            # Créer le dossier config s'il n'existe pas
-            os.makedirs('config', exist_ok=True)
-            
-            # Sauvegarder la configuration
-            config_path = 'config/admin_config.json'
-            with open(config_path, 'w') as f:
-                json.dump(config, f, indent=2)
-            
-            return jsonify({'message': 'Configuration sauvegardée avec succès'})
-            
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/admin/test-llm', methods=['POST'])
 def test_llm():
@@ -655,7 +594,7 @@ def test_openai(config):
         # Utiliser la clé API de l'environnement ou de la configuration
         api_key = config.get('openai_api_key', '') or os.getenv('OPENAI_API_KEY')
         if not api_key:
-            return jsonify({'success': False, 'error': 'Clé API OpenAI manquante'}), 400
+            return jsonify({'success': False, 'error': 'Cle API OpenAI manquante'}), 400
         
         # Test avec la vraie API OpenAI
         try:
@@ -667,28 +606,28 @@ def test_openai(config):
             # Test simple avec une requête basique
             response = client.chat.completions.create(
                 model=model,
-                messages=[{'role': 'user', 'content': 'Test de connexion - répondez simplement "OK"'}],
+                messages=[{'role': 'user', 'content': 'Test de connexion - repondez simplement "OK"'}],
                 max_tokens=10
             )
             
             return jsonify({
                 'success': True, 
-                'message': f'Connexion OpenAI réussie avec {model}',
+                'message': f'Connexion OpenAI reussie avec {model}',
                 'model': model,
                 'response': response.choices[0].message.content.strip()
             })
             
         except openai.AuthenticationError:
-            return jsonify({'success': False, 'error': 'Clé API OpenAI invalide'}), 400
+            return jsonify({'success': False, 'error': 'Cle API OpenAI invalide'}), 400
         except openai.RateLimitError:
-            return jsonify({'success': False, 'error': 'Limite de taux dépassée'}), 400
+            return jsonify({'success': False, 'error': 'Limite de taux depassee'}), 400
         except openai.APIError as e:
             return jsonify({'success': False, 'error': f'Erreur API OpenAI: {str(e)}'}), 400
         except Exception as e:
             return jsonify({'success': False, 'error': f'Erreur OpenAI: {str(e)}'}), 400
             
     except ImportError:
-        return jsonify({'success': False, 'error': 'Module OpenAI non installé'}), 400
+        return jsonify({'success': False, 'error': 'Module OpenAI non installe'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': f'Erreur inattendue: {str(e)}'}), 500
 
@@ -727,9 +666,49 @@ def test_openrouter(config):
     except Exception as e:
         return jsonify({'success': False, 'error': f'Erreur OpenRouter: {str(e)}'}), 400
 
+@app.route('/api/admin/config', methods=['GET', 'POST'])
+def admin_config():
+    """Configuration d'administration"""
+    if request.method == 'GET':
+        # Recuperer la configuration actuelle
+        config = {
+            'llm_provider': 'chatgpt',
+            'llm_config': {
+                'openai_api_key': '***masked***',
+                'openai_model': 'gpt-4o',
+                'ollama_url': 'http://localhost:11434',
+                'ollama_model': 'llama3.1:8b'
+            },
+            'system_config': {
+                'threat_threshold': 0.7,
+                'alert_enabled': True,
+                'data_retention_days': 90
+            }
+        }
+        return jsonify(config)
+    
+    elif request.method == 'POST':
+        # Sauvegarder la configuration
+        try:
+            data = request.get_json()
+            
+            # Simuler la sauvegarde de la configuration
+            # En production, vous sauvegarderiez en base de donnees
+            saved_config = {
+                'llm_provider': data.get('llm_provider', 'chatgpt'),
+                'llm_config': data.get('llm_config', {}),
+                'system_config': data.get('system_config', {}),
+                'saved_at': datetime.now().isoformat()
+            }
+            
+            return jsonify({'message': 'Configuration sauvegardee avec succes', 'config': saved_config})
+            
+        except Exception as e:
+            return jsonify({'error': f'Erreur lors de la sauvegarde: {str(e)}'}), 500
+
 @app.route('/api/admin/system-status', methods=['GET'])
 def system_status():
-    """Obtenir le statut du système"""
+    """Obtenir le statut du systeme"""
     try:
         system_info = {
             'version': '2.0.0',

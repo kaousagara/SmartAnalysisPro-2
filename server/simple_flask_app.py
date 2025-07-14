@@ -15,114 +15,7 @@ CORS(app)
 # Initialize services
 prescription_service = PrescriptionService()
 
-# Mock data for demonstration
-SAMPLE_THREATS = [
-    {
-        'id': 'threat_001',
-        'name': 'Activité réseau suspecte',
-        'score': 0.85,
-        'severity': 'high',
-        'timestamp': '2024-01-15T10:30:00Z',
-        'status': 'active'
-    },
-    {
-        'id': 'threat_002',
-        'name': 'Détection de malware',
-        'score': 0.92,
-        'severity': 'critical',
-        'timestamp': '2024-01-15T11:45:00Z',
-        'status': 'active'
-    },
-    {
-        'id': 'threat_003',
-        'name': 'Tentative d\'accès non autorisé',
-        'score': 0.67,
-        'severity': 'medium',
-        'timestamp': '2024-01-15T09:15:00Z',
-        'status': 'resolved'
-    },
-    {
-        'id': 'threat_004',
-        'name': 'Intrusion système détectée',
-        'score': 0.78,
-        'severity': 'high',
-        'timestamp': '2024-01-15T12:15:00Z',
-        'status': 'active'
-    },
-    {
-        'id': 'threat_005',
-        'name': 'Phishing email campaign',
-        'score': 0.64,
-        'severity': 'medium',
-        'timestamp': '2024-01-15T08:45:00Z',
-        'status': 'monitoring'
-    },
-    {
-        'id': 'threat_006',
-        'name': 'Attaque DDoS en cours',
-        'score': 0.89,
-        'severity': 'critical',
-        'timestamp': '2024-01-15T13:00:00Z',
-        'status': 'active'
-    }
-]
-
-SAMPLE_SCENARIOS = [
-    {
-        'id': 'scenario_001',
-        'name': 'ATT-2024-MALI',
-        'description': 'Détection de menaces régionales pour la zone Mali',
-        'conditions': [
-            {'type': 'location', 'value': 'Mali'},
-            {'type': 'threat_score', 'operator': '>', 'value': 0.7}
-        ],
-        'actions': [
-            {'type': 'SIGINT', 'description': 'Initialiser la collecte SIGINT'},
-            {'type': 'HUMINT', 'description': 'Déployer les actifs HUMINT'}
-        ],
-        'status': 'active',
-        'priority': 1,
-        'conditions_met': 2,
-        'total_conditions': 2,
-        'last_triggered': '2024-01-15T12:00:00Z'
-    },
-    {
-        'id': 'scenario_002',
-        'name': 'CYBER-INTRUSION-07',
-        'description': 'Détection d\'intrusion cybernétique avancée',
-        'conditions': [
-            {'type': 'threat_type', 'value': 'cyber'},
-            {'type': 'severity', 'operator': '>=', 'value': 'high'}
-        ],
-        'actions': [
-            {'type': 'NETWORK_ISOLATION', 'description': 'Isoler le réseau compromis'},
-            {'type': 'FORENSIC_ANALYSIS', 'description': 'Lancer l\'analyse forensique'}
-        ],
-        'status': 'active',
-        'priority': 2,
-        'conditions_met': 1,
-        'total_conditions': 2,
-        'last_triggered': '2024-01-15T11:30:00Z'
-    },
-    {
-        'id': 'scenario_003',
-        'name': 'PHISHING-CAMPAIGN-DETECT',
-        'description': 'Détection de campagne de phishing',
-        'conditions': [
-            {'type': 'email_indicators', 'value': 'suspicious'},
-            {'type': 'volume', 'operator': '>', 'value': 100}
-        ],
-        'actions': [
-            {'type': 'EMAIL_FILTERING', 'description': 'Activer le filtrage email'},
-            {'type': 'USER_NOTIFICATION', 'description': 'Notifier les utilisateurs'}
-        ],
-        'status': 'partial',
-        'priority': 3,
-        'conditions_met': 1,
-        'total_conditions': 2,
-        'last_triggered': '2024-01-15T08:45:00Z'
-    }
-]
+# Les données simulées ont été supprimées - utilisez maintenant la base de données
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -349,61 +242,40 @@ def update_user_password(user_id):
 @app.route('/api/dashboard/stats', methods=['GET'])
 def dashboard_stats():
     """Get dashboard statistics"""
-    return jsonify({
-        'stats': {
-            'active_threats': len([t for t in SAMPLE_THREATS if t['status'] == 'active']),
-            'avg_score': sum(t['score'] for t in SAMPLE_THREATS) / len(SAMPLE_THREATS),
-            'high_severity_count': len([t for t in SAMPLE_THREATS if t['severity'] in ['high', 'critical']]),
-            'false_positive_rate': 0.05,
-            'data_sources': 8,
-            'data_sources_operational': 7,
-            'system_status': 'operational'
-        }
-    })
+    try:
+        # Récupérer les statistiques depuis la base de données
+        threats = db.get_all_threats()
+        
+        active_threats = len([t for t in threats if t.get('status') == 'active'])
+        avg_score = sum(t.get('score', 0) for t in threats) / len(threats) if threats else 0
+        high_severity_count = len([t for t in threats if t.get('severity') in ['high', 'critical']])
+        
+        return jsonify({
+            'stats': {
+                'active_threats': active_threats,
+                'avg_score': round(avg_score, 2),
+                'high_severity_count': high_severity_count,
+                'false_positive_rate': 0.05,
+                'data_sources': 8,
+                'data_sources_operational': 7,
+                'system_status': 'operational'
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/threats/realtime', methods=['GET'])
 def realtime_threats():
     """Get real-time threats"""
-    # Add entities field to each threat
-    threats_with_entities = []
-    for threat in SAMPLE_THREATS[:10]:
-        threat_copy = threat.copy()
-        if 'entities' not in threat_copy:
-            # Add default entities based on threat type
-            if threat_copy['id'] == 'threat_001':
-                threat_copy['entities'] = ['entity_001', 'entity_002', 'infrastructure_critique']
-                threat_copy['name'] = 'Activité suspecte détectée'
-                threat_copy['description'] = 'Tentative d\'intrusion sur infrastructure critique'
-                threat_copy['category'] = 'cyber'
-                threat_copy['source'] = 'SIGINT'
-            elif threat_copy['id'] == 'threat_002':
-                threat_copy['entities'] = ['entity_003', 'reseau_001', 'serveur_distant']
-                threat_copy['name'] = 'Communications chiffrées'
-                threat_copy['description'] = 'Trafic réseau anormal détecté'
-                threat_copy['category'] = 'network'
-                threat_copy['source'] = 'COMINT'
-            elif threat_copy['id'] == 'threat_003':
-                threat_copy['entities'] = ['personnel_001', 'zone_sensible']
-                threat_copy['name'] = 'Mouvement de personnel'
-                threat_copy['description'] = 'Déplacement inhabituel observé'
-                threat_copy['category'] = 'physical'
-                threat_copy['source'] = 'HUMINT'
-            elif threat_copy['id'] == 'threat_004':
-                threat_copy['entities'] = ['pattern_001', 'data_cluster', 'anomalie_comportementale']
-                threat_copy['name'] = 'Analyse de données'
-                threat_copy['description'] = 'Patterns suspects identifiés'
-                threat_copy['category'] = 'intelligence'
-                threat_copy['source'] = 'OSINT'
-            else:
-                threat_copy['entities'] = ['entity_default']
-                threat_copy['category'] = threat_copy.get('category', 'unknown')
-                threat_copy['source'] = threat_copy.get('source', 'UNKNOWN')
-                threat_copy['description'] = threat_copy.get('description', 'Description non disponible')
-        threats_with_entities.append(threat_copy)
-    
-    return jsonify({
-        'threats': threats_with_entities
-    })
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        threats = db.get_all_threats()[:limit]
+        
+        return jsonify({
+            'threats': threats
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/threats/evolution', methods=['GET'])
 def threat_evolution():
@@ -419,17 +291,24 @@ def threat_evolution():
 @app.route('/api/scenarios', methods=['GET'])
 def get_scenarios():
     """Get active scenarios"""
-    return jsonify({
-        'scenarios': SAMPLE_SCENARIOS
-    })
+    try:
+        scenarios = db.get_all_scenarios()
+        return jsonify({
+            'scenarios': scenarios
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/scenarios/<scenario_id>', methods=['GET'])
 def get_scenario(scenario_id):
     """Get specific scenario"""
-    scenario = next((s for s in SAMPLE_SCENARIOS if s['id'] == scenario_id), None)
-    if scenario:
-        return jsonify({'scenario': scenario})
-    return jsonify({'error': 'Scenario not found'}), 404
+    try:
+        scenario = db.get_scenario_by_id(scenario_id)
+        if scenario:
+            return jsonify({'scenario': scenario})
+        return jsonify({'error': 'Scenario not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ingestion/status', methods=['GET'])
 def ingestion_status():

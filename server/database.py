@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import Json, RealDictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -10,7 +10,7 @@ class Database:
         self.connection = None
         self.connect()
         self.init_tables()
-    
+
     def connect(self):
         """Établir la connexion à la base de données PostgreSQL"""
         try:
@@ -26,51 +26,51 @@ class Database:
             print("Connexion à la base de données établie avec succès")
         except Exception as e:
             print(f"Erreur de connexion à la base de données: {e}")
-    
+
     def get_connection(self):
         """Obtenir une connexion valide, reconnecter si nécessaire"""
         try:
             if self.connection is None or self.connection.closed:
                 print("Connexion fermée, reconnexion en cours...")
                 self.connect()
-            
+
             # Test de la connexion
             cursor = self.connection.cursor()
             cursor.execute("SELECT 1")
             cursor.fetchone()
             cursor.close()
-            
+
             return self.connection
         except Exception as e:
             print(f"Erreur lors de la vérification de la connexion: {e}")
             print("Tentative de reconnexion...")
             self.connect()
             return self.connection
-    
+
     def init_tables(self):
         """Initialiser les tables nécessaires"""
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            
+
             # Créer toutes les tables du système
             self._create_all_tables(cursor)
-            
+
             # Insérer les utilisateurs par défaut s'ils n'existent pas
             cursor.execute("SELECT COUNT(*) FROM users")
             user_count = cursor.fetchone()['count']
-            
+
             if user_count == 0:
                 self._create_default_users(cursor)
-            
+
             cursor.close()
-            
+
         except Exception as e:
             print(f"Erreur lors de l'initialisation des tables: {e}")
-    
+
     def _create_all_tables(self, cursor):
         """Créer toutes les tables nécessaires"""
-        
+
         # Table users
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -85,7 +85,7 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table data_sources
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS data_sources (
@@ -99,7 +99,7 @@ class Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table threats
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS threats (
@@ -115,7 +115,7 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table scenarios
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scenarios (
@@ -131,7 +131,7 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table actions
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS actions (
@@ -147,7 +147,7 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table alerts
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS alerts (
@@ -161,7 +161,7 @@ class Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
+
         # Table threat_scores
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS threat_scores (
@@ -172,7 +172,7 @@ class Database:
                 metadata JSONB
             )
         """)
-        
+
         # Table prescriptions
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS prescriptions (
@@ -189,7 +189,7 @@ class Database:
                 status VARCHAR(20) DEFAULT 'active'
             )
         """)
-    
+
     def _create_default_users(self, cursor):
         """Créer les utilisateurs par défaut"""
         default_users = [
@@ -197,16 +197,16 @@ class Database:
             ('admin', 'admin123', 5, 'Admin User', 'admin@intel.gov'),
             ('operator', 'operator123', 2, 'Opérateur Système', 'operator@intel.gov')
         ]
-        
+
         for username, password, clearance, name, email in default_users:
             hashed_password = generate_password_hash(password)
             cursor.execute("""
                 INSERT INTO users (username, password, clearance_level, name, email)
                 VALUES (%s, %s, %s, %s, %s)
             """, (username, hashed_password, clearance, name, email))
-        
+
         print("Utilisateurs par défaut créés avec succès")
-    
+
     def get_user_by_username(self, username: str) -> Optional[Dict]:
         """Récupérer un utilisateur par nom d'utilisateur"""
         try:
@@ -218,16 +218,16 @@ class Database:
                 FROM users 
                 WHERE username = %s AND is_active = TRUE
             """, (username,))
-            
+
             user = cursor.fetchone()
             cursor.close()
-            
+
             return dict(user) if user else None
-            
+
         except Exception as e:
             print(f"Erreur lors de la récupération de l'utilisateur: {e}")
             return None
-    
+
     def get_user_by_id(self, user_id: int) -> Optional[Dict]:
         """Récupérer un utilisateur par ID"""
         try:
@@ -239,16 +239,16 @@ class Database:
                 FROM users 
                 WHERE id = %s AND is_active = TRUE
             """, (user_id,))
-            
+
             user = cursor.fetchone()
             cursor.close()
-            
+
             return dict(user) if user else None
-            
+
         except Exception as e:
             print(f"Erreur lors de la récupération de l'utilisateur: {e}")
             return None
-    
+
     def get_all_users(self) -> List[Dict]:
         """Récupérer tous les utilisateurs"""
         try:
@@ -261,32 +261,32 @@ class Database:
                 WHERE is_active = TRUE
                 ORDER BY created_at DESC
             """)
-            
+
             users = cursor.fetchall()
             cursor.close()
-            
+
             return [dict(user) for user in users]
-            
+
         except Exception as e:
             print(f"Erreur lors de la récupération des utilisateurs: {e}")
             return []
-    
+
     def create_user(self, username: str, password: str, clearance_level: int, 
                    name: str, email: str) -> Optional[Dict]:
         """Créer un nouvel utilisateur"""
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            
+
             # Vérifier si l'utilisateur existe déjà
             cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
             if cursor.fetchone():
                 cursor.close()
                 return None  # L'utilisateur existe déjà
-            
+
             # Hacher le mot de passe
             hashed_password = generate_password_hash(password)
-            
+
             # Insérer le nouvel utilisateur
             cursor.execute("""
                 INSERT INTO users (username, password, clearance_level, name, email)
@@ -294,27 +294,27 @@ class Database:
                 RETURNING id, username, clearance_level, name, email, is_active, 
                           created_at, updated_at
             """, (username, hashed_password, clearance_level, name, email))
-            
+
             user = cursor.fetchone()
             cursor.close()
-            
+
             return dict(user) if user else None
-            
+
         except Exception as e:
             print(f"Erreur lors de la création de l'utilisateur: {e}")
             return None
-    
+
     def update_user(self, user_id: int, username: str = None, clearance_level: int = None,
                    name: str = None, email: str = None, is_active: bool = None) -> Optional[Dict]:
         """Mettre à jour un utilisateur"""
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            
+
             # Construire la requête de mise à jour dynamiquement
             update_fields = []
             values = []
-            
+
             if username is not None:
                 update_fields.append("username = %s")
                 values.append(username)
@@ -330,10 +330,10 @@ class Database:
             if is_active is not None:
                 update_fields.append("is_active = %s")
                 values.append(is_active)
-            
+
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             values.append(user_id)
-            
+
             query = f"""
                 UPDATE users 
                 SET {', '.join(update_fields)}
@@ -341,17 +341,17 @@ class Database:
                 RETURNING id, username, clearance_level, name, email, is_active, 
                           created_at, updated_at
             """
-            
+
             cursor.execute(query, values)
             user = cursor.fetchone()
             cursor.close()
-            
+
             return dict(user) if user else None
-            
+
         except Exception as e:
             print(f"Erreur lors de la mise à jour de l'utilisateur: {e}")
             return None
-    
+
     def delete_user(self, user_id: int) -> bool:
         """Supprimer un utilisateur (suppression logique)"""
         try:
@@ -362,14 +362,14 @@ class Database:
                 SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
             """, (user_id,))
-            
+
             cursor.close()
             return True
-            
+
         except Exception as e:
             print(f"Erreur lors de la suppression de l'utilisateur: {e}")
             return False
-    
+
     def verify_password(self, username: str, password: str) -> Optional[Dict]:
         """Vérifier le mot de passe d'un utilisateur"""
         user = self.get_user_by_username(username)
@@ -383,23 +383,23 @@ class Database:
                 'email': user['email']
             }
         return None
-    
+
     def update_password(self, user_id: int, new_password: str) -> bool:
         """Mettre à jour le mot de passe d'un utilisateur"""
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
             hashed_password = generate_password_hash(new_password)
-            
+
             cursor.execute("""
                 UPDATE users 
                 SET password = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
             """, (hashed_password, user_id))
-            
+
             cursor.close()
             return True
-            
+
         except Exception as e:
             print(f"Erreur lors de la mise à jour du mot de passe: {e}")
             return False
@@ -409,7 +409,7 @@ class Database:
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            
+
             # Supprimer les données existantes (sauf users)
             cursor.execute("DELETE FROM threat_scores")
             cursor.execute("DELETE FROM alerts")
@@ -418,7 +418,7 @@ class Database:
             cursor.execute("DELETE FROM scenarios")
             cursor.execute("DELETE FROM prescriptions")
             cursor.execute("DELETE FROM data_sources")
-            
+
             # Insérer des sources de données de test
             data_sources = [
                 ('SIGINT Collection Alpha', 'sigint', 'https://sigint.intel.gov/feed', 'active', '2024-01-15 10:30:00', 1250.5),
@@ -430,7 +430,7 @@ class Database:
                 ('Legacy System Theta', 'json', 'https://legacy.intel.gov/export', 'inactive', '2024-01-14 18:30:00', 125.1),
                 ('Emergency Feed Kappa', 'json', 'https://emergency.intel.gov/alerts', 'error', '2024-01-15 06:00:00', 0.0)
             ]
-            
+
             source_ids = []
             for name, type_, url, status, last_ingested, throughput in data_sources:
                 cursor.execute("""
@@ -438,7 +438,7 @@ class Database:
                     VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
                 """, (name, type_, url, status, last_ingested, throughput))
                 source_ids.append(cursor.fetchone()['id'])
-            
+
             # Insérer des menaces de test
             threats = [
                 ('Activité réseau suspecte', 'Tentative d\'intrusion détectée sur infrastructure critique', 0.85, 'high', 'active', source_ids[0], '{"ip": "192.168.1.100", "port": 22, "protocol": "ssh"}'),
@@ -450,7 +450,7 @@ class Database:
                 ('Alerte système legacy', 'Alerte générée par système hérité', 0.45, 'low', 'archived', source_ids[6], '{"system": "legacy", "alert_type": "maintenance"}'),
                 ('Panne de communication', 'Interruption des communications d\'urgence', 0.95, 'critical', 'active', source_ids[7], '{"duration": "2h30m", "affected_units": 23, "cause": "unknown"}')
             ]
-            
+
             threat_ids = []
             for name, desc, score, severity, status, source_id, metadata in threats:
                 cursor.execute("""
@@ -458,7 +458,7 @@ class Database:
                     VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb) RETURNING id
                 """, (name, desc, score, severity, status, source_id, metadata))
                 threat_ids.append(cursor.fetchone()['id'])
-            
+
             # Insérer des scénarios de test
             scenarios = [
                 ('CYBER-INTRUSION-07', 'Détection d\'intrusion cybernétique', 
@@ -474,7 +474,7 @@ class Database:
                  '[{"type": "EMAIL_FILTERING", "description": "Activer le filtrage email"}, {"type": "USER_NOTIFICATION", "description": "Notifier les utilisateurs"}]',
                  'partial', 3, 'P12H')
             ]
-            
+
             scenario_ids = []
             for name, desc, conditions, actions, status, priority, validity in scenarios:
                 cursor.execute("""
@@ -482,7 +482,7 @@ class Database:
                     VALUES (%s, %s, %s::jsonb, %s::jsonb, %s, %s, %s) RETURNING id
                 """, (name, desc, conditions, actions, status, priority, validity))
                 scenario_ids.append(cursor.fetchone()['id'])
-            
+
             # Insérer des actions de test
             actions = [
                 ('sigint', 'Collection SIGINT intensifiée sur réseau cible', 'P1', 'in_progress', threat_ids[0], scenario_ids[0], '{"target": "network_alpha", "duration": "72h"}'),
@@ -492,13 +492,13 @@ class Database:
                 ('imint', 'Analyse imagerie satellite zone sensible', 'P2', 'in_progress', threat_ids[4], scenario_ids[1], '{"coordinates": "45.123,-73.456", "resolution": "0.5m"}'),
                 ('investigation', 'Enquête approfondie sur exfiltration', 'P1', 'pending', threat_ids[5], None, '{"lead_investigator": "I002", "estimated_duration": "48h"}')
             ]
-            
+
             for type_, desc, priority, status, threat_id, scenario_id, metadata in actions:
                 cursor.execute("""
                     INSERT INTO actions (type, description, priority, status, related_threat_id, related_scenario_id, metadata)
                     VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
                 """, (type_, desc, priority, status, threat_id, scenario_id, metadata))
-            
+
             # Insérer des alertes de test
             alerts = [
                 ('threat', 'critical', 'Menace critique détectée', 'La menace "Détection de malware" a atteint un niveau critique (0.92)', False, threat_ids[1]),
@@ -507,13 +507,13 @@ class Database:
                 ('data', 'info', 'Ingestion de données complétée', 'Ingestion réussie de 1,250 enregistrements depuis SIGINT Alpha', True, None),
                 ('threat', 'warning', 'Évolution de menace', 'Le score de menace "Communication chiffrée anormale" a augmenté', False, threat_ids[3])
             ]
-            
+
             for type_, severity, title, message, is_read, threat_id in alerts:
                 cursor.execute("""
                     INSERT INTO alerts (type, severity, title, message, is_read, related_threat_id)
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, (type_, severity, title, message, is_read, threat_id))
-            
+
             # Insérer des prescriptions de test
             prescriptions = [
                 ('threat_001', 'P1', 'Incident Response', '2-4 heures', 0.92, 
@@ -526,15 +526,15 @@ class Database:
                  '[{"id": "action_005", "type": "forensics", "description": "Analyse forensique des artefacts"}, {"id": "action_006", "type": "reporting", "description": "Rédiger rapport d\'incident"}]',
                  '["Équipe forensique", "Analystes threat intel"]', 'completed')
             ]
-            
+
             for threat_id, priority, category, time_est, confidence, actions, resources, status in prescriptions:
                 cursor.execute("""
                     INSERT INTO prescriptions (threat_id, priority, category, time_estimate, confidence, actions, resources, status)
                     VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s)
                 """, (threat_id, priority, category, time_est, confidence, actions, resources, status))
-            
+
             cursor.close()
-            
+
             # Compter les enregistrements créés
             connection = self.get_connection()
             cursor = connection.cursor()
@@ -543,13 +543,13 @@ class Database:
                 cursor.execute(f"SELECT COUNT(*) FROM {table}")
                 counts[table] = cursor.fetchone()['count']
             cursor.close()
-            
+
             return {
                 'success': True,
                 'message': 'Données de test générées avec succès',
                 'counts': counts
             }
-            
+
         except Exception as e:
             print(f"Erreur lors de la génération des données de test: {e}")
             return {
@@ -562,7 +562,7 @@ class Database:
         try:
             connection = self.get_connection()
             cursor = connection.cursor()
-            
+
             # Supprimer dans l'ordre inverse des dépendances
             cursor.execute("DELETE FROM threat_scores")
             cursor.execute("DELETE FROM alerts")
@@ -571,14 +571,14 @@ class Database:
             cursor.execute("DELETE FROM threats")
             cursor.execute("DELETE FROM scenarios")
             cursor.execute("DELETE FROM data_sources")
-            
+
             cursor.close()
-            
+
             return {
                 'success': True,
                 'message': 'Toutes les données de test ont été supprimées avec succès'
             }
-            
+
         except Exception as e:
             print(f"Erreur lors de la suppression des données de test: {e}")
             return {
@@ -592,19 +592,88 @@ class Database:
             connection = self.get_connection()
             cursor = connection.cursor()
             stats = {}
-            
+
             tables = ['users', 'data_sources', 'threats', 'scenarios', 'actions', 'alerts', 'prescriptions', 'threat_scores']
-            
+
             for table in tables:
                 cursor.execute(f"SELECT COUNT(*) FROM {table}")
                 stats[table] = cursor.fetchone()['count']
-            
+
             cursor.close()
             return stats
-            
+
         except Exception as e:
             print(f"Erreur lors de l'obtention des statistiques: {e}")
             return {}
+
+    def get_all_threats(self):
+        """Récupérer toutes les menaces"""
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+            cursor.execute("""
+                SELECT id, name, description, score, severity, status, 
+                       category, source, entities, created_at as timestamp
+                FROM threats 
+                ORDER BY created_at DESC
+            """)
+
+            threats = cursor.fetchall()
+            cursor.close()
+
+            # Convertir en liste de dictionnaires
+            return [dict(threat) for threat in threats]
+
+        except Exception as e:
+            print(f"Erreur lors de la récupération des menaces: {e}")
+            return []
+
+    def get_all_scenarios(self):
+        """Récupérer tous les scénarios"""
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+            cursor.execute("""
+                SELECT id, name, description, conditions, actions, 
+                       status, priority, conditions_met, total_conditions, 
+                       last_triggered, created_at
+                FROM scenarios 
+                ORDER BY priority ASC
+            """)
+
+            scenarios = cursor.fetchall()
+            cursor.close()
+
+            return [dict(scenario) for scenario in scenarios]
+
+        except Exception as e:
+            print(f"Erreur lors de la récupération des scénarios: {e}")
+            return []
+
+    def get_scenario_by_id(self, scenario_id):
+        """Récupérer un scénario par son ID"""
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor(cursor_factory=RealDictCursor)
+
+            cursor.execute("""
+                SELECT id, name, description, conditions, actions, 
+                       status, priority, conditions_met, total_conditions, 
+                       last_triggered, created_at
+                FROM scenarios 
+                WHERE id = %s
+            """, (scenario_id,))
+
+            scenario = cursor.fetchone()
+            cursor.close()
+
+            return dict(scenario) if scenario else None
+
+        except Exception as e:
+            print(f"Erreur lors de la récupération du scénario: {e}")
+            return None
 
 # Instance globale de la base de données
 db = Database()

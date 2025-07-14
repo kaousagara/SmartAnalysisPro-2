@@ -19,7 +19,14 @@ This is a comprehensive intelligence analysis system designed for threat detecti
 - **Database**: PostgreSQL with connection pooling and error recovery
 - **API**: Flask REST API with Express proxy layer
 - **Frontend**: React with TypeScript, fully responsive
+- **Documentation**: Complete project documentation generated
 - **Deployment**: Ready for production deployment
+
+### Documentation Generated (July 14, 2025)
+- ✅ **PROJET_INTELLIGENCE_ANALYSIS.md**: Complete technical documentation
+- ✅ **PRESENTATION_EXECUTIF.md**: Executive summary and key benefits
+- ✅ **GUIDE_UTILISATION.md**: User guide with step-by-step instructions
+- ✅ **README_DEPLOYMENT.md**: Deployment instructions for Replit
 
 ## User Preferences
 

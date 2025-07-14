@@ -75,6 +75,23 @@
 
 /* Dark theme utility classes */
 .dark-bg {
+  @apply bg-[hsl(240,10%,7%)];
+}
+
+.dark-surface {
+  @apply bg-[hsl(240,10%,11%)];
+}
+
+.dark-elevated {
+  @apply bg-[hsl(240,10%,18%)];
+}
+
+.dark-border {
+  @apply border-[hsl(240,7%,20%)];
+}
+
+/* Dark theme utility classes */
+.dark-bg {
   background-color: var(--dark-bg);
 }
 

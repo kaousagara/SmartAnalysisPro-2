@@ -136,7 +136,7 @@ SAMPLE_SCENARIOS = [
     }
 ]
 
-@app.route('/auth/login', methods=['POST'])
+@app.route('/api/login', methods=['POST'])
 def login():
     """Handle user login"""
     try:
@@ -161,7 +161,7 @@ def login():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/auth/user', methods=['GET'])
+@app.route('/api/user', methods=['GET'])
 def get_user():
     """Get current user info"""
     try:
@@ -553,7 +553,7 @@ def submit_feedback():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({
@@ -1597,6 +1597,8 @@ def test_collection_scenario():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

@@ -61,6 +61,15 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        // Intelligence system specific colors
+        "dark-bg": "var(--dark-bg)",
+        "dark-surface": "var(--dark-surface)",
+        "dark-elevated": "var(--dark-elevated)",
+        "dark-border": "var(--dark-border)",
+        success: "var(--success)",
+        warning: "var(--warning)",
+        error: "var(--error)",
+        "accent-orange": "var(--accent-orange)",
       },
       keyframes: {
         "accordion-down": {

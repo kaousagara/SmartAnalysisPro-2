@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/components/ui/theme-provider";
+
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 
@@ -14,6 +14,7 @@ import Ingestion from "@/pages/ingestion";
 import Scenarios from "@/pages/scenarios";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
+import Admin from "@/pages/admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -40,7 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-dark-bg">
+    <div className="min-h-screen flex bg-background">
       <Sidebar />
       <div className="flex-1 overflow-auto">
         <TopBar />
@@ -86,6 +87,11 @@ function Router() {
           <Reports />
         </ProtectedRoute>
       </Route>
+      <Route path="/admin">
+        <ProtectedRoute>
+          <Admin />
+        </ProtectedRoute>
+      </Route>
       <Route path="/">
         <Redirect to="/dashboard" />
       </Route>
@@ -95,19 +101,12 @@ function Router() {
 }
 
 function App() {
-  useEffect(() => {
-    // Force dark theme for intelligence system
-    document.documentElement.classList.add('dark');
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

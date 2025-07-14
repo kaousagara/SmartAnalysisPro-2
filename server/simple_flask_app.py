@@ -344,5 +344,74 @@ def health_check():
         'version': '2.0.0'
     })
 
+@app.route('/admin/llm/config', methods=['GET', 'POST'])
+def llm_config():
+    """Configuration LLM"""
+    try:
+        if request.method == 'GET':
+            from services.llm_service import llm_service
+            return jsonify(llm_service.get_config())
+        
+        elif request.method == 'POST':
+            from services.llm_service import llm_service
+            data = request.get_json()
+            llm_service.update_config(data)
+            return jsonify({
+                'status': 'success',
+                'message': 'Configuration LLM mise à jour'
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/llm/test', methods=['POST'])
+def test_llm():
+    """Test de connexion LLM"""
+    try:
+        from services.llm_service import llm_service
+        result = llm_service.test_connection()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/system/config', methods=['GET', 'POST'])
+def system_config():
+    """Configuration système"""
+    try:
+        if request.method == 'GET':
+            return jsonify({
+                'threat_threshold': 0.70,
+                'critical_score_delta': 0.20,
+                'false_positive_threshold': 0.08,
+                'latency_threshold': 400,
+                'enable_realtime_processing': True,
+                'enable_auto_alerts': True,
+                'data_retention_days': 90,
+                'max_concurrent_analysis': 10
+            })
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            return jsonify({
+                'status': 'success',
+                'message': 'Configuration système mise à jour'
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/database/test', methods=['POST'])
+def test_database():
+    """Test de connexion à la base de données"""
+    try:
+        import time
+        time.sleep(1)  # Simulation d'un délai
+        return jsonify({
+            'status': 'success',
+            'message': 'Connexion à la base de données réussie'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

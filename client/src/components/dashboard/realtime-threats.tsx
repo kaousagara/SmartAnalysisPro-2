@@ -5,28 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
-import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter, RefreshCw, X } from 'lucide-react';
+import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function RealtimeThreats() {
   const [selectedThreat, setSelectedThreat] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [isThreatsUpdating, setIsThreatsUpdating] = useState(false);
   
-  const { data: threatsData, isLoading, isFetching } = useQuery({
+  const { data: threatsData, isLoading } = useQuery({
     queryKey: ['/api/threats/realtime'],
     queryFn: () => dashboardApi.getRealtimeThreats(10),
     refetchInterval: 5000,
   });
-
-  useEffect(() => {
-    if (isFetching) {
-      setIsThreatsUpdating(true);
-      const timer = setTimeout(() => setIsThreatsUpdating(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isFetching]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -79,28 +70,13 @@ export function RealtimeThreats() {
   );
 
   return (
-    <Card className={`bg-slate-800 border-slate-700 transition-all duration-300 ${
-      isThreatsUpdating ? 'ring-2 ring-blue-400 ring-opacity-50' : ''
-    }`}>
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Activity className={`w-5 h-5 text-red-400 ${isThreatsUpdating ? 'animate-pulse' : ''}`} />
-            <CardTitle className="text-white">Menaces en Temps Réel</CardTitle>
-            {isThreatsUpdating && (
-              <div className="flex items-center space-x-2">
-                <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
-                <span className="text-xs text-blue-400">Actualisation...</span>
-              </div>
-            )}
-          </div>
+          <CardTitle className="text-white">Menaces en Temps Réel</CardTitle>
           <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${
-              isThreatsUpdating ? 'bg-blue-400 animate-pulse' : 'bg-green-400'
-            }`} />
-            <span className="text-xs text-gray-400">
-              {isThreatsUpdating ? 'En cours...' : 'En Direct'}
-            </span>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-xs text-gray-400">En Direct</span>
           </div>
         </div>
       </CardHeader>

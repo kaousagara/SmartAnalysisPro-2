@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { Line } from 'react-chartjs-2';
-import { useState, useEffect } from 'react';
-import { Activity, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -32,21 +31,12 @@ type TimeFilter = '24H' | '7J' | '30J';
 
 export function ThreatChart() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('24H');
-  const [isChartUpdating, setIsChartUpdating] = useState(false);
   
-  const { data: chartData, isLoading, error, isFetching } = useQuery({
+  const { data: chartData, isLoading, error } = useQuery({
     queryKey: ['/api/threats/evolution', timeFilter],
     queryFn: dashboardApi.getThreatEvolution,
-    refetchInterval: 15000, // Mise à jour plus fréquente
+    refetchInterval: 30000,
   });
-
-  useEffect(() => {
-    if (isFetching) {
-      setIsChartUpdating(true);
-      const timer = setTimeout(() => setIsChartUpdating(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isFetching]);
 
   const options = {
     responsive: true,
@@ -218,21 +208,10 @@ export function ThreatChart() {
   const data = chartData && chartData.datasets && Array.isArray(chartData.datasets) ? chartData : defaultData;
 
   return (
-    <Card className={`bg-slate-800 border-slate-700 transition-all duration-300 ${
-      isChartUpdating ? 'ring-2 ring-blue-400 ring-opacity-50' : ''
-    }`}>
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Activity className={`w-5 h-5 text-orange-400 ${isChartUpdating ? 'animate-pulse' : ''}`} />
-            <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
-            {isChartUpdating && (
-              <div className="flex items-center space-x-2">
-                <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
-                <span className="text-xs text-blue-400">Mise à jour...</span>
-              </div>
-            )}
-          </div>
+          <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
           <div className="flex space-x-2">
             {(['24H', '7J', '30J'] as TimeFilter[]).map((filter) => (
               <Button
@@ -249,27 +228,8 @@ export function ThreatChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className={`h-64 transition-all duration-500 ${
-          isChartUpdating ? 'opacity-80 scale-105' : ''
-        }`}>
+        <div className="h-64">
           <Line data={data} options={options} />
-        </div>
-        
-        {/* Indicateurs de statut en temps réel */}
-        <div className="mt-4 flex items-center justify-between text-xs text-gray-400">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
-                isChartUpdating ? 'bg-blue-400 animate-pulse' : 'bg-green-400'
-              }`} />
-              <span>{isChartUpdating ? 'Actualisation...' : 'Données à jour'}</span>
-            </div>
-            <span>•</span>
-            <span>Période: {timeFilter}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span>Dernière mise à jour: {new Date().toLocaleTimeString()}</span>
-          </div>
         </div>
       </CardContent>
     </Card>

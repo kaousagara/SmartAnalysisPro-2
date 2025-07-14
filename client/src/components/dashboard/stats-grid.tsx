@@ -1,32 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle, TrendingUp, Database, Percent, ArrowUp, ArrowDown, Check, RefreshCw } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Database, Percent, ArrowUp, ArrowDown, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
-import { useState, useEffect } from 'react';
 
 export function StatsGrid() {
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-  
-  const { data: stats, isLoading, isFetching } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     queryFn: dashboardApi.getStats,
-    refetchInterval: 5000, // Mise à jour plus fréquente
+    refetchInterval: 10000,
   });
-
-  useEffect(() => {
-    if (isFetching) {
-      setIsUpdating(true);
-      const timer = setTimeout(() => setIsUpdating(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isFetching]);
-
-  useEffect(() => {
-    if (stats) {
-      setLastUpdate(new Date());
-    }
-  }, [stats]);
 
   if (isLoading) {
     return (
@@ -79,38 +61,16 @@ export function StatsGrid() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {/* Indicateur de mise à jour global */}
-      <div className="col-span-full flex items-center justify-end mb-2">
-        <div className="flex items-center space-x-2 text-xs text-gray-400">
-          <RefreshCw className={`w-3 h-3 ${isUpdating ? 'animate-spin text-blue-400' : ''}`} />
-          <span>Dernière mise à jour: {lastUpdate.toLocaleTimeString()}</span>
-          <div className={`w-2 h-2 rounded-full ${isUpdating ? 'bg-blue-400 animate-pulse' : 'bg-green-400'}`} />
-        </div>
-      </div>
-      
-      {statCards.map((stat, index) => {
+      {statCards.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card 
-            key={stat.title} 
-            className={`bg-slate-800 border-slate-700 transition-all duration-300 hover:border-slate-600 hover:shadow-lg ${
-              isUpdating ? 'animate-pulse' : ''
-            }`}
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
+          <Card key={stat.title} className="bg-slate-800 border-slate-700">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-gray-400">{stat.title}</h3>
-                <div className="flex items-center space-x-2">
-                  <Icon className={`w-5 h-5 ${stat.color} ${isUpdating ? 'animate-pulse' : ''}`} />
-                  {isUpdating && (
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping" />
-                  )}
-                </div>
+                <Icon className={`w-5 h-5 ${stat.color}`} />
               </div>
-              <div className={`text-2xl font-bold text-white mb-2 transition-all duration-500 ${
-                isUpdating ? 'scale-105' : ''
-              }`}>
+              <div className={`text-2xl font-bold text-white mb-2`}>
                 {stat.value}
               </div>
               <p className={`text-sm flex items-center ${

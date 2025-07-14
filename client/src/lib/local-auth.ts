@@ -1,8 +1,10 @@
-// Système d'authentification local
+// Système d'authentification basé sur la base de données
 export interface LocalUser {
+  id: number;
   username: string;
   name: string;
   clearance_level: number;
+  email?: string;
 }
 
 export interface LocalCredentials {
@@ -10,25 +12,6 @@ export interface LocalCredentials {
   password: string;
   two_fa_code?: string;
 }
-
-// Base de données locale des utilisateurs
-const LOCAL_USERS: Record<string, { password: string; name: string; clearance_level: number }> = {
-  'analyst': {
-    password: 'analyst123',
-    name: 'Analyste J.Smith',
-    clearance_level: 3
-  },
-  'admin': {
-    password: 'admin123',
-    name: 'Administrateur',
-    clearance_level: 5
-  },
-  'operator': {
-    password: 'operator123',
-    name: 'Opérateur Système',
-    clearance_level: 2
-  }
-};
 
 export class LocalAuth {
   private static instance: LocalAuth;
@@ -81,36 +64,53 @@ export class LocalAuth {
       return { success: false, error: 'Nom d\'utilisateur et mot de passe requis' };
     }
 
-    const userData = LOCAL_USERS[username];
-    if (!userData) {
-      return { success: false, error: 'Utilisateur non trouvé' };
-    }
+    try {
+      // Authentification via l'API de la base de données
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password, two_fa_code }),
+      });
 
-    if (userData.password !== password) {
-      return { success: false, error: 'Mot de passe incorrect' };
-    }
+      const result = await response.json();
 
-    // 2FA is optional - if provided, it should be valid
-    if (two_fa_code && two_fa_code.length > 0) {
-      // For demo purposes, accept any 6-digit code or "123456"
-      if (two_fa_code.length !== 6 || !/^\d{6}$/.test(two_fa_code)) {
-        return { success: false, error: 'Code 2FA invalide (6 chiffres requis)' };
+      if (!response.ok) {
+        return { success: false, error: result.message || 'Erreur d\'authentification' };
       }
+
+      if (!result.success) {
+        return { success: false, error: result.message || 'Échec de l\'authentification' };
+      }
+
+      // 2FA is optional - if provided, it should be valid
+      if (two_fa_code && two_fa_code.length > 0) {
+        // For demo purposes, accept any 6-digit code or "123456"
+        if (two_fa_code.length !== 6 || !/^\d{6}$/.test(two_fa_code)) {
+          return { success: false, error: 'Code 2FA invalide (6 chiffres requis)' };
+        }
+      }
+
+      const user: LocalUser = {
+        id: result.user.id,
+        username: result.user.username,
+        name: result.user.name,
+        clearance_level: result.user.clearance_level,
+        email: result.user.email
+      };
+
+      const token = result.token || `db_token_${username}_${Date.now()}`;
+      
+      this.currentUser = user;
+      this.token = token;
+      this.saveToStorage();
+
+      return { success: true, user, token };
+    } catch (error) {
+      console.error('Erreur lors de l\'authentification:', error);
+      return { success: false, error: 'Erreur de connexion au serveur' };
     }
-
-    const user: LocalUser = {
-      username,
-      name: userData.name,
-      clearance_level: userData.clearance_level
-    };
-
-    const token = `local_token_${username}_${Date.now()}`;
-    
-    this.currentUser = user;
-    this.token = token;
-    this.saveToStorage();
-
-    return { success: true, user, token };
   }
 
   logout(): void {

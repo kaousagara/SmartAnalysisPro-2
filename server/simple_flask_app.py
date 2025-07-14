@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -145,6 +146,49 @@ def login():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login():
+    """Handle user authentication using database"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        two_fa_code = data.get('two_fa_code')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'message': 'Nom d\'utilisateur et mot de passe requis'}), 400
+        
+        # Vérification via la base de données
+        user = db.verify_password(username, password)
+        
+        if not user:
+            return jsonify({'success': False, 'message': 'Identifiants invalides'}), 401
+        
+        # 2FA is optional - if provided, it should be valid
+        if two_fa_code and two_fa_code.strip():
+            # For demo purposes, accept any 6-digit code or "123456"
+            if len(two_fa_code) != 6 or not two_fa_code.isdigit():
+                return jsonify({'success': False, 'message': 'Code 2FA invalide (6 chiffres requis)'}), 400
+        
+        # Générer un token simple (en production, utiliser JWT ou similaire)
+        token = f'db_token_{username}_{int(time.time())}'
+        
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'name': user['name'],
+                'clearance_level': user['clearance_level'],
+                'email': user['email']
+            },
+            'token': token
+        })
+    
+    except Exception as e:
+        print(f"Erreur lors de la connexion: {e}")
+        return jsonify({'success': False, 'message': f'Erreur lors de la connexion: {str(e)}'}), 500
+
 @app.route('/api/user', methods=['GET'])
 def get_user():
     """Get current user info"""
@@ -160,6 +204,50 @@ def get_user():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/user', methods=['GET'])
+def get_auth_user():
+    """Get authenticated user info from token"""
+    try:
+        # In a real system, this would validate the JWT token
+        # For now, we'll use a simple header-based approach
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return jsonify({'error': 'Token d\'authentification requis'}), 401
+        
+        # Extract token from "Bearer <token>" format
+        token = auth_header.replace('Bearer ', '') if auth_header.startswith('Bearer ') else auth_header
+        
+        # Parse token to get username (simple implementation)
+        if token.startswith('db_token_'):
+            username = token.split('_')[2]  # db_token_<username>_<timestamp>
+            
+            # Get user from database
+            user = db.get_user_by_username(username)
+            if user:
+                return jsonify({
+                    'id': user['id'],
+                    'username': user['username'],
+                    'name': user['name'],
+                    'clearance_level': user['clearance_level'],
+                    'email': user['email']
+                })
+        
+        return jsonify({'error': 'Token invalide'}), 401
+    except Exception as e:
+        print(f"Erreur lors de la récupération de l'utilisateur authentifié: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    """Handle user logout"""
+    try:
+        # In a real system, this would invalidate the JWT token
+        # For now, we'll just return success
+        return jsonify({'success': True, 'message': 'Déconnexion réussie'})
+    except Exception as e:
+        print(f"Erreur lors de la déconnexion: {e}")
+        return jsonify({'success': False, 'message': f'Erreur lors de la déconnexion: {str(e)}'}), 500
 
 # === ADMINISTRATION ENDPOINTS ===
 

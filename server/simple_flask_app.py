@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -933,26 +933,78 @@ def generate_collection_request():
         data = request.get_json()
         
         # Logique de génération automatique basée sur les scénarios
-        # Simulation d'une nouvelle requête générée
         import time
+        import random
+        
+        # Zones géographiques du Mali
+        zones = [
+            'Gao - Secteur Nord', 'Kidal - Route principale', 'Tombouctou - Centre urbain',
+            'Ménaka - Frontière', 'Tessalit - Poste avancé', 'Ansongo - Zone rurale',
+            'Bourem - Fleuve Niger', 'Araouane - Région désertique'
+        ]
+        
+        # Types de requêtes réalistes
+        types_requetes = [
+            'HUMINT local + SIGINT', 'IMINT satellite + OSINT', 'TECHINT réseau + COMINT',
+            'SIGINT multi-sources', 'ELINT + COMINT', 'MASINT + IMINT'
+        ]
+        
+        # Objectifs basés sur l'analyse prédictive
+        objectifs = [
+            'Confirmer activité suspecte détectée par analyse prédictive',
+            'Valider signal faible identifié par corrélation automatique',
+            'Combler lacune géographique dans la couverture',
+            'Vérifier évolution menace prédite par modèle IA',
+            'Confirmer pattern détecté dans communications interceptées'
+        ]
+        
+        # Scénarios actifs
+        scenarios = [
+            {'id': 'PREDICT-2025-AUTO', 'name': 'PREDICTION-AUTOMATIQUE-2025'},
+            {'id': 'LACUNE-GEO-2025', 'name': 'COMBLEMENT-LACUNE-GEOGRAPHIQUE'},
+            {'id': 'SIGNAL-FAIBLE-2025', 'name': 'DETECTION-SIGNAUX-FAIBLES'},
+            {'id': 'CORRELATION-IA-2025', 'name': 'CORRELATION-INTELLIGENCE-ARTIFICIELLE'},
+            {'id': 'THREAT-EVOLUTION-2025', 'name': 'EVOLUTION-MENACE-PREDICTIVE'}
+        ]
+        
+        # Sélection aléatoire pour simulation réaliste
+        selected_zone = random.choice(zones)
+        selected_type = random.choice(types_requetes)
+        selected_objectif = random.choice(objectifs)
+        selected_scenario = random.choice(scenarios)
+        
+        # Détermination de l'urgence basée sur le score de priorité
+        priority_score = random.uniform(0.4, 0.95)
+        if priority_score > 0.85:
+            urgence = 'Critique'
+        elif priority_score > 0.7:
+            urgence = 'Haute'
+        elif priority_score > 0.5:
+            urgence = 'Moyenne'
+        else:
+            urgence = 'Faible'
+        
+        # Génération de la requête
         new_request = {
-            'id': f'req_{int(time.time())}',
-            'zone': 'Zone générée automatiquement',
-            'objectif': 'Collecte automatique basée sur analyse prédictive',
-            'origine': 'Génération automatique - Scénario actif détecté',
-            'urgence': 'Haute',
+            'id': f'req_auto_{int(time.time())}',
+            'zone': selected_zone,
+            'objectif': selected_objectif,
+            'origine': 'Génération automatique - Seuil de confiance atteint (<0.4) ou lacune détectée',
+            'urgence': urgence,
             'date': datetime.now().strftime('%Y-%m-%d'),
-            'type_requete': 'SIGINT multi-sources',
-            'scenario_id': 'auto_scenario_001',
-            'scenario_name': 'Auto-Generated Request',
+            'type_requete': selected_type,
+            'scenario_id': selected_scenario['id'],
+            'scenario_name': selected_scenario['name'],
             'status': 'pending',
             'created_at': datetime.now().isoformat(),
-            'priority_score': 0.78,
-            'documents_analysés': 5,
-            'confidence_level': 0.70
+            'priority_score': round(priority_score, 2),
+            'documents_analysés': random.randint(3, 15),
+            'confidence_level': random.uniform(0.25, 0.45),  # Faible pour justifier la génération
+            'estimated_completion': (datetime.now() + timedelta(hours=random.randint(12, 72))).isoformat(),
+            'collection_type': 'Automatique - Génération prédictive'
         }
         
-        return jsonify({'request': new_request, 'message': 'Requête générée avec succès'}), 201
+        return jsonify({'request': new_request, 'message': 'Requête générée avec succès par analyse prédictive'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -974,6 +1026,120 @@ def update_collection_request_status(request_id):
         }
         
         return jsonify({'request': updated_request, 'message': 'Statut mis à jour'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/collection-requests/test-scenario', methods=['POST'])
+def test_collection_scenario():
+    """Tester un scénario complet de génération automatique de requêtes"""
+    try:
+        # Simuler la détection d'un scénario nécessitant une requête de collecte
+        scenario_data = {
+            'scenario_name': 'ATT-2024-MALI-URGENT',
+            'threat_score': 0.35,  # Faible confiance déclenchant une requête
+            'location': 'Gao - Secteur Est',
+            'threat_type': 'Groupe armé suspect',
+            'analysis_gaps': [
+                'Manque de confirmation HUMINT',
+                'Géolocalisation imprécise',
+                'Information obsolète (>48h)'
+            ]
+        }
+        
+        # Générer automatiquement des requêtes basées sur les gaps
+        generated_requests = []
+        import random
+        
+        # Requête pour combler le gap HUMINT
+        humint_request = {
+            'id': f'req_test_humint_{int(datetime.now().timestamp())}',
+            'zone': scenario_data['location'],
+            'objectif': f'Confirmer présence de {scenario_data["threat_type"]} par source locale',
+            'origine': 'Test automatique - Gap HUMINT détecté',
+            'urgence': 'Haute',
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'type_requete': 'HUMINT local',
+            'scenario_id': scenario_data['scenario_name'],
+            'scenario_name': scenario_data['scenario_name'],
+            'status': 'pending',
+            'created_at': datetime.now().isoformat(),
+            'priority_score': 0.89,
+            'documents_analysés': 8,
+            'confidence_level': scenario_data['threat_score'],
+            'estimated_completion': (datetime.now() + timedelta(hours=24)).isoformat(),
+            'collection_type': 'Automatique - Test scénario',
+            'gap_addressed': 'HUMINT'
+        }
+        
+        # Requête pour améliorer la géolocalisation
+        geo_request = {
+            'id': f'req_test_geo_{int(datetime.now().timestamp())}',
+            'zone': scenario_data['location'],
+            'objectif': f'Préciser géolocalisation de {scenario_data["threat_type"]}',
+            'origine': 'Test automatique - Gap géolocalisation détecté',
+            'urgence': 'Moyenne',
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'type_requete': 'IMINT satellite + SIGINT',
+            'scenario_id': scenario_data['scenario_name'],
+            'scenario_name': scenario_data['scenario_name'],
+            'status': 'pending',
+            'created_at': datetime.now().isoformat(),
+            'priority_score': 0.72,
+            'documents_analysés': 5,
+            'confidence_level': scenario_data['threat_score'],
+            'estimated_completion': (datetime.now() + timedelta(hours=6)).isoformat(),
+            'collection_type': 'Automatique - Test scénario',
+            'gap_addressed': 'Géolocalisation'
+        }
+        
+        # Requête pour actualiser l'information
+        update_request = {
+            'id': f'req_test_update_{int(datetime.now().timestamp())}',
+            'zone': scenario_data['location'],
+            'objectif': f'Actualiser information sur {scenario_data["threat_type"]}',
+            'origine': 'Test automatique - Information obsolète détectée',
+            'urgence': 'Haute',
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'type_requete': 'SIGINT + OSINT',
+            'scenario_id': scenario_data['scenario_name'],
+            'scenario_name': scenario_data['scenario_name'],
+            'status': 'pending',
+            'created_at': datetime.now().isoformat(),
+            'priority_score': 0.83,
+            'documents_analysés': 12,
+            'confidence_level': scenario_data['threat_score'],
+            'estimated_completion': (datetime.now() + timedelta(hours=12)).isoformat(),
+            'collection_type': 'Automatique - Test scénario',
+            'gap_addressed': 'Actualisation'
+        }
+        
+        generated_requests = [humint_request, geo_request, update_request]
+        
+        # Calcul des statistiques de test
+        test_stats = {
+            'scenario_triggered': scenario_data['scenario_name'],
+            'threat_score': scenario_data['threat_score'],
+            'requests_generated': len(generated_requests),
+            'gaps_identified': len(scenario_data['analysis_gaps']),
+            'total_priority_score': sum(req['priority_score'] for req in generated_requests),
+            'avg_priority_score': sum(req['priority_score'] for req in generated_requests) / len(generated_requests),
+            'urgency_distribution': {
+                'Critique': len([r for r in generated_requests if r['urgence'] == 'Critique']),
+                'Haute': len([r for r in generated_requests if r['urgence'] == 'Haute']),
+                'Moyenne': len([r for r in generated_requests if r['urgence'] == 'Moyenne']),
+                'Faible': len([r for r in generated_requests if r['urgence'] == 'Faible'])
+            },
+            'collection_types': list(set([req['type_requete'] for req in generated_requests])),
+            'test_timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'message': 'Scénario de test exécuté avec succès',
+            'scenario_data': scenario_data,
+            'generated_requests': generated_requests,
+            'test_statistics': test_stats
+        }), 200
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

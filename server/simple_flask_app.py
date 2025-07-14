@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from services.prescription_service import PrescriptionService
+from services.collection_request_service import collection_service
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -603,10 +604,10 @@ def validate_prediction(threat_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/prescriptions/collection-requests', methods=['GET'])
-def get_collection_requests():
-    """Récupérer les requêtes de collecte générées"""
+def get_prescription_collection_requests():
+    """Récupérer les requêtes de collecte générées par les prescriptions"""
     try:
-        requests = prescription_service.get_collection_requests()
+        requests = prescription_service.get_prescription_collection_requests()
         return jsonify({'collection_requests': requests})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -838,6 +839,173 @@ def get_report_templates():
         ]
         
         return jsonify({'templates': templates})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ================================
+# COLLECTION REQUESTS ENDPOINTS
+# ================================
+
+@app.route('/collection-requests', methods=['GET'])
+def get_collection_requests():
+    """Récupérer toutes les requêtes de collecte actives"""
+    try:
+        zone = request.args.get('zone')
+        urgency = request.args.get('urgency')
+        
+        if zone:
+            requests = collection_service.get_requests_by_zone(zone)
+        elif urgency:
+            requests = collection_service.get_requests_by_urgency(urgency)
+        else:
+            requests = collection_service.get_all_requests()
+        
+        return jsonify({'collection_requests': requests})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/<request_id>', methods=['GET'])
+def get_collection_request(request_id):
+    """Récupérer une requête de collecte spécifique"""
+    try:
+        request_data = collection_service.get_request_by_id(request_id)
+        if not request_data:
+            return jsonify({'error': 'Requête non trouvée'}), 404
+        
+        return jsonify({'collection_request': request_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/generate', methods=['POST'])
+def generate_collection_request():
+    """Générer une nouvelle requête de collecte"""
+    try:
+        data = request.get_json()
+        
+        # Validation des données requises
+        if not data:
+            return jsonify({'error': 'Données manquantes'}), 400
+        
+        # Génération de la requête
+        new_request = collection_service.generate_collection_request(data)
+        
+        if not new_request:
+            return jsonify({'error': 'Impossible de générer la requête (seuil de confiance ou limite atteinte)'}), 400
+        
+        return jsonify({
+            'message': 'Requête de collecte générée avec succès',
+            'collection_request': new_request.__dict__
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/<request_id>/fulfill', methods=['POST'])
+def fulfill_collection_request(request_id):
+    """Marquer une requête comme satisfaite"""
+    try:
+        data = request.get_json()
+        fulfillment_info = data.get('fulfillment_info', {}) if data else {}
+        
+        success = collection_service.mark_request_fulfilled(request_id, fulfillment_info)
+        
+        if not success:
+            return jsonify({'error': 'Requête non trouvée'}), 404
+        
+        return jsonify({'message': 'Requête marquée comme satisfaite'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/trigger', methods=['POST'])
+def trigger_collection_request():
+    """Déclencher une requête de collecte basée sur un scénario/menace"""
+    try:
+        data = request.get_json()
+        
+        # Exemples de déclenchement pour demonstration
+        trigger_examples = [
+            {
+                'type': 'scenario_uncertain',
+                'scenario_id': 'scenario_001',
+                'confidence': 0.6,
+                'zone': 'Gao',
+                'missing_info': 'mouvements de groupes armés',
+                'threat_type': 'groupe armé',
+                'context': {
+                    'scenario_name': 'ATT-2024-MALI',
+                    'threat_name': 'Mouvement suspect dans le secteur Est'
+                }
+            },
+            {
+                'type': 'prescription_incomplete',
+                'threat_id': 'threat_001',
+                'confidence': 0.8,
+                'zone': 'Tombouctou',
+                'missing_info': 'communications interceptées',
+                'threat_type': 'cyber intrusion',
+                'gap_count': 3
+            },
+            {
+                'type': 'information_gap',
+                'confidence': 0.7,
+                'zone': 'Kidal',
+                'missing_info': 'validation de présence',
+                'threat_type': 'terrorisme',
+                'threat_level': 'high'
+            }
+        ]
+        
+        if not data:
+            # Utiliser un exemple si pas de données
+            trigger_data = trigger_examples[0]
+        else:
+            trigger_data = data
+        
+        # Génération de la requête
+        new_request = collection_service.generate_collection_request(trigger_data)
+        
+        if not new_request:
+            return jsonify({'error': 'Impossible de générer la requête'}), 400
+        
+        return jsonify({
+            'message': 'Requête de collecte générée automatiquement',
+            'collection_request': new_request.__dict__,
+            'trigger_data': trigger_data
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/examples', methods=['GET'])
+def get_collection_request_examples():
+    """Récupérer des exemples de requêtes de collecte"""
+    try:
+        examples = [
+            {
+                "zone": "Gao",
+                "objectif": "Confirmer la présence d'un groupe armé dans le secteur Est",
+                "origine": "Manque d'information dans 3 documents consécutifs",
+                "urgence": "Haute",
+                "date": "2025-07-14",
+                "type_requête": "HUMINT ou SIGINT ciblé"
+            },
+            {
+                "zone": "Tombouctou",
+                "objectif": "Analyser les communications interceptées liées à l'activité cyber",
+                "origine": "Prescription nécessitant des informations complémentaires",
+                "urgence": "Critique",
+                "date": "2025-07-14",
+                "type_requête": "SIGINT ciblé"
+            },
+            {
+                "zone": "Kidal",
+                "objectif": "Valider la présence de terrorisme dans la zone",
+                "origine": "Scénario avec conditions incertaines",
+                "urgence": "Haute",
+                "date": "2025-07-14",
+                "type_requête": "HUMINT"
+            }
+        ]
+        
+        return jsonify({'examples': examples})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

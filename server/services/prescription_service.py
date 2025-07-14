@@ -678,8 +678,8 @@ class PrescriptionService:
             'validated_at': latest_entry['validated_at']
         }
     
-    def get_collection_requests(self) -> List[Dict]:
-        """Récupérer les requêtes de collecte générées"""
+    def get_prescription_collection_requests(self) -> List[Dict]:
+        """Récupérer les requêtes de collecte générées par les prescriptions"""
         return self.collection_requests
     
     def get_prediction_trends(self) -> Dict:

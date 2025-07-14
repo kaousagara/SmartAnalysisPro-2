@@ -3,18 +3,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { actionApi } from '@/lib/api';
-import { Satellite, Eye, Network, AlertTriangle, Activity, CheckCircle, Clock, Target, User, Shield } from 'lucide-react';
+import { Satellite, Eye, Network, AlertTriangle, Activity, CheckCircle, Clock, Target, User, Shield, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function RecentActions() {
   const [selectedAction, setSelectedAction] = useState<any>(null);
+  const [isActionsUpdating, setIsActionsUpdating] = useState(false);
   
-  const { data: actionsData, isLoading } = useQuery({
+  const { data: actionsData, isLoading, isFetching } = useQuery({
     queryKey: ['/api/actions'],
     queryFn: actionApi.getActions,
-    refetchInterval: 10000,
+    refetchInterval: 8000, // Mise à jour plus fréquente
   });
+
+  useEffect(() => {
+    if (isFetching) {
+      setIsActionsUpdating(true);
+      const timer = setTimeout(() => setIsActionsUpdating(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isFetching]);
 
   const getActionIcon = (type: string) => {
     switch (type) {
@@ -72,7 +81,13 @@ export function RecentActions() {
     return (
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Actions Récentes & Prescriptions</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Activity className="w-5 h-5 text-blue-400 animate-pulse" />
+              <CardTitle className="text-white">Actions Récentes & Prescriptions</CardTitle>
+            </div>
+            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -95,9 +110,28 @@ export function RecentActions() {
   const recentActions = actions.slice(0, 10); // Show last 10 actions
 
   return (
-    <Card className="bg-slate-800 border-slate-700">
+    <Card className={`bg-slate-800 border-slate-700 transition-all duration-300 ${
+      isActionsUpdating ? 'ring-2 ring-blue-400 ring-opacity-50' : ''
+    }`}>
       <CardHeader>
-        <CardTitle className="text-white">Actions Récentes & Prescriptions</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Activity className={`w-5 h-5 text-blue-400 ${isActionsUpdating ? 'animate-pulse' : ''}`} />
+            <CardTitle className="text-white">Actions Récentes & Prescriptions</CardTitle>
+            {isActionsUpdating && (
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
+                <span className="text-xs text-blue-400">Actualisation...</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center space-x-2 text-xs text-gray-400">
+            <div className={`w-2 h-2 rounded-full ${
+              isActionsUpdating ? 'bg-blue-400 animate-pulse' : 'bg-green-400'
+            }`} />
+            <span>{isActionsUpdating ? 'En cours...' : 'À jour'}</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

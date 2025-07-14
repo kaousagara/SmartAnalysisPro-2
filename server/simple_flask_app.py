@@ -934,6 +934,7 @@ def generate_collection_request():
         
         # Logique de génération automatique basée sur les scénarios
         # Simulation d'une nouvelle requête générée
+        import time
         new_request = {
             'id': f'req_{int(time.time())}',
             'zone': 'Zone générée automatiquement',

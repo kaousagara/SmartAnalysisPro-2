@@ -1,15 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
-import { Clock, Eye, AlertTriangle, Shield, Activity } from 'lucide-react';
+import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 
 export function RealtimeThreats() {
   const [selectedThreat, setSelectedThreat] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   
   const { data: threatsData, isLoading } = useQuery({
     queryKey: ['/api/threats/realtime'],
@@ -60,6 +62,13 @@ export function RealtimeThreats() {
 
   const threats = threatsData?.threats || [];
 
+  // Filtrer les menaces selon le terme de recherche
+  const filteredThreats = threats.filter((threat) =>
+    threat.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    threat.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    threat.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
@@ -72,13 +81,46 @@ export function RealtimeThreats() {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Barre de recherche/filtre */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Filtrer par nom de menace..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-blue-500"
+            />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-white"
+                onClick={() => setSearchTerm('')}
+              >
+                ×
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Indicateur de filtrage */}
+        {searchTerm && (
+          <div className="mb-3 flex items-center space-x-2 text-sm text-gray-400">
+            <Filter className="w-4 h-4" />
+            <span>
+              {filteredThreats.length} résultat{filteredThreats.length > 1 ? 's' : ''} pour "{searchTerm}"
+            </span>
+          </div>
+        )}
+
         <div className="space-y-4">
-          {threats.length === 0 ? (
+          {filteredThreats.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              Aucune menace active détectée
+              {searchTerm ? 'Aucune menace trouvée pour ce filtre' : 'Aucune menace active détectée'}
             </div>
           ) : (
-            threats.map((threat) => (
+            filteredThreats.map((threat) => (
               <div
                 key={threat.id}
                 className="border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors cursor-pointer"

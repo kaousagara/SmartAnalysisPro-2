@@ -1,55 +1,48 @@
 import { useState, useEffect } from 'react';
-import { authApi, type User } from '@/lib/api';
+import { useLocalAuth, type LocalUser } from '@/lib/local-auth';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<LocalUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const localAuth = useLocalAuth();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    if (storedToken) {
-      setToken(storedToken);
-      // Validate token and get user info
-      authApi.getUser()
-        .then(userData => {
-          setUser(userData);
-        })
-        .catch(() => {
-          // Invalid token, clear it
-          localStorage.removeItem('auth_token');
-          setToken(null);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setIsLoading(false);
+    // Charger l'utilisateur depuis l'authentification locale
+    const currentUser = localAuth.getCurrentUser();
+    const currentToken = localAuth.getToken();
+    
+    if (currentUser && currentToken) {
+      setUser(currentUser);
+      setToken(currentToken);
     }
+    
+    setIsLoading(false);
   }, []);
 
-  const login = async (credentials: { username: string; password: string; two_fa_code: string }) => {
+  const login = async (credentials: { username: string; password: string; two_fa_code?: string }) => {
     try {
-      const response = await authApi.login(credentials);
-      const { access_token, user: userData } = response;
+      const response = await localAuth.login(credentials);
       
-      localStorage.setItem('auth_token', access_token);
-      setToken(access_token);
-      setUser(userData);
-      
-      return { success: true };
+      if (response.success && response.user && response.token) {
+        setUser(response.user);
+        setToken(response.token);
+        return { success: true };
+      } else {
+        return { success: false, error: response.error || 'Échec de connexion' };
+      }
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
+      return { success: false, error: error instanceof Error ? error.message : 'Échec de connexion' };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
-    setToken(null);
+    localAuth.logout();
     setUser(null);
+    setToken(null);
   };
 
-  const isAuthenticated = !!token && !!user;
+  const isAuthenticated = localAuth.isAuthenticated();
 
   return {
     user,

@@ -149,11 +149,27 @@ def login():
             return jsonify({
                 'success': True,
                 'user': user_data,
-                'token': 'mock_jwt_token'
+                'token': f'local_token_{username}'
             })
         else:
-            return jsonify({'success': False, 'message': 'Invalid credentials'}), 401
+            return jsonify({'success': False, 'message': 'Identifiants invalides'}), 401
             
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/auth/user', methods=['GET'])
+def get_user():
+    """Get current user info"""
+    try:
+        # For demo purposes, return a default user
+        # In a real system, this would check the JWT token
+        return jsonify({
+            'user': {
+                'username': 'analyst',
+                'name': 'Analyst J.Smith',
+                'clearance_level': 3
+            }
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -1,16 +1,14 @@
 import { Link, useLocation } from 'wouter';
-import { Brain, ChartLine, AlertTriangle, Upload, Table, BarChart, FileText, User, Settings } from 'lucide-react';
+import { Brain, ChartLine, AlertTriangle, Upload, Table, BarChart, FileText, User } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: ChartLine },
-  { name: 'Menaces', href: '/threats', icon: AlertTriangle },
-  { name: 'Ingestion', href: '/ingestion', icon: Upload },
-  { name: 'Scénarios', href: '/scenarios', icon: Table },
+  { name: 'Threat Detection', href: '/threats', icon: AlertTriangle },
+  { name: 'Data Ingestion', href: '/ingestion', icon: Upload },
+  { name: 'Scenarios', href: '/scenarios', icon: Table },
   { name: 'Analytics', href: '/analytics', icon: BarChart },
-  { name: 'Rapports', href: '/reports', icon: FileText },
-  { name: 'Administration', href: '/admin', icon: Settings },
+  { name: 'Reports', href: '/reports', icon: FileText },
 ];
 
 export function Sidebar() {
@@ -18,17 +16,14 @@ export function Sidebar() {
   const { user } = useAuth();
 
   return (
-    <div className="w-64 bg-card border-r border-border">
+    <div className="w-64 bg-slate-900 border-r border-slate-700">
       <div className="p-6">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <Brain className="text-primary text-2xl" />
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Analyse Intel</h1>
-              <p className="text-xs text-muted-foreground">v2.0 Sécurisé</p>
-            </div>
+        <div className="flex items-center space-x-3 mb-8">
+          <Brain className="text-blue-400 text-2xl" />
+          <div>
+            <h1 className="text-lg font-semibold text-white">Analyse Intel</h1>
+            <p className="text-xs text-gray-400">v2.0 Sécurisé</p>
           </div>
-          <ThemeToggle />
         </div>
 
         <nav className="space-y-2">
@@ -41,8 +36,8 @@ export function Sidebar() {
                 <div
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-blue-600 bg-opacity-20 text-blue-400'
+                      : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -54,16 +49,16 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="absolute bottom-0 w-64 p-6 border-t border-border">
+      <div className="absolute bottom-0 w-64 p-6 border-t border-slate-700">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <User className="text-primary-foreground text-sm" />
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <User className="text-white text-sm" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-sm font-medium text-white">
               {user?.name || 'Utilisateur Inconnu'}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-400">
               Niveau {user?.clearance_level || 0} Clearance
             </p>
           </div>

@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from services.prescription_service import PrescriptionService
+from database import db
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -12,20 +13,6 @@ CORS(app)
 
 # Initialize services
 prescription_service = PrescriptionService()
-
-# Mock user data
-USERS = {
-    'analyst': {
-        'password': generate_password_hash('analyst123'),
-        'clearance_level': 3,
-        'name': 'Analyst J.Smith'
-    },
-    'admin': {
-        'password': generate_password_hash('admin123'),
-        'clearance_level': 5,
-        'name': 'Admin User'
-    }
-}
 
 # Mock data for demonstration
 SAMPLE_THREATS = [
@@ -144,15 +131,12 @@ def login():
         username = data.get('username')
         password = data.get('password')
         
-        if username in USERS and check_password_hash(USERS[username]['password'], password):
-            user_data = {
-                'username': username,
-                'name': USERS[username]['name'],
-                'clearance_level': USERS[username]['clearance_level']
-            }
+        # Check user credentials using database
+        user = db.verify_password(username, password)
+        if user:
             return jsonify({
                 'success': True,
-                'user': user_data,
+                'user': user,
                 'token': f'local_token_{username}'
             })
         else:
@@ -174,6 +158,103 @@ def get_user():
                 'clearance_level': 3
             }
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# === ADMINISTRATION ENDPOINTS ===
+
+@app.route('/api/admin/users', methods=['GET'])
+def get_users():
+    """Récupérer tous les utilisateurs"""
+    try:
+        users = db.get_all_users()
+        return jsonify({'users': users})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users', methods=['POST'])
+def create_user():
+    """Créer un nouvel utilisateur"""
+    try:
+        data = request.get_json()
+        
+        # Validation des données
+        required_fields = ['username', 'password', 'name', 'email', 'clearance_level']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Le champ {field} est requis'}), 400
+        
+        # Créer l'utilisateur
+        user = db.create_user(
+            username=data['username'],
+            password=data['password'],
+            clearance_level=data['clearance_level'],
+            name=data['name'],
+            email=data['email']
+        )
+        
+        if user:
+            return jsonify({'success': True, 'user': user}), 201
+        else:
+            return jsonify({'error': 'Nom d\'utilisateur déjà existant'}), 409
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    """Mettre à jour un utilisateur"""
+    try:
+        data = request.get_json()
+        
+        # Mettre à jour l'utilisateur
+        user = db.update_user(
+            user_id=user_id,
+            username=data.get('username'),
+            clearance_level=data.get('clearance_level'),
+            name=data.get('name'),
+            email=data.get('email'),
+            is_active=data.get('is_active')
+        )
+        
+        if user:
+            return jsonify({'success': True, 'user': user})
+        else:
+            return jsonify({'error': 'Utilisateur non trouvé'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    """Supprimer un utilisateur"""
+    try:
+        success = db.delete_user(user_id)
+        
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Utilisateur non trouvé'}), 404
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>/password', methods=['PUT'])
+def update_user_password(user_id):
+    """Mettre à jour le mot de passe d'un utilisateur"""
+    try:
+        data = request.get_json()
+        
+        if 'password' not in data:
+            return jsonify({'error': 'Le mot de passe est requis'}), 400
+        
+        success = db.update_password(user_id, data['password'])
+        
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Utilisateur non trouvé'}), 404
+            
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

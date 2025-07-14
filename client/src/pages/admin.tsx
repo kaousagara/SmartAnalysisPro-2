@@ -7,8 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Database, Brain, Shield, Bell, Save, TestTube, RefreshCw } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Settings, Database, Brain, Users, Bell, Save, TestTube, RefreshCw, UserPlus, Edit, Trash2, Shield } from "lucide-react";
 
 export default function Admin() {
   const [llmProvider, setLlmProvider] = useState("chatgpt");
@@ -29,7 +33,100 @@ export default function Admin() {
     false_positive_threshold: 0.08
   });
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userForm, setUserForm] = useState({
+    username: '',
+    name: '',
+    email: '',
+    clearance_level: 1,
+    password: ''
+  });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Queries for users
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/admin/users'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return response.json();
+    }
+  });
+
+  // Mutations for user management
+  const createUserMutation = useMutation({
+    mutationFn: async (userData) => {
+      return await apiRequest('/api/admin/users', {
+        method: 'POST',
+        body: userData
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setIsUserDialogOpen(false);
+      resetUserForm();
+      toast({
+        title: "Utilisateur créé",
+        description: "L'utilisateur a été créé avec succès"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la création de l'utilisateur",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, userData }) => {
+      return await apiRequest(`/api/admin/users/${id}`, {
+        method: 'PUT',
+        body: userData
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setIsUserDialogOpen(false);
+      resetUserForm();
+      toast({
+        title: "Utilisateur mis à jour",
+        description: "L'utilisateur a été mis à jour avec succès"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la mise à jour de l'utilisateur",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId) => {
+      return await apiRequest(`/api/admin/users/${userId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: "Utilisateur supprimé",
+        description: "L'utilisateur a été supprimé avec succès"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Erreur lors de la suppression de l'utilisateur",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleLlmConfigChange = (key: string, value: string) => {
     setLlmConfig(prev => ({ ...prev, [key]: value }));
@@ -37,6 +134,96 @@ export default function Admin() {
 
   const handleSystemConfigChange = (key: string, value: string | number | boolean) => {
     setSystemConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const resetUserForm = () => {
+    setUserForm({
+      username: '',
+      name: '',
+      email: '',
+      clearance_level: 1,
+      password: ''
+    });
+    setEditingUser(null);
+  };
+
+  const handleCreateUser = () => {
+    setEditingUser(null);
+    resetUserForm();
+    setIsUserDialogOpen(true);
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setUserForm({
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      clearance_level: user.clearance_level,
+      password: ''
+    });
+    setIsUserDialogOpen(true);
+  };
+
+  const handleSaveUser = () => {
+    if (!userForm.username || !userForm.name || !userForm.email) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs requis",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (editingUser) {
+      updateUserMutation.mutate({
+        id: editingUser.id,
+        userData: {
+          username: userForm.username,
+          name: userForm.name,
+          email: userForm.email,
+          clearance_level: userForm.clearance_level
+        }
+      });
+    } else {
+      if (!userForm.password) {
+        toast({
+          title: "Erreur",
+          description: "Le mot de passe est requis pour un nouvel utilisateur",
+          variant: "destructive"
+        });
+        return;
+      }
+      createUserMutation.mutate(userForm);
+    }
+  };
+
+  const handleDeleteUser = (userId) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
+
+  const getClearanceLevelBadge = (level) => {
+    const colors = {
+      1: 'bg-green-500 bg-opacity-20 text-green-400',
+      2: 'bg-blue-500 bg-opacity-20 text-blue-400',
+      3: 'bg-yellow-500 bg-opacity-20 text-yellow-400',
+      4: 'bg-orange-500 bg-opacity-20 text-orange-400',
+      5: 'bg-red-500 bg-opacity-20 text-red-400'
+    };
+    return colors[level] || 'bg-gray-500 bg-opacity-20 text-gray-400';
+  };
+
+  const getClearanceLevelName = (level) => {
+    const names = {
+      1: 'Niveau 1',
+      2: 'Niveau 2',
+      3: 'Niveau 3',
+      4: 'Niveau 4',
+      5: 'Niveau 5'
+    };
+    return names[level] || 'Inconnu';
   };
 
   const testLlmConnection = async () => {
@@ -165,9 +352,9 @@ export default function Admin() {
             <Settings className="w-4 h-4 mr-2" />
             Système
           </TabsTrigger>
-          <TabsTrigger value="security">
-            <Shield className="w-4 h-4 mr-2" />
-            Sécurité
+          <TabsTrigger value="users">
+            <Users className="w-4 h-4 mr-2" />
+            Utilisateurs
           </TabsTrigger>
           <TabsTrigger value="database">
             <Database className="w-4 h-4 mr-2" />
@@ -447,22 +634,185 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-6">
+        <TabsContent value="users" className="space-y-6">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Shield className="w-5 h-5 mr-2" />
-                Sécurité et authentification
+              <CardTitle className="text-white flex items-center justify-between">
+                <div className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Gestion des utilisateurs
+                </div>
+                <Button onClick={handleCreateUser} className="bg-blue-600 hover:bg-blue-700">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Nouvel utilisateur
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-400">
-                <Shield className="w-12 h-12 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Configuration de sécurité</h3>
-                <p>Paramètres de sécurité et d'authentification à venir</p>
-              </div>
+              {usersLoading ? (
+                <div className="text-center py-12 text-gray-400">
+                  <RefreshCw className="w-8 h-8 mx-auto mb-4 animate-spin" />
+                  <p>Chargement des utilisateurs...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-slate-700">
+                        <TableHead className="text-gray-300">Nom d'utilisateur</TableHead>
+                        <TableHead className="text-gray-300">Nom complet</TableHead>
+                        <TableHead className="text-gray-300">Email</TableHead>
+                        <TableHead className="text-gray-300">Niveau de clearance</TableHead>
+                        <TableHead className="text-gray-300">Créé le</TableHead>
+                        <TableHead className="text-gray-300">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users?.users?.map((user) => (
+                        <TableRow key={user.id} className="border-slate-700">
+                          <TableCell className="text-white font-medium">{user.username}</TableCell>
+                          <TableCell className="text-gray-300">{user.name}</TableCell>
+                          <TableCell className="text-gray-300">{user.email}</TableCell>
+                          <TableCell>
+                            <Badge className={getClearanceLevelBadge(user.clearance_level)}>
+                              {getClearanceLevelName(user.clearance_level)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                onClick={() => handleEditUser(user)}
+                                variant="outline"
+                                size="sm"
+                                className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                onClick={() => handleDeleteUser(user.id)}
+                                variant="outline"
+                                size="sm"
+                                className="border-red-600 text-red-400 hover:bg-red-900"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Dialog for creating/editing users */}
+          <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+            <DialogContent className="bg-slate-800 border-slate-700">
+              <DialogHeader>
+                <DialogTitle className="text-white">
+                  {editingUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="username" className="text-gray-300">
+                    Nom d'utilisateur
+                  </Label>
+                  <Input
+                    id="username"
+                    value={userForm.username}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, username: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Entrez le nom d'utilisateur"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name" className="text-gray-300">
+                    Nom complet
+                  </Label>
+                  <Input
+                    id="name"
+                    value={userForm.name}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Entrez le nom complet"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email" className="text-gray-300">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Entrez l'email"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="clearance_level" className="text-gray-300">
+                    Niveau de clearance
+                  </Label>
+                  <Select 
+                    value={userForm.clearance_level.toString()} 
+                    onValueChange={(value) => setUserForm(prev => ({ ...prev, clearance_level: parseInt(value) }))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Choisir un niveau" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Niveau 1 - Accès de base</SelectItem>
+                      <SelectItem value="2">Niveau 2 - Accès étendu</SelectItem>
+                      <SelectItem value="3">Niveau 3 - Accès confidentiel</SelectItem>
+                      <SelectItem value="4">Niveau 4 - Accès secret</SelectItem>
+                      <SelectItem value="5">Niveau 5 - Accès très secret</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {!editingUser && (
+                  <div>
+                    <Label htmlFor="password" className="text-gray-300">
+                      Mot de passe
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={userForm.password}
+                      onChange={(e) => setUserForm(prev => ({ ...prev, password: e.target.value }))}
+                      className="bg-slate-700 border-slate-600 text-white"
+                      placeholder="Entrez le mot de passe"
+                    />
+                  </div>
+                )}
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsUserDialogOpen(false)}
+                    className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                  >
+                    Annuler
+                  </Button>
+                  <Button 
+                    onClick={handleSaveUser}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={createUserMutation.isPending || updateUserMutation.isPending}
+                  >
+                    {createUserMutation.isPending || updateUserMutation.isPending ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    {editingUser ? 'Modifier' : 'Créer'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="database" className="space-y-6">

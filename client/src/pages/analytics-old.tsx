@@ -86,6 +86,27 @@ export default function Analytics() {
     }
   };
 
+  const validatePrediction = async (threatId: string, outcome: boolean) => {
+    try {
+      const response = await fetch(`/api/prescriptions/validate/${threatId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ actual_outcome: outcome }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Validation result:', result);
+        // Refresh data after validation
+        fetchAnalyticsData();
+      }
+    } catch (error) {
+      console.error('Error validating prediction:', error);
+    }
+  };
+
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'increasing':

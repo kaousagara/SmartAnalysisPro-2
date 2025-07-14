@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scenarioApi } from '@/lib/api';
-import { Plus, AlertTriangle, Clock, CheckCircle, Eye, Activity, Target, Settings } from 'lucide-react';
+import { Plus, AlertTriangle, Clock, CheckCircle, Eye, Activity, Target, Settings, Shield, Zap, Globe, Monitor } from 'lucide-react';
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -17,7 +17,13 @@ export function ActiveScenarios() {
   const [newScenario, setNewScenario] = useState({
     name: '',
     description: '',
-    priority: 1
+    priority: 1,
+    type: 'CYBER',
+    classification: 'CONFIDENTIEL',
+    region: 'FRANCE',
+    duration: '30',
+    conditions: [],
+    actions: []
   });
 
   const queryClient = useQueryClient();
@@ -33,7 +39,17 @@ export function ActiveScenarios() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/scenarios'] });
       setShowCreateDialog(false);
-      setNewScenario({ name: '', description: '', priority: 1 });
+      setNewScenario({ 
+        name: '', 
+        description: '', 
+        priority: 1, 
+        type: 'CYBER', 
+        classification: 'CONFIDENTIEL', 
+        region: 'FRANCE', 
+        duration: '30', 
+        conditions: [], 
+        actions: [] 
+      });
     },
     onError: (error) => {
       console.error('Erreur lors de la création du scénario:', error);
@@ -127,30 +143,58 @@ export function ActiveScenarios() {
             activeScenarios.map((scenario) => (
               <div
                 key={scenario.id}
-                className="border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors cursor-pointer"
+                className="group border border-slate-700 rounded-xl p-5 hover:border-slate-500 hover:bg-slate-700/50 transition-all duration-200 cursor-pointer"
                 onClick={() => setSelectedScenario(scenario)}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-white">
-                    {scenario.name}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={`${getStatusColor(scenario.status)} text-xs`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      scenario.status === 'active' ? 'bg-red-500/20 text-red-400' : 
+                      scenario.status === 'partial' ? 'bg-orange-500/20 text-orange-400' : 
+                      'bg-gray-500/20 text-gray-400'
+                    }`}>
                       {getStatusIcon(scenario.status)}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors">
+                        {scenario.name}
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Type: {scenario.type || 'CYBER'} • Priorité: {scenario.priority}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={`${getStatusColor(scenario.status)} text-xs px-3 py-1`}>
                       <span className="ml-1">{getStatusText(scenario.status)}</span>
                     </Badge>
-                    <Eye className="w-4 h-4 text-gray-400" />
+                    <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-colors" />
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 mb-2">
+                
+                <p className="text-sm text-gray-300 mb-3 line-clamp-2">
                   {scenario.description}
                 </p>
-                <div className="flex items-center space-x-4 text-xs text-gray-400">
-                  <span>Score: {scenario.conditions_met > 0 ? '0.87' : '0.00'}</span>
-                  <span>•</span>
-                  <span>
-                    {scenario.conditions_met}/{scenario.total_conditions} conditions met
-                  </span>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4 text-xs text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>{scenario.conditions_met}/{scenario.total_conditions} conditions</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Target className="w-3 h-3" />
+                      <span>Score: {scenario.conditions_met > 0 ? '0.87' : '0.00'}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className={`w-2 h-2 rounded-full ${
+                      scenario.conditions_met > 0 ? 'bg-green-500' : 'bg-gray-500'
+                    }`}></div>
+                    <span className="text-xs text-gray-400">
+                      {scenario.conditions_met > 0 ? 'Actif' : 'Inactif'}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
@@ -296,64 +340,212 @@ export function ActiveScenarios() {
 
       {/* Dialog de création de scénario */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl bg-slate-900 border-slate-700">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
           <DialogHeader className="pb-4 border-b border-slate-700">
             <DialogTitle className="flex items-center space-x-3 text-xl">
-              <Plus className="w-6 h-6 text-blue-500" />
-              <span className="text-white">Créer un Nouveau Scénario</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Plus className="w-5 h-5 text-blue-400" />
+              </div>
+              <span className="text-white">Créer un Nouveau Scénario d'Intelligence</span>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 pt-4">
-            <div>
-              <Label htmlFor="scenario-name" className="text-gray-300">Nom du Scénario</Label>
-              <Input
-                id="scenario-name"
-                value={newScenario.name}
-                onChange={(e) => setNewScenario({...newScenario, name: e.target.value})}
-                placeholder="Ex: CYBER-INTRUSION-08"
-                className="bg-slate-800 border-slate-600 text-white"
-              />
+          <div className="space-y-6 pt-4">
+            {/* Informations générales */}
+            <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center text-lg">
+                <Shield className="w-5 h-5 mr-3 text-blue-400" />
+                Informations Générales
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="scenario-name" className="text-gray-300 font-medium">Code Opération</Label>
+                  <Input
+                    id="scenario-name"
+                    value={newScenario.name}
+                    onChange={(e) => setNewScenario({...newScenario, name: e.target.value})}
+                    placeholder="Ex: CYBER-INTRUSION-08"
+                    className="bg-slate-700 border-slate-600 text-white mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="scenario-type" className="text-gray-300 font-medium">Type d'Opération</Label>
+                  <select
+                    id="scenario-type"
+                    value={newScenario.type}
+                    onChange={(e) => setNewScenario({...newScenario, type: e.target.value})}
+                    className="w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="CYBER">🔒 Cyber Intelligence</option>
+                    <option value="HUMINT">👥 Human Intelligence</option>
+                    <option value="SIGINT">📡 Signal Intelligence</option>
+                    <option value="IMINT">🛰️ Imagery Intelligence</option>
+                    <option value="GEOINT">🌍 Geospatial Intelligence</option>
+                    <option value="TECHINT">⚙️ Technical Intelligence</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="scenario-priority" className="text-gray-300 font-medium">Niveau de Priorité</Label>
+                  <select
+                    id="scenario-priority"
+                    value={newScenario.priority}
+                    onChange={(e) => setNewScenario({...newScenario, priority: parseInt(e.target.value)})}
+                    className="w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="1">🔴 Critique (1)</option>
+                    <option value="2">🟠 Urgent (2)</option>
+                    <option value="3">🟡 Élevé (3)</option>
+                    <option value="4">🟢 Normal (4)</option>
+                    <option value="5">🔵 Faible (5)</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="scenario-classification" className="text-gray-300 font-medium">Classification</Label>
+                  <select
+                    id="scenario-classification"
+                    value={newScenario.classification}
+                    onChange={(e) => setNewScenario({...newScenario, classification: e.target.value})}
+                    className="w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="SECRET-DEFENSE">🔒 SECRET-DÉFENSE</option>
+                    <option value="CONFIDENTIEL">🔐 CONFIDENTIEL</option>
+                    <option value="DIFFUSION-RESTREINTE">📋 DIFFUSION RESTREINTE</option>
+                    <option value="NON-CLASSIFIE">📄 NON CLASSIFIÉ</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Configuration opérationnelle */}
+            <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center text-lg">
+                <Globe className="w-5 h-5 mr-3 text-green-400" />
+                Configuration Opérationnelle
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="scenario-region" className="text-gray-300 font-medium">Zone Géographique</Label>
+                  <select
+                    id="scenario-region"
+                    value={newScenario.region}
+                    onChange={(e) => setNewScenario({...newScenario, region: e.target.value})}
+                    className="w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="FRANCE">🇫🇷 France Métropolitaine</option>
+                    <option value="EUROPE">🇪🇺 Europe</option>
+                    <option value="AFRIQUE">🌍 Afrique</option>
+                    <option value="MOYEN-ORIENT">🏜️ Moyen-Orient</option>
+                    <option value="ASIE">🌏 Asie-Pacifique</option>
+                    <option value="AMERIQUES">🌎 Amériques</option>
+                    <option value="GLOBAL">🌐 Mondial</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="scenario-duration" className="text-gray-300 font-medium">Durée d'Opération (jours)</Label>
+                  <Input
+                    id="scenario-duration"
+                    type="number"
+                    value={newScenario.duration}
+                    onChange={(e) => setNewScenario({...newScenario, duration: e.target.value})}
+                    placeholder="30"
+                    min="1"
+                    max="365"
+                    className="bg-slate-700 border-slate-600 text-white mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Description et objectifs */}
+            <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center text-lg">
+                <Target className="w-5 h-5 mr-3 text-orange-400" />
+                Description et Objectifs
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="scenario-description" className="text-gray-300 font-medium">Description Opérationnelle</Label>
+                  <Textarea
+                    id="scenario-description"
+                    value={newScenario.description}
+                    onChange={(e) => setNewScenario({...newScenario, description: e.target.value})}
+                    placeholder="Décrivez les objectifs, le contexte et les enjeux du scénario..."
+                    className="bg-slate-700 border-slate-600 text-white mt-1"
+                    rows={4}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Paramètres avancés */}
+            <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center text-lg">
+                <Settings className="w-5 h-5 mr-3 text-purple-400" />
+                Paramètres Avancés
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-gray-300 font-medium mb-2 block">Conditions de Déclenchement</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg">
+                      <input type="checkbox" className="text-blue-500" />
+                      <span className="text-sm text-gray-300">Score de menace {'>'} 0.7</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg">
+                      <input type="checkbox" className="text-blue-500" />
+                      <span className="text-sm text-gray-300">Sources multiples confirmées</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg">
+                      <input type="checkbox" className="text-blue-500" />
+                      <span className="text-sm text-gray-300">Validation humaine requise</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-300 font-medium mb-2 block">Actions Automatiques</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg">
+                      <input type="checkbox" className="text-blue-500" />
+                      <span className="text-sm text-gray-300">Collecte SIGINT</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg">
+                      <input type="checkbox" className="text-blue-500" />
+                      <span className="text-sm text-gray-300">Analyse réseau</span>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-slate-700 rounded-lg">
+                      <input type="checkbox" className="text-blue-500" />
+                      <span className="text-sm text-gray-300">Génération de rapport</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div>
-              <Label htmlFor="scenario-description" className="text-gray-300">Description</Label>
-              <Textarea
-                id="scenario-description"
-                value={newScenario.description}
-                onChange={(e) => setNewScenario({...newScenario, description: e.target.value})}
-                placeholder="Description détaillée du scénario..."
-                className="bg-slate-800 border-slate-600 text-white"
-                rows={3}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="scenario-priority" className="text-gray-300">Priorité</Label>
-              <Input
-                id="scenario-priority"
-                type="number"
-                value={newScenario.priority}
-                onChange={(e) => setNewScenario({...newScenario, priority: parseInt(e.target.value)})}
-                min="1"
-                max="10"
-                className="bg-slate-800 border-slate-600 text-white"
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-4">
+            {/* Boutons d'action */}
+            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-700">
               <Button
                 variant="outline"
                 onClick={() => setShowCreateDialog(false)}
-                className="border-slate-600 text-gray-300"
+                className="border-slate-600 text-gray-300 hover:bg-slate-700"
               >
                 Annuler
               </Button>
               <Button
                 onClick={handleCreateScenario}
+                disabled={createScenarioMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Créer le Scénario
+                {createScenarioMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Créer le Scénario
+                  </>
+                )}
               </Button>
             </div>
           </div>

@@ -13,6 +13,7 @@ import Threats from "@/pages/threats";
 import Ingestion from "@/pages/ingestion";
 import Scenarios from "@/pages/scenarios";
 import Analytics from "@/pages/analytics";
+import Prescriptions from "@/pages/prescriptions";
 import Reports from "@/pages/reports";
 import Admin from "@/pages/admin";
 import Login from "@/pages/login";
@@ -80,6 +81,11 @@ function Router() {
       <Route path="/analytics">
         <ProtectedRoute>
           <Analytics />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/prescriptions">
+        <ProtectedRoute>
+          <Prescriptions />
         </ProtectedRoute>
       </Route>
       <Route path="/reports">

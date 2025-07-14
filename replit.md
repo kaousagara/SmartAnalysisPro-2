@@ -26,6 +26,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: JWT-based with 2FA support
 - **Caching**: Redis for session management and real-time data caching
 - **ML/AI**: scikit-learn and transformers for threat scoring and NLP
+- **Prescription Engine**: Automated recommendation system with action prioritization
 
 ## Key Components
 
@@ -47,7 +48,14 @@ Preferred communication style: Simple, everyday language.
 - **Actions**: SIGINT collection, HUMINT tasking, network monitoring
 - **Lifecycle**: Active/partial/inactive status tracking with validity windows
 
-### 4. Analytics Dashboard
+### 4. Prescription Engine (New)
+- **Purpose**: Automated generation of actionable security recommendations
+- **Categories**: Security measures, investigations, mitigation actions, incident response
+- **Intelligence**: Threat-based recommendation logic with confidence scoring
+- **Capabilities**: Status tracking, action execution, resource allocation planning
+- **Integration**: Real-time generation from threat predictions and manual creation
+
+### 5. Analytics Dashboard
 - **Real-time Metrics**: Active threats, average scores, system health
 - **Visualizations**: Threat evolution charts, severity distribution, data source status
 - **Performance Tracking**: Detection rates, false positive metrics, processing latency
@@ -73,6 +81,11 @@ Threat Detection → Scenario Evaluation → Condition Matching → Action Trigg
 ### 4. User Interaction
 ```
 Frontend → API Gateway → Authentication → Service Layer → Database → Response
+```
+
+### 5. Prescription Generation
+```
+Threat Detection → Risk Assessment → Prescription Engine → Action Prioritization → Resource Allocation
 ```
 
 ## External Dependencies

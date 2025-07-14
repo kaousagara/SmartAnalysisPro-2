@@ -5,6 +5,7 @@ import { DataIngestionStatus } from "@/components/dashboard/data-ingestion-statu
 import { ActiveScenarios } from "@/components/dashboard/active-scenarios";
 import { RecentActions } from "@/components/dashboard/recent-actions";
 import { AlertsBanner } from "@/components/dashboard/alerts-banner";
+import { PrescriptionSummary } from "@/components/dashboard/prescription-summary";
 
 export default function Dashboard() {
   return (
@@ -27,12 +28,15 @@ export default function Dashboard() {
       </div>
 
       {/* Secondary Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Data Ingestion Status */}
         <DataIngestionStatus />
 
         {/* Active Scenarios */}
         <ActiveScenarios />
+
+        {/* Prescription Summary */}
+        <PrescriptionSummary />
       </div>
 
       {/* Recent Actions */}

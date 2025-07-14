@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { Brain, ChartLine, AlertTriangle, Upload, Table, BarChart, FileText, User, Settings } from 'lucide-react';
+import { Brain, ChartLine, AlertTriangle, Upload, Table, BarChart, FileText, User, Settings, Clipboard } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const navigation = [
@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Ingestion', href: '/ingestion', icon: Upload },
   { name: 'Scénarios', href: '/scenarios', icon: Table },
   { name: 'Analytics', href: '/analytics', icon: BarChart },
+  { name: 'Prescriptions', href: '/prescriptions', icon: Clipboard },
   { name: 'Rapports', href: '/reports', icon: FileText },
   { name: 'Administration', href: '/admin', icon: Settings },
 ];

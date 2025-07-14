@@ -4,10 +4,14 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
+from services.prescription_service import PrescriptionService
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+
+# Initialize services
+prescription_service = PrescriptionService()
 
 # Mock user data
 USERS = {
@@ -498,6 +502,87 @@ def system_status():
         
         return jsonify({'system_info': system_info})
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===================== PRESCRIPTION ROUTES =====================
+
+@app.route('/prescriptions', methods=['GET'])
+def get_prescriptions():
+    """Récupérer toutes les prescriptions"""
+    try:
+        prescriptions = prescription_service.get_prescriptions()
+        return jsonify({'prescriptions': prescriptions})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/<prescription_id>', methods=['GET'])
+def get_prescription(prescription_id):
+    """Récupérer une prescription spécifique"""
+    try:
+        prescription = prescription_service.get_prescription_by_id(prescription_id)
+        if not prescription:
+            return jsonify({'error': 'Prescription non trouvée'}), 404
+        return jsonify({'prescription': prescription})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/<prescription_id>/status', methods=['POST'])
+def update_prescription_status(prescription_id):
+    """Mettre à jour le statut d'une prescription"""
+    try:
+        data = request.get_json()
+        status = data.get('status')
+        
+        if not status:
+            return jsonify({'error': 'Statut manquant'}), 400
+        
+        if status not in ['pending', 'in_progress', 'completed', 'dismissed']:
+            return jsonify({'error': 'Statut invalide'}), 400
+        
+        success = prescription_service.update_prescription_status(prescription_id, status)
+        if not success:
+            return jsonify({'error': 'Prescription non trouvée'}), 404
+        
+        return jsonify({'message': 'Statut mis à jour avec succès'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/<prescription_id>/actions/<action_id>/execute', methods=['POST'])
+def execute_prescription_action(prescription_id, action_id):
+    """Exécuter une action d'une prescription"""
+    try:
+        success = prescription_service.execute_action(prescription_id, action_id)
+        if not success:
+            return jsonify({'error': 'Prescription ou action non trouvée'}), 404
+        
+        return jsonify({'message': 'Action exécutée avec succès'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/generate', methods=['POST'])
+def generate_prescription():
+    """Générer une nouvelle prescription basée sur une menace"""
+    try:
+        data = request.get_json()
+        threat_data = data.get('threat_data')
+        
+        if not threat_data:
+            return jsonify({'error': 'Données de menace manquantes'}), 400
+        
+        prescription = prescription_service.generate_prescription_from_threat(threat_data)
+        prescription_service.prescriptions.append(prescription)
+        
+        return jsonify({'prescription': prescription})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prescriptions/statistics', methods=['GET'])
+def get_prescription_statistics():
+    """Récupérer les statistiques des prescriptions"""
+    try:
+        stats = prescription_service.get_prescription_statistics()
+        return jsonify({'statistics': stats})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

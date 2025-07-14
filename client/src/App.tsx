@@ -17,6 +17,7 @@ import Prescriptions from "@/pages/prescriptions";
 import Reports from "@/pages/reports";
 import CollectionRequests from "@/pages/collection-requests";
 import Admin from "@/pages/admin";
+import ThreatFlow from "@/pages/threat-flow";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -89,9 +90,9 @@ function Router() {
           <Prescriptions />
         </ProtectedRoute>
       </Route>
-      <Route path="/analytics">
+      <Route path="/threat-flow">
         <ProtectedRoute>
-          <Analytics />
+          <ThreatFlow />
         </ProtectedRoute>
       </Route>
       <Route path="/reports">

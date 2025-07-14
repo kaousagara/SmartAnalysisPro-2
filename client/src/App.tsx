@@ -16,7 +16,6 @@ import Analytics from "@/pages/analytics";
 import Prescriptions from "@/pages/prescriptions";
 import Reports from "@/pages/reports";
 import Admin from "@/pages/admin";
-import CollectionRequests from "@/pages/collection-requests";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -97,11 +96,6 @@ function Router() {
       <Route path="/reports">
         <ProtectedRoute>
           <Reports />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/collection-requests">
-        <ProtectedRoute>
-          <CollectionRequests />
         </ProtectedRoute>
       </Route>
       <Route path="/admin">

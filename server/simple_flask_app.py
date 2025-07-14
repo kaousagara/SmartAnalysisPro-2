@@ -481,7 +481,7 @@ def get_actions():
         ]
     })
 
-@app.route('/alerts', methods=['GET'])
+@app.route('/api/alerts', methods=['GET'])
 def get_alerts():
     """Get active alerts"""
     return jsonify({
@@ -684,7 +684,7 @@ def system_status():
 
 # ===================== PRESCRIPTION ROUTES =====================
 
-@app.route('/prescriptions', methods=['GET'])
+@app.route('/api/prescriptions', methods=['GET'])
 def get_prescriptions():
     """Récupérer toutes les prescriptions"""
     try:
@@ -693,7 +693,7 @@ def get_prescriptions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/<prescription_id>', methods=['GET'])
+@app.route('/api/prescriptions/<prescription_id>', methods=['GET'])
 def get_prescription(prescription_id):
     """Récupérer une prescription spécifique"""
     try:
@@ -704,7 +704,7 @@ def get_prescription(prescription_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/<prescription_id>/status', methods=['POST'])
+@app.route('/api/prescriptions/<prescription_id>/status', methods=['POST'])
 def update_prescription_status(prescription_id):
     """Mettre à jour le statut d'une prescription"""
     try:
@@ -725,7 +725,7 @@ def update_prescription_status(prescription_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/<prescription_id>/actions/<action_id>/execute', methods=['POST'])
+@app.route('/api/prescriptions/<prescription_id>/actions/<action_id>/execute', methods=['POST'])
 def execute_prescription_action(prescription_id, action_id):
     """Exécuter une action d'une prescription"""
     try:
@@ -737,7 +737,7 @@ def execute_prescription_action(prescription_id, action_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/generate', methods=['POST'])
+@app.route('/api/prescriptions/generate', methods=['POST'])
 def generate_prescription():
     """Générer une nouvelle prescription basée sur une menace"""
     try:
@@ -754,7 +754,7 @@ def generate_prescription():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/statistics', methods=['GET'])
+@app.route('/api/prescriptions/statistics', methods=['GET'])
 def get_prescription_statistics():
     """Récupérer les statistiques des prescriptions"""
     try:
@@ -763,7 +763,7 @@ def get_prescription_statistics():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/validate/<threat_id>', methods=['POST'])
+@app.route('/api/prescriptions/validate/<threat_id>', methods=['POST'])
 def validate_prediction(threat_id):
     """Valider une prédiction pour l'auto-apprentissage"""
     try:
@@ -781,7 +781,7 @@ def validate_prediction(threat_id):
 
 
 
-@app.route('/prescriptions/trends', methods=['GET'])
+@app.route('/api/prescriptions/trends', methods=['GET'])
 def get_prediction_trends():
     """Obtenir les tendances de prédiction"""
     try:
@@ -790,7 +790,7 @@ def get_prediction_trends():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/signals', methods=['GET'])
+@app.route('/api/prescriptions/signals', methods=['GET'])
 def get_signal_analysis():
     """Analyse des signaux faibles et forts"""
     try:
@@ -800,14 +800,20 @@ def get_signal_analysis():
                 {
                     'id': 'weak_001',
                     'description': 'Augmentation subtile du trafic réseau vers certaines régions',
+                    'score': 0.65,
                     'confidence': 0.65,
+                    'entities': ['entity_001', 'entity_002'],
+                    'trend': 'increasing',
                     'impact_potential': 'medium',
                     'timeframe': '7-14 jours'
                 },
                 {
                     'id': 'weak_002',
                     'description': 'Changements dans les patterns de communication',
+                    'score': 0.72,
                     'confidence': 0.72,
+                    'entities': ['entity_001', 'entity_002'],
+                    'trend': 'increasing',
                     'impact_potential': 'high',
                     'timeframe': '3-7 jours'
                 }
@@ -816,7 +822,10 @@ def get_signal_analysis():
                 {
                     'id': 'strong_001',
                     'description': 'Activité suspecte confirmée sur infrastructure critique',
+                    'score': 0.89,
                     'confidence': 0.89,
+                    'entities': ['entity_001', 'entity_002'],
+                    'trend': 'increasing',
                     'impact_potential': 'critical',
                     'timeframe': '24-48 heures'
                 }
@@ -828,7 +837,16 @@ def get_signal_analysis():
             }
         }
         
-        return jsonify({'signal_analysis': signal_analysis})
+        return jsonify(signal_analysis)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/prescriptions/collection-requests', methods=['GET'])
+def get_prescription_collection_requests():
+    """Récupérer les requêtes de collecte des prescriptions"""
+    try:
+        collection_requests = prescription_service.get_collection_requests()
+        return jsonify({'collection_requests': collection_requests})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

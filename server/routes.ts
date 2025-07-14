@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Proxy all /api requests to the Flask backend
   app.use('/api', (req, res) => {
-    const url = `http://localhost:8000${req.url}`;
+    const url = `http://localhost:8000${req.originalUrl}`;
     
     // Simple proxy implementation
     const headers: Record<string, string> = {};
@@ -35,10 +35,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       headers['content-type'] = 'application/json';
     }
 
+    // Log the proxy request for debugging
+    log(`Proxying ${req.method} ${url}`, 'proxy');
+
     fetch(url, {
       method: req.method,
       headers,
-      body: req.method === 'GET' ? undefined : JSON.stringify(req.body)
+      body: req.method === 'GET' ? undefined : (req.body ? JSON.stringify(req.body) : undefined)
     })
     .then(response => {
       res.status(response.status);
@@ -58,8 +61,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     })
     .catch(error => {
-      log(`Proxy error: ${error.message}`, 'proxy');
-      res.status(500).json({ error: 'Proxy error' });
+      log(`Proxy error for ${url}: ${error.message}`, 'proxy');
+      log(`Request body: ${JSON.stringify(req.body)}`, 'proxy');
+      log(`Request headers: ${JSON.stringify(req.headers)}`, 'proxy');
+      res.status(500).json({ error: 'Proxy error', details: error.message, url: url });
     });
   });
 

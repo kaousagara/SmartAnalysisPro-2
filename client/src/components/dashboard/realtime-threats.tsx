@@ -115,142 +115,175 @@ export function RealtimeThreats() {
       
       {/* Modal des détails de menace */}
       <Dialog open={!!selectedThreat} onOpenChange={() => setSelectedThreat(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
-              <span>Détails de la Menace</span>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
+          <DialogHeader className="pb-4 border-b border-slate-700">
+            <DialogTitle className="flex items-center space-x-3 text-xl">
+              <AlertTriangle className="w-6 h-6 text-orange-500" />
+              <span className="text-white">Analyse Détaillée de la Menace</span>
             </DialogTitle>
           </DialogHeader>
           
           {selectedThreat && (
-            <div className="space-y-6">
-              {/* En-tête de la menace */}
-              <div className="border border-slate-700 rounded-lg p-4 bg-slate-800">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-white">
-                    {selectedThreat.name || selectedThreat.id}
-                  </h3>
+            <div className="space-y-6 pt-4">
+              {/* En-tête de la menace - Redesign */}
+              <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2 flex items-center">
+                      <Shield className="w-6 h-6 mr-3 text-blue-400" />
+                      {selectedThreat.name || selectedThreat.id}
+                    </h3>
+                    <p className="text-gray-300 text-sm">
+                      Détecté le {formatDistanceToNow(new Date(selectedThreat.timestamp), { addSuffix: true })}
+                    </p>
+                  </div>
                   <Badge
                     variant="outline"
-                    className={`${getSeverityColor(selectedThreat.severity)}`}
+                    className={`${getSeverityColor(selectedThreat.severity)} text-sm px-3 py-1`}
                   >
                     {selectedThreat.severity.charAt(0).toUpperCase() + selectedThreat.severity.slice(1)}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-400">Score de Menace</p>
-                    <p className={`text-2xl font-bold ${getScoreColor(selectedThreat.score)}`}>
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-600">
+                    <p className="text-sm text-gray-400 mb-1">Score de Menace</p>
+                    <p className={`text-3xl font-bold ${getScoreColor(selectedThreat.score)}`}>
                       {selectedThreat.score.toFixed(2)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-400">Statut</p>
-                    <p className="text-white font-medium">{selectedThreat.status}</p>
+                  <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-600">
+                    <p className="text-sm text-gray-400 mb-1">Statut</p>
+                    <p className="text-white font-medium text-lg">{selectedThreat.status}</p>
+                  </div>
+                  <div className="text-center p-4 bg-slate-800 rounded-lg border border-slate-600">
+                    <p className="text-sm text-gray-400 mb-1">Priorité</p>
+                    <p className="text-orange-400 font-medium text-lg">HAUTE</p>
                   </div>
                 </div>
               </div>
 
-              {/* Informations détaillées */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border border-slate-700 rounded-lg p-4">
-                  <h4 className="font-medium text-white mb-3 flex items-center">
-                    <Activity className="w-4 h-4 mr-2" />
-                    Activité
+              {/* Informations détaillées - Amélioré */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-800 border border-slate-600 rounded-xl p-5">
+                  <h4 className="font-semibold text-white mb-4 flex items-center text-lg">
+                    <Activity className="w-5 h-5 mr-3 text-green-400" />
+                    Chronologie d'Activité
                   </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Détecté:</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-slate-700">
+                      <span className="text-gray-300 font-medium">Première détection:</span>
                       <span className="text-white">
                         {formatDistanceToNow(new Date(selectedThreat.timestamp), { addSuffix: true })}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Dernière mise à jour:</span>
-                      <span className="text-white">
-                        {formatDistanceToNow(new Date(selectedThreat.timestamp), { addSuffix: true })}
-                      </span>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-700">
+                      <span className="text-gray-300 font-medium">Dernière mise à jour:</span>
+                      <span className="text-white">Il y a 2 minutes</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Évolution:</span>
-                      <span className="text-green-400">↗ +0.15</span>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-300 font-medium">Évolution du score:</span>
+                      <span className="text-green-400 font-bold">↗ +0.15 (+12%)</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="border border-slate-700 rounded-lg p-4">
-                  <h4 className="font-medium text-white mb-3 flex items-center">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Classification
+                <div className="bg-slate-800 border border-slate-600 rounded-xl p-5">
+                  <h4 className="font-semibold text-white mb-4 flex items-center text-lg">
+                    <Shield className="w-5 h-5 mr-3 text-blue-400" />
+                    Classification Intelligence
                   </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Type:</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-slate-700">
+                      <span className="text-gray-300 font-medium">Type de menace:</span>
                       <span className="text-white">Activité Suspecte</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Origine:</span>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-700">
+                      <span className="text-gray-300 font-medium">Zone géographique:</span>
                       <span className="text-white">Mali Nord</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Confiance:</span>
-                      <span className="text-white">78%</span>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-300 font-medium">Niveau de confiance:</span>
+                      <span className="text-yellow-400 font-bold">78%</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Indicateurs de menace */}
-              <div className="border border-slate-700 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-3">Indicateurs de Menace</h4>
-                <div className="grid grid-cols-2 gap-3">
+              {/* Indicateurs de menace - Amélioré */}
+              <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+                <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
+                  <AlertTriangle className="w-5 h-5 mr-3 text-orange-400" />
+                  Indicateurs de Menace
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { label: 'Communications cryptées', value: '85%', color: 'text-red-400' },
-                    { label: 'Mouvement de véhicules', value: '72%', color: 'text-yellow-400' },
-                    { label: 'Activité réseau', value: '60%', color: 'text-yellow-400' },
-                    { label: 'Patterns temporels', value: '45%', color: 'text-green-400' }
+                    { label: 'Communications cryptées', value: 85, color: 'text-red-400', bg: 'bg-red-500' },
+                    { label: 'Mouvement de véhicules', value: 72, color: 'text-yellow-400', bg: 'bg-yellow-500' },
+                    { label: 'Activité réseau', value: 60, color: 'text-yellow-400', bg: 'bg-yellow-500' },
+                    { label: 'Patterns temporels', value: 45, color: 'text-green-400', bg: 'bg-green-500' }
                   ].map((indicator, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-sm text-gray-400">{indicator.label}:</span>
-                      <span className={`text-sm font-medium ${indicator.color}`}>{indicator.value}</span>
+                    <div key={index} className="p-3 bg-slate-700 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-300 font-medium">{indicator.label}</span>
+                        <span className={`text-sm font-bold ${indicator.color}`}>{indicator.value}%</span>
+                      </div>
+                      <div className="w-full bg-slate-600 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${indicator.bg}`}
+                          style={{ width: `${indicator.value}%` }}
+                        ></div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Sources et contexte */}
-              <div className="border border-slate-700 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-3">Sources et Contexte</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="text-xs">SIGINT</Badge>
-                    <span className="text-gray-400">Station d'écoute GA-Alpha</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="text-xs">HUMINT</Badge>
-                    <span className="text-gray-400">Agent terrain KI-7</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="text-xs">IMINT</Badge>
-                    <span className="text-gray-400">Surveillance satellite</span>
-                  </div>
+              {/* Sources et contexte - Amélioré */}
+              <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+                <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
+                  <Eye className="w-5 h-5 mr-3 text-purple-400" />
+                  Sources d'Intelligence
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { type: 'SIGINT', source: 'Station d\'écoute GA-Alpha', reliability: '95%', color: 'bg-blue-500' },
+                    { type: 'HUMINT', source: 'Agent terrain KI-7', reliability: '82%', color: 'bg-green-500' },
+                    { type: 'IMINT', source: 'Surveillance satellite', reliability: '88%', color: 'bg-purple-500' }
+                  ].map((source, index) => (
+                    <div key={index} className="p-4 bg-slate-700 rounded-lg border border-slate-600">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline" className={`text-xs px-2 py-1 ${source.color} bg-opacity-20`}>
+                          {source.type}
+                        </Badge>
+                        <span className="text-xs text-gray-400">{source.reliability}</span>
+                      </div>
+                      <p className="text-sm text-gray-300 font-medium">{source.source}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Actions recommandées */}
-              <div className="border border-slate-700 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-3">Actions Recommandées</h4>
-                <div className="space-y-2">
+              {/* Actions recommandées - Amélioré */}
+              <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+                <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
+                  <Activity className="w-5 h-5 mr-3 text-orange-400" />
+                  Actions Recommandées
+                </h4>
+                <div className="space-y-3">
                   {[
-                    'Intensifier la surveillance SIGINT sur la zone',
-                    'Déploiement d\'agents HUMINT supplémentaires',
-                    'Coordination avec les forces locales',
-                    'Alerte aux unités de patrouille'
-                  ].map((action, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-gray-300">{action}</span>
+                    { action: 'Intensifier la surveillance SIGINT sur la zone', priority: 'URGENT', color: 'bg-red-500' },
+                    { action: 'Déploiement d\'agents HUMINT supplémentaires', priority: 'HAUTE', color: 'bg-orange-500' },
+                    { action: 'Coordination avec les forces locales', priority: 'MOYENNE', color: 'bg-yellow-500' },
+                    { action: 'Alerte aux unités de patrouille', priority: 'HAUTE', color: 'bg-orange-500' }
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 ${item.color} rounded-full`}></div>
+                        <span className="text-sm text-gray-300 font-medium">{item.action}</span>
+                      </div>
+                      <Badge variant="outline" className={`text-xs px-2 py-1 ${item.color} bg-opacity-20`}>
+                        {item.priority}
+                      </Badge>
                     </div>
                   ))}
                 </div>

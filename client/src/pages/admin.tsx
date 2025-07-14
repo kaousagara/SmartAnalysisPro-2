@@ -339,9 +339,7 @@ export default function Admin() {
   // Mutation for generating test data
   const generateTestDataMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/admin/generate_test_data', {
-        method: 'POST'
-      });
+      return await apiRequest('POST', '/api/admin/generate_test_data');
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/database_stats'] });
@@ -362,9 +360,7 @@ export default function Admin() {
   // Mutation for clearing test data
   const clearTestDataMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/admin/clear_test_data', {
-        method: 'POST'
-      });
+      return await apiRequest('POST', '/api/admin/clear_test_data');
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/database_stats'] });

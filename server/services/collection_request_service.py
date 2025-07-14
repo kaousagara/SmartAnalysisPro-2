@@ -24,6 +24,11 @@ class CollectionRequest:
     type_requete: str
     scenario_id: Optional[str] = None
     threat_id: Optional[str] = None
+    prediction_id: Optional[str] = None
+    prediction_confidence: Optional[float] = None
+    prediction_hypothesis: Optional[str] = None
+    validation_result: Optional[str] = None  # "confirm", "refute", "inconclusive"
+    collected_evidence: Optional[str] = None
     status: str = "pending"
     created_at: str = None
     expires_at: str = None
@@ -41,6 +46,7 @@ class CollectionRequestService:
         self.requests: Dict[str, CollectionRequest] = {}
         self.scenario_requests: Dict[str, str] = {}  # scenario_id -> request_id
         self.threat_requests: Dict[str, str] = {}    # threat_id -> request_id
+        self.prediction_requests: Dict[str, str] = {}  # prediction_id -> request_id
         self.max_requests_per_scenario = 1
         self.min_confidence_threshold = 0.4
         
@@ -101,6 +107,145 @@ class CollectionRequestService:
                 return False
                 
         return True
+    
+    def generate_prediction_validation_request(self, prediction_data: Dict) -> Optional[CollectionRequest]:
+        """
+        Génère une requête de collecte pour valider une prédiction
+        
+        Args:
+            prediction_data: Données de la prédiction
+            - prediction_id: ID de la prédiction
+            - threat_id: ID de la menace
+            - confidence: Score de confiance de la prédiction
+            - hypothesis: Hypothèse à valider
+            - zone: Zone géographique
+            - threat_type: Type de menace
+        """
+        try:
+            # Vérifier qu'il n'y a pas déjà une requête pour cette prédiction
+            prediction_id = prediction_data.get('prediction_id')
+            if prediction_id and prediction_id in self.prediction_requests:
+                existing_request_id = self.prediction_requests[prediction_id]
+                if existing_request_id in self.requests:
+                    logger.debug(f"Requête existante pour prédiction {prediction_id}")
+                    return None
+            
+            # Créer une requête spécifique pour validation de prédiction
+            request = self._create_prediction_validation_request(prediction_data)
+            
+            # Enregistrer la requête
+            self._register_prediction_request(request)
+            
+            logger.info(f"Requête de validation de prédiction générée: {request.id} pour prédiction {prediction_id}")
+            return request
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la génération de requête de validation: {str(e)}")
+            return None
+    
+    def _create_prediction_validation_request(self, prediction_data: Dict) -> CollectionRequest:
+        """Crée une requête de validation de prédiction"""
+        request_id = f"CR-PRED-{str(uuid.uuid4())[:8]}"
+        
+        prediction_id = prediction_data.get('prediction_id', '')
+        hypothesis = prediction_data.get('hypothesis', '')
+        confidence = prediction_data.get('confidence', 0.0)
+        threat_type = prediction_data.get('threat_type', 'inconnu')
+        zone = prediction_data.get('zone', 'Zone non spécifiée')
+        
+        # Générer l'objectif de validation
+        objectif = f"Valider la prédiction: {hypothesis}"
+        
+        # Déterminer le type de collecte nécessaire
+        if threat_type in ['cyber', 'cyberattaque', 'intrusion']:
+            type_requete = "SIGINT ciblé"
+        elif threat_type in ['terrorisme', 'groupe armé']:
+            type_requete = "HUMINT"
+        else:
+            type_requete = "HUMINT ou SIGINT ciblé"
+        
+        # Déterminer l'urgence basée sur la confiance
+        if confidence >= 0.8:
+            urgence = "Critique"
+        elif confidence >= 0.6:
+            urgence = "Haute"
+        elif confidence >= 0.4:
+            urgence = "Moyenne"
+        else:
+            urgence = "Faible"
+        
+        return CollectionRequest(
+            id=request_id,
+            zone=zone,
+            objectif=objectif,
+            origine=f"Validation de prédiction {prediction_id} (confiance: {confidence:.2f})",
+            urgence=urgence,
+            date=datetime.now().strftime('%Y-%m-%d'),
+            type_requete=type_requete,
+            prediction_id=prediction_id,
+            prediction_confidence=confidence,
+            prediction_hypothesis=hypothesis,
+            threat_id=prediction_data.get('threat_id'),
+            scenario_id=prediction_data.get('scenario_id')
+        )
+    
+    def _register_prediction_request(self, request: CollectionRequest):
+        """Enregistre une requête de validation de prédiction"""
+        self.requests[request.id] = request
+        
+        if request.prediction_id:
+            self.prediction_requests[request.prediction_id] = request.id
+        
+        # Nettoyer les requêtes expirées
+        self.cleanup_expired_requests()
+    
+    def validate_prediction_with_evidence(self, request_id: str, evidence: str, result: str) -> bool:
+        """
+        Valide une prédiction avec les preuves collectées
+        
+        Args:
+            request_id: ID de la requête
+            evidence: Preuves collectées
+            result: Résultat de la validation ("confirm", "refute", "inconclusive")
+        """
+        try:
+            if request_id not in self.requests:
+                return False
+            
+            request = self.requests[request_id]
+            request.collected_evidence = evidence
+            request.validation_result = result
+            request.status = "completed"
+            
+            # Retourner le résultat de validation à l'historique des prédictions
+            if request.prediction_id:
+                self._update_prediction_history(request.prediction_id, result, evidence)
+            
+            logger.info(f"Prédiction {request.prediction_id} validée avec résultat: {result}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la validation de prédiction: {str(e)}")
+            return False
+    
+    def _update_prediction_history(self, prediction_id: str, result: str, evidence: str):
+        """Met à jour l'historique des prédictions avec le résultat de validation"""
+        # Cette méthode serait appelée par le service de prescriptions
+        # pour mettre à jour l'historique des prédictions
+        logger.info(f"Mise à jour de l'historique de prédiction {prediction_id}: {result}")
+    
+    def get_prediction_validation_requests(self) -> List[Dict]:
+        """Récupère toutes les requêtes de validation de prédiction"""
+        validation_requests = []
+        
+        for request in self.requests.values():
+            if request.prediction_id:
+                validation_requests.append({
+                    **asdict(request),
+                    'type': 'prediction_validation'
+                })
+        
+        return validation_requests
     
     def _create_request_from_trigger(self, trigger_data: Dict) -> CollectionRequest:
         """Crée une requête à partir des données de déclenchement"""

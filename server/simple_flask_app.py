@@ -1009,5 +1009,123 @@ def get_collection_request_examples():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ================================
+# PREDICTION VALIDATION ENDPOINTS
+# ================================
+
+@app.route('/collection-requests/prediction-validation', methods=['POST'])
+def generate_prediction_validation_request():
+    """Générer une requête de validation de prédiction"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Données manquantes'}), 400
+        
+        # Validation des champs requis
+        required_fields = ['prediction_id', 'hypothesis', 'confidence']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Champ manquant: {field}'}), 400
+        
+        # Génération de la requête de validation
+        new_request = collection_service.generate_prediction_validation_request(data)
+        
+        if not new_request:
+            return jsonify({'error': 'Impossible de générer la requête de validation'}), 400
+        
+        return jsonify({
+            'message': 'Requête de validation de prédiction générée avec succès',
+            'collection_request': new_request.__dict__
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/<request_id>/validate', methods=['POST'])
+def validate_prediction_with_evidence(request_id):
+    """Valider une prédiction avec les preuves collectées"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Données manquantes'}), 400
+        
+        evidence = data.get('evidence', '')
+        result = data.get('result', '')  # "confirm", "refute", "inconclusive"
+        
+        if not result or result not in ['confirm', 'refute', 'inconclusive']:
+            return jsonify({'error': 'Résultat de validation invalide'}), 400
+        
+        success = collection_service.validate_prediction_with_evidence(request_id, evidence, result)
+        
+        if not success:
+            return jsonify({'error': 'Impossible de valider la prédiction'}), 404
+        
+        return jsonify({
+            'message': 'Prédiction validée avec succès',
+            'validation_result': result,
+            'evidence': evidence
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/collection-requests/prediction-validation', methods=['GET'])
+def get_prediction_validation_requests():
+    """Récupérer toutes les requêtes de validation de prédiction"""
+    try:
+        validation_requests = collection_service.get_prediction_validation_requests()
+        return jsonify({'validation_requests': validation_requests})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/predictions/<prediction_id>/generate-validation-request', methods=['POST'])
+def generate_validation_request_for_prediction(prediction_id):
+    """Générer une requête de validation pour une prédiction spécifique"""
+    try:
+        data = request.get_json() or {}
+        
+        # Simulation d'une prédiction pour démonstration
+        sample_predictions = [
+            {
+                'prediction_id': f'pred_{prediction_id}',
+                'threat_id': f'threat_{prediction_id}',
+                'hypothesis': 'Augmentation probable de l\'activité terroriste dans la région de Gao',
+                'confidence': 0.75,
+                'zone': 'Gao',
+                'threat_type': 'terrorisme',
+                'scenario_id': 'ATT-2024-MALI'
+            },
+            {
+                'prediction_id': f'pred_{prediction_id}',
+                'threat_id': f'threat_{prediction_id}',
+                'hypothesis': 'Tentative d\'intrusion cyber imminente sur les systèmes de communication',
+                'confidence': 0.85,
+                'zone': 'Tombouctou',
+                'threat_type': 'cyber',
+                'scenario_id': 'CYBER-INTRUSION-07'
+            }
+        ]
+        
+        # Utiliser la première prédiction comme exemple
+        prediction_data = sample_predictions[0]
+        prediction_data['prediction_id'] = prediction_id
+        
+        # Merger avec les données fournies
+        prediction_data.update(data)
+        
+        # Générer la requête de validation
+        new_request = collection_service.generate_prediction_validation_request(prediction_data)
+        
+        if not new_request:
+            return jsonify({'error': 'Impossible de générer la requête de validation'}), 400
+        
+        return jsonify({
+            'message': 'Requête de validation générée pour la prédiction',
+            'prediction_id': prediction_id,
+            'collection_request': new_request.__dict__
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

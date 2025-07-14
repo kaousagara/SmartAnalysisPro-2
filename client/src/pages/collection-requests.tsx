@@ -56,6 +56,16 @@ export default function CollectionRequests() {
     threat_level: 'medium'
   });
 
+  const [predictionValidation, setPredictionValidation] = useState({
+    prediction_id: '',
+    hypothesis: '',
+    confidence: 0.7,
+    zone: '',
+    threat_type: 'terrorisme'
+  });
+
+  const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
+
   const queryClient = useQueryClient();
 
   // Récupération des requêtes de collecte
@@ -94,6 +104,30 @@ export default function CollectionRequests() {
     }
   });
 
+  // Mutation pour générer une requête de validation de prédiction
+  const validationMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/collection-requests/prediction-validation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Erreur lors de la génération de validation');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/collection-requests'] });
+      setIsValidationDialogOpen(false);
+      setPredictionValidation({
+        prediction_id: '',
+        hypothesis: '',
+        confidence: 0.7,
+        zone: '',
+        threat_type: 'terrorisme'
+      });
+    }
+  });
+
   // Mutation pour marquer comme satisfaite
   const fulfillMutation = useMutation({
     mutationFn: async (requestId: string) => {
@@ -120,11 +154,12 @@ export default function CollectionRequests() {
       request.zone.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.origine.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesZone = !selectedZone || request.zone === selectedZone;
-    const matchesUrgency = !selectedUrgency || request.urgence === selectedUrgency;
+    const matchesZone = !selectedZone || selectedZone === 'all' || request.zone === selectedZone;
+    const matchesUrgency = !selectedUrgency || selectedUrgency === 'all' || request.urgence === selectedUrgency;
     const matchesTab = activeTab === 'all' || 
       (activeTab === 'active' && request.status === 'pending') ||
-      (activeTab === 'urgent' && ['Critique', 'Haute'].includes(request.urgence));
+      (activeTab === 'urgent' && ['Critique', 'Haute'].includes(request.urgence)) ||
+      (activeTab === 'validation' && request.prediction_id);
     
     return matchesSearch && matchesZone && matchesUrgency && matchesTab;
   });
@@ -149,6 +184,10 @@ export default function CollectionRequests() {
     triggerMutation.mutate(newRequest);
   };
 
+  const handleCreateValidationRequest = () => {
+    validationMutation.mutate(predictionValidation);
+  };
+
   const handleFulfillRequest = (requestId: string) => {
     fulfillMutation.mutate(requestId);
   };
@@ -167,6 +206,114 @@ export default function CollectionRequests() {
           <Badge variant="outline" className="text-blue-400 border-blue-400">
             {requests.length} Requêtes Actives
           </Badge>
+          <Dialog open={isValidationDialogOpen} onOpenChange={setIsValidationDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700 text-white border-green-500 hover:border-green-400 transition-all duration-200 font-medium shadow-lg">
+                <Target className="w-4 h-4 mr-2" />
+                Valider Prédiction
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-slate-800 border-slate-700 max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-white">Générer Requête de Validation de Prédiction</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="prediction_id" className="text-gray-300">ID Prédiction</Label>
+                  <Input
+                    id="prediction_id"
+                    value={predictionValidation.prediction_id}
+                    onChange={(e) => setPredictionValidation(prev => ({ ...prev, prediction_id: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="ex: pred_001"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="hypothesis" className="text-gray-300">Hypothèse à Valider</Label>
+                  <Textarea
+                    id="hypothesis"
+                    value={predictionValidation.hypothesis}
+                    onChange={(e) => setPredictionValidation(prev => ({ ...prev, hypothesis: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="ex: Augmentation de l'activité terroriste prévue"
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="pred_zone" className="text-gray-300">Zone</Label>
+                  <Input
+                    id="pred_zone"
+                    value={predictionValidation.zone}
+                    onChange={(e) => setPredictionValidation(prev => ({ ...prev, zone: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="ex: Gao, Tombouctou, Kidal..."
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="pred_threat_type" className="text-gray-300">Type de Menace</Label>
+                  <Select 
+                    value={predictionValidation.threat_type} 
+                    onValueChange={(value) => setPredictionValidation(prev => ({ ...prev, threat_type: value }))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="terrorisme">Terrorisme</SelectItem>
+                      <SelectItem value="cyber">Cyber</SelectItem>
+                      <SelectItem value="groupe_arme">Groupe Armé</SelectItem>
+                      <SelectItem value="autre">Autre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="pred_confidence" className="text-gray-300">Confiance Prédiction ({(predictionValidation.confidence * 100).toFixed(0)}%)</Label>
+                  <Input
+                    id="pred_confidence"
+                    type="range"
+                    min="0.4"
+                    max="1"
+                    step="0.05"
+                    value={predictionValidation.confidence}
+                    onChange={(e) => setPredictionValidation(prev => ({ ...prev, confidence: parseFloat(e.target.value) }))}
+                    className="bg-slate-700 border-slate-600"
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsValidationDialogOpen(false)}
+                    className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white transition-all duration-200 font-medium"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={handleCreateValidationRequest}
+                    disabled={validationMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white border-green-500 hover:border-green-400 transition-all duration-200 font-medium shadow-lg"
+                  >
+                    {validationMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Génération...
+                      </>
+                    ) : (
+                      <>
+                        <Target className="w-4 h-4 mr-2" />
+                        Créer Requête
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg">
@@ -294,7 +441,7 @@ export default function CollectionRequests() {
                   <SelectValue placeholder="Zone" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="">Toutes les zones</SelectItem>
+                  <SelectItem value="all">Toutes les zones</SelectItem>
                   {zones.map(zone => (
                     <SelectItem key={zone} value={zone}>{zone}</SelectItem>
                   ))}
@@ -305,7 +452,7 @@ export default function CollectionRequests() {
                   <SelectValue placeholder="Urgence" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="">Toutes</SelectItem>
+                  <SelectItem value="all">Toutes</SelectItem>
                   {urgencies.map(urgency => (
                     <SelectItem key={urgency} value={urgency}>{urgency}</SelectItem>
                   ))}
@@ -318,10 +465,11 @@ export default function CollectionRequests() {
 
       {/* Onglets */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 bg-slate-800">
+        <TabsList className="grid w-full grid-cols-4 bg-slate-800">
           <TabsTrigger value="all">Toutes ({requests.length})</TabsTrigger>
           <TabsTrigger value="active">Actives ({requests.filter((r: CollectionRequest) => r.status === 'pending').length})</TabsTrigger>
           <TabsTrigger value="urgent">Urgentes ({requests.filter((r: CollectionRequest) => ['Critique', 'Haute'].includes(r.urgence)).length})</TabsTrigger>
+          <TabsTrigger value="validation">Validations ({requests.filter((r: CollectionRequest) => r.prediction_id).length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
@@ -397,6 +545,50 @@ export default function CollectionRequests() {
                               <span>Expire: {new Date(request.expires_at).toLocaleDateString()}</span>
                             </div>
                           </div>
+                          
+                          {/* Section spécifique aux requêtes de validation de prédiction */}
+                          {request.prediction_id && (
+                            <div className="bg-slate-700 rounded-lg p-4 mb-4 border-l-4 border-green-500">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Target className="w-4 h-4 text-green-400" />
+                                <h4 className="font-semibold text-green-400">Validation de Prédiction</h4>
+                              </div>
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-300">ID Prédiction:</span>
+                                  <span className="text-white font-mono">{request.prediction_id}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-300">Confiance:</span>
+                                  <span className="text-white">{(request.prediction_confidence * 100).toFixed(0)}%</span>
+                                </div>
+                                <div className="mt-2">
+                                  <p className="text-gray-300 mb-1">Hypothèse:</p>
+                                  <p className="text-white text-sm italic">{request.prediction_hypothesis}</p>
+                                </div>
+                                {request.validation_result && (
+                                  <div className="mt-3 pt-3 border-t border-slate-600">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-gray-300">Résultat:</span>
+                                      <Badge className={request.validation_result === 'confirm' ? 'bg-green-600' : 
+                                                      request.validation_result === 'refute' ? 'bg-red-600' : 'bg-yellow-600'}>
+                                        {request.validation_result === 'confirm' ? 'Confirmé' : 
+                                         request.validation_result === 'refute' ? 'Réfuté' : 'Inconcluant'}
+                                      </Badge>
+                                    </div>
+                                    {request.collected_evidence && (
+                                      <div>
+                                        <p className="text-gray-300 mb-1">Preuves collectées:</p>
+                                        <p className="text-white text-sm bg-slate-800 p-2 rounded border-l-2 border-blue-400">
+                                          {request.collected_evidence}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
                         <div className="flex items-center space-x-2">

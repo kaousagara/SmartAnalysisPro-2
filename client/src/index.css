@@ -36,23 +36,23 @@
 }
 
 .dark {
-  --background: hsl(240, 10%, 7%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 7%, 16%);
-  --muted-foreground: hsl(240, 5%, 65%);
-  --popover: hsl(240, 10%, 7%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 11%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 7%, 20%);
-  --input: hsl(240, 7%, 16%);
-  --primary: hsl(207, 90%, 54%);
+  --background: hsl(240, 10%, 8%);
+  --foreground: hsl(0, 0%, 95%);
+  --muted: hsl(240, 7%, 18%);
+  --muted-foreground: hsl(240, 5%, 75%);
+  --popover: hsl(240, 10%, 8%);
+  --popover-foreground: hsl(0, 0%, 95%);
+  --card: hsl(240, 10%, 14%);
+  --card-foreground: hsl(0, 0%, 95%);
+  --border: hsl(240, 7%, 25%);
+  --input: hsl(240, 7%, 18%);
+  --primary: hsl(207, 90%, 60%);
   --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 7%, 16%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 7%, 16%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 63%, 31%);
+  --secondary: hsl(240, 7%, 18%);
+  --secondary-foreground: hsl(0, 0%, 95%);
+  --accent: hsl(240, 7%, 18%);
+  --accent-foreground: hsl(0, 0%, 95%);
+  --destructive: hsl(0, 63%, 45%);
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 5%, 84%);
   --radius: 0.5rem;
@@ -74,19 +74,19 @@
 }
 
 .threat-score-critical {
-  @apply text-red-400;
+  @apply text-red-300 font-semibold;
 }
 
 .threat-score-high {
-  @apply text-orange-400;
+  @apply text-orange-300 font-semibold;
 }
 
 .threat-score-medium {
-  @apply text-yellow-400;
+  @apply text-yellow-300 font-medium;
 }
 
 .threat-score-low {
-  @apply text-gray-400;
+  @apply text-gray-300 font-normal;
 }
 
 .status-indicator {
@@ -148,19 +148,19 @@
 
 /* Threat severity badges */
 .severity-critical {
-  @apply bg-red-500 bg-opacity-20 text-red-400 border border-red-500;
+  @apply bg-red-500 bg-opacity-25 text-red-200 border border-red-400 font-medium;
 }
 
 .severity-high {
-  @apply bg-orange-500 bg-opacity-20 text-orange-400 border border-orange-500;
+  @apply bg-orange-500 bg-opacity-25 text-orange-200 border border-orange-400 font-medium;
 }
 
 .severity-medium {
-  @apply bg-yellow-500 bg-opacity-20 text-yellow-400 border border-yellow-500;
+  @apply bg-yellow-500 bg-opacity-25 text-yellow-200 border border-yellow-400 font-medium;
 }
 
 .severity-low {
-  @apply bg-gray-500 bg-opacity-20 text-gray-400 border border-gray-500;
+  @apply bg-gray-500 bg-opacity-25 text-gray-200 border border-gray-400 font-medium;
 }
 
 /* Scenario status indicators */

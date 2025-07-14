@@ -624,38 +624,220 @@ def get_prediction_trends():
 def get_signal_analysis():
     """Analyse des signaux faibles et forts"""
     try:
-        # Simulation d'analyse de signaux
-        signals = {
+        # Simuler l'analyse des signaux
+        signal_analysis = {
             'weak_signals': [
                 {
-                    'id': 'signal_001',
-                    'description': 'Augmentation des mentions de coordination',
-                    'score': 0.35,
-                    'confidence': 0.6,
-                    'entities': ['Groupe A', 'Secteur Nord'],
-                    'trend': 'increasing'
+                    'id': 'weak_001',
+                    'description': 'Augmentation subtile du trafic réseau vers certaines régions',
+                    'confidence': 0.65,
+                    'impact_potential': 'medium',
+                    'timeframe': '7-14 jours'
                 },
                 {
-                    'id': 'signal_002',
-                    'description': 'Changement de patterns de communication',
-                    'score': 0.42,
-                    'confidence': 0.7,
-                    'entities': ['Source B', 'Réseau C'],
-                    'trend': 'stable'
+                    'id': 'weak_002',
+                    'description': 'Changements dans les patterns de communication',
+                    'confidence': 0.72,
+                    'impact_potential': 'high',
+                    'timeframe': '3-7 jours'
                 }
             ],
             'strong_signals': [
                 {
-                    'id': 'signal_003',
-                    'description': 'Mentions répétées d\'opération imminente',
-                    'score': 0.85,
-                    'confidence': 0.9,
-                    'entities': ['Groupe X', 'Tombouctou'],
-                    'trend': 'increasing'
+                    'id': 'strong_001',
+                    'description': 'Activité suspecte confirmée sur infrastructure critique',
+                    'confidence': 0.89,
+                    'impact_potential': 'critical',
+                    'timeframe': '24-48 heures'
                 }
+            ],
+            'trend_analysis': {
+                'increasing_threats': 15,
+                'decreasing_threats': 8,
+                'stable_threats': 23
+            }
+        }
+        
+        return jsonify({'signal_analysis': signal_analysis})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===================== REPORT ROUTES =====================
+
+@app.route('/reports', methods=['GET'])
+def get_reports():
+    """Récupérer tous les rapports"""
+    try:
+        # Données de rapport simulées avec plus de détails
+        reports = [
+            {
+                'id': 'RPT-2024-001',
+                'title': 'Weekly Threat Intelligence Summary',
+                'type': 'Intelligence Summary',
+                'date': '2024-01-15',
+                'created_at': '2024-01-15T08:30:00Z',
+                'status': 'Published',
+                'classification': 'SECRET',
+                'pages': 15,
+                'threats': 23,
+                'author': 'Agent Smith',
+                'description': 'Analyse hebdomadaire des menaces détectées avec évaluation des risques',
+                'tags': ['weekly', 'summary', 'threats']
+            },
+            {
+                'id': 'RPT-2024-002',
+                'title': 'APT Group XYZ Activity Assessment',
+                'type': 'Threat Assessment',
+                'date': '2024-01-14',
+                'created_at': '2024-01-14T14:20:00Z',
+                'status': 'Published',
+                'classification': 'TOP SECRET',
+                'pages': 8,
+                'threats': 5,
+                'author': 'Agent Johnson',
+                'description': 'Évaluation approfondie des activités du groupe APT XYZ',
+                'tags': ['apt', 'assessment', 'cybersecurity']
+            },
+            {
+                'id': 'RPT-2024-003',
+                'title': 'Mali Regional Security Analysis',
+                'type': 'Regional Analysis',
+                'date': '2024-01-13',
+                'created_at': '2024-01-13T10:15:00Z',
+                'status': 'Draft',
+                'classification': 'CONFIDENTIAL',
+                'pages': 22,
+                'threats': 12,
+                'author': 'Agent Williams',
+                'description': 'Analyse de sécurité régionale pour le Mali',
+                'tags': ['regional', 'mali', 'security']
+            }
+        ]
+        
+        return jsonify({'reports': reports})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/reports/<report_id>', methods=['GET'])
+def get_report(report_id):
+    """Récupérer un rapport spécifique"""
+    try:
+        # Simuler la récupération d'un rapport
+        report = {
+            'id': report_id,
+            'title': 'Weekly Threat Intelligence Summary',
+            'type': 'Intelligence Summary',
+            'date': '2024-01-15',
+            'status': 'Published',
+            'classification': 'SECRET',
+            'pages': 15,
+            'threats': 23,
+            'author': 'Agent Smith',
+            'content': 'Contenu détaillé du rapport...',
+            'executive_summary': 'Résumé exécutif du rapport...',
+            'sections': [
+                {'title': 'Executive Summary', 'page': 1},
+                {'title': 'Threat Landscape', 'page': 3},
+                {'title': 'Regional Analysis', 'page': 8},
+                {'title': 'Recommendations', 'page': 12}
             ]
         }
-        return jsonify(signals)
+        
+        return jsonify({'report': report})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/reports/generate', methods=['POST'])
+def generate_report():
+    """Générer un nouveau rapport"""
+    try:
+        data = request.get_json()
+        
+        # Valider les données requises
+        required_fields = ['title', 'type', 'classification', 'date_range']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Champ manquant: {field}'}), 400
+        
+        # Générer un ID unique pour le rapport
+        report_id = f"RPT-{datetime.now().strftime('%Y')}-{str(len(reports) + 1).zfill(3)}"
+        
+        # Créer le nouveau rapport
+        new_report = {
+            'id': report_id,
+            'title': data['title'],
+            'type': data['type'],
+            'classification': data['classification'],
+            'date_range': data['date_range'],
+            'include_sections': data.get('include_sections', []),
+            'format': data.get('format', 'PDF'),
+            'status': 'Generating',
+            'created_at': datetime.now().isoformat(),
+            'author': 'System',
+            'progress': 0
+        }
+        
+        # Simuler la génération du rapport
+        import time
+        time.sleep(2)  # Simuler le temps de génération
+        
+        # Mettre à jour le statut
+        new_report['status'] = 'Generated'
+        new_report['progress'] = 100
+        new_report['pages'] = 12
+        new_report['threats'] = 8
+        new_report['download_url'] = f'/reports/{report_id}/download'
+        
+        return jsonify({
+            'message': 'Rapport généré avec succès',
+            'report': new_report
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/reports/<report_id>/download', methods=['GET'])
+def download_report(report_id):
+    """Télécharger un rapport"""
+    try:
+        # Simuler le téléchargement
+        return jsonify({
+            'message': 'Téléchargement du rapport initié',
+            'report_id': report_id,
+            'download_url': f'/reports/{report_id}/download'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/reports/templates', methods=['GET'])
+def get_report_templates():
+    """Récupérer les modèles de rapport"""
+    try:
+        templates = [
+            {
+                'id': 'template_001',
+                'name': 'Intelligence Summary',
+                'description': 'Résumé hebdomadaire des menaces',
+                'sections': ['Executive Summary', 'Threat Analysis', 'Recommendations'],
+                'classification': 'SECRET'
+            },
+            {
+                'id': 'template_002',
+                'name': 'Threat Assessment',
+                'description': 'Évaluation détaillée des menaces',
+                'sections': ['Threat Overview', 'Risk Assessment', 'Mitigation Strategies'],
+                'classification': 'TOP SECRET'
+            },
+            {
+                'id': 'template_003',
+                'name': 'Regional Analysis',
+                'description': 'Analyse sécuritaire régionale',
+                'sections': ['Regional Context', 'Security Situation', 'Forecasts'],
+                'classification': 'CONFIDENTIAL'
+            }
+        ]
+        
+        return jsonify({'templates': templates})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

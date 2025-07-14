@@ -50,34 +50,34 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-      <Card className="w-full max-w-md mx-4 bg-dark-surface border-dark-border">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <Card className="w-full max-w-md mx-4 bg-slate-800 border-slate-700">
         <CardContent className="p-8">
           <div className="text-center mb-6">
-            <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h1 className="text-2xl font-semibold text-white">Secure Access</h1>
-            <p className="text-gray-400 mt-2">Intelligence Analysis System</p>
+            <Shield className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-semibold text-white">Accès Sécurisé</h1>
+            <p className="text-gray-400 mt-2">Système d'Analyse d'Intelligence</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="username" className="text-gray-300">
-                Username
+              <Label htmlFor="username" className="text-gray-300 block mb-2">
+                Nom d'utilisateur
               </Label>
               <Input
                 id="username"
                 type="text"
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
-                className="bg-dark-elevated border-dark-border text-white placeholder-gray-400"
-                placeholder="Enter username"
+                className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 w-full"
+                placeholder="Entrez votre nom d'utilisateur"
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-gray-300">
-                Password
+              <Label htmlFor="password" className="text-gray-300 block mb-2">
+                Mot de passe
               </Label>
               <div className="relative">
                 <Input
@@ -85,8 +85,8 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  className="bg-dark-elevated border-dark-border text-white placeholder-gray-400 pr-10"
-                  placeholder="Enter password"
+                  className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 w-full pr-10"
+                  placeholder="Entrez votre mot de passe"
                   required
                 />
                 <button
@@ -100,23 +100,22 @@ export default function Login() {
             </div>
 
             <div>
-              <Label htmlFor="two_fa_code" className="text-gray-300">
-                2FA Code
+              <Label htmlFor="two_fa_code" className="text-gray-300 block mb-2">
+                Code 2FA (optionnel)
               </Label>
               <Input
                 id="two_fa_code"
                 type="text"
                 value={formData.two_fa_code}
                 onChange={(e) => handleInputChange('two_fa_code', e.target.value)}
-                className="bg-dark-elevated border-dark-border text-white placeholder-gray-400 font-mono"
-                placeholder="000000"
+                className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 font-mono w-full"
+                placeholder="123456"
                 maxLength={6}
-                required
               />
             </div>
 
             {error && (
-              <div className="text-error text-sm text-center bg-error bg-opacity-10 p-3 rounded">
+              <div className="text-red-400 text-sm text-center bg-red-500 bg-opacity-10 p-3 rounded">
                 {error}
               </div>
             )}
@@ -124,17 +123,17 @@ export default function Login() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary hover:bg-primary/90 text-white"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Authenticating...</span>
+                  <span>Authentification...</span>
                 </div>
               ) : (
                 <>
                   <Lock className="w-4 h-4 mr-2" />
-                  Authenticate
+                  Se connecter
                 </>
               )}
             </Button>
@@ -143,15 +142,15 @@ export default function Login() {
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-500">
               <Lock className="inline w-3 h-3 mr-1" />
-              Zero-Trust Architecture • AES-256 Encryption
+              Architecture Zero-Trust • Chiffrement AES-256
             </p>
           </div>
 
           <div className="mt-4 text-center text-xs text-gray-400">
-            <p>Demo credentials:</p>
-            <p>Username: <code className="bg-dark-elevated px-1 rounded">analyst</code></p>
-            <p>Password: <code className="bg-dark-elevated px-1 rounded">analyst123</code></p>
-            <p>2FA: <code className="bg-dark-elevated px-1 rounded">123456</code></p>
+            <p className="mb-2">Identifiants de démonstration :</p>
+            <p>Utilisateur: <code className="bg-slate-700 px-2 py-1 rounded text-white">analyst</code></p>
+            <p>Mot de passe: <code className="bg-slate-700 px-2 py-1 rounded text-white">analyst123</code></p>
+            <p>2FA: <code className="bg-slate-700 px-2 py-1 rounded text-white">123456</code> (optionnel)</p>
           </div>
         </CardContent>
       </Card>

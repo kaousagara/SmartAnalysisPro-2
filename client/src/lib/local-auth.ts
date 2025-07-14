@@ -75,7 +75,7 @@ export class LocalAuth {
   }
 
   async login(credentials: LocalCredentials): Promise<{ success: boolean; user?: LocalUser; token?: string; error?: string }> {
-    const { username, password } = credentials;
+    const { username, password, two_fa_code } = credentials;
     
     if (!username || !password) {
       return { success: false, error: 'Nom d\'utilisateur et mot de passe requis' };
@@ -88,6 +88,14 @@ export class LocalAuth {
 
     if (userData.password !== password) {
       return { success: false, error: 'Mot de passe incorrect' };
+    }
+
+    // 2FA is optional - if provided, it should be valid
+    if (two_fa_code && two_fa_code.length > 0) {
+      // For demo purposes, accept any 6-digit code or "123456"
+      if (two_fa_code.length !== 6 || !/^\d{6}$/.test(two_fa_code)) {
+        return { success: false, error: 'Code 2FA invalide (6 chiffres requis)' };
+      }
     }
 
     const user: LocalUser = {

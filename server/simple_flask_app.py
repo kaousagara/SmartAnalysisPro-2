@@ -602,14 +602,7 @@ def validate_prediction(threat_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/prescriptions/collection-requests', methods=['GET'])
-def get_collection_requests():
-    """Récupérer les requêtes de collecte générées"""
-    try:
-        requests = prescription_service.get_collection_requests()
-        return jsonify({'collection_requests': requests})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/prescriptions/trends', methods=['GET'])
 def get_prediction_trends():
@@ -838,6 +831,148 @@ def get_report_templates():
         ]
         
         return jsonify({'templates': templates})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===================== COLLECTION REQUESTS ROUTES =====================
+
+@app.route('/api/collection-requests', methods=['GET'])
+def get_api_collection_requests():
+    """Récupérer toutes les requêtes de collecte"""
+    try:
+        # Données simulées - à remplacer par des données réelles
+        requests = [
+            {
+                'id': 'req_001',
+                'zone': 'Gao',
+                'objectif': 'Confirmer la présence d\'un groupe armé dans le secteur Est',
+                'origine': 'Manque d\'information dans 3 documents consécutifs',
+                'urgence': 'Haute',
+                'date': '2025-07-14',
+                'type_requete': 'HUMINT ou SIGINT ciblé',
+                'scenario_id': 'scenario_001',
+                'scenario_name': 'ATT-2024-MALI',
+                'status': 'pending',
+                'created_at': '2025-07-14T10:30:00Z',
+                'priority_score': 0.85,
+                'documents_analysed': 12,
+                'confidence_level': 0.75
+            },
+            {
+                'id': 'req_002',
+                'zone': 'Kidal',
+                'objectif': 'Vérifier les mouvements de véhicules suspects',
+                'origine': 'Signalement SIGINT incomplète',
+                'urgence': 'Moyenne',
+                'date': '2025-07-14',
+                'type_requete': 'IMINT géospatial',
+                'scenario_id': 'scenario_002',
+                'scenario_name': 'CYBER-INTRUSION-07',
+                'status': 'in_progress',
+                'created_at': '2025-07-14T09:15:00Z',
+                'priority_score': 0.65,
+                'documents_analysed': 8,
+                'confidence_level': 0.60,
+                'assigned_to': 'Agent Delta'
+            },
+            {
+                'id': 'req_003',
+                'zone': 'Tombouctou',
+                'objectif': 'Évaluer la menace cyber sur infrastructure critique',
+                'origine': 'Analyse prédictive faible confiance',
+                'urgence': 'Critique',
+                'date': '2025-07-14',
+                'type_requete': 'TECHINT réseau',
+                'scenario_id': 'scenario_003',
+                'scenario_name': 'INFRA-PROTECTION-2025',
+                'status': 'completed',
+                'created_at': '2025-07-13T14:20:00Z',
+                'priority_score': 0.92,
+                'documents_analysed': 15,
+                'confidence_level': 0.88,
+                'assigned_to': 'Agent Alpha'
+            }
+        ]
+        
+        return jsonify({'requests': requests}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/collection-requests/statistics', methods=['GET'])
+def get_collection_requests_statistics():
+    """Obtenir les statistiques des requêtes de collecte"""
+    try:
+        # Données simulées - à remplacer par des données réelles
+        statistics = {
+            'active_requests': 5,
+            'completed_requests': 23,
+            'success_rate': '87%',
+            'avg_completion_time': '2.4h',
+            'by_urgency': {
+                'Critique': 2,
+                'Haute': 3,
+                'Moyenne': 8,
+                'Faible': 1
+            },
+            'by_type': {
+                'HUMINT': 6,
+                'SIGINT': 4,
+                'IMINT': 3,
+                'TECHINT': 1
+            }
+        }
+        
+        return jsonify({'statistics': statistics}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/collection-requests/generate', methods=['POST'])
+def generate_collection_request():
+    """Générer une nouvelle requête de collecte automatiquement"""
+    try:
+        data = request.get_json()
+        
+        # Logique de génération automatique basée sur les scénarios
+        # Simulation d'une nouvelle requête générée
+        new_request = {
+            'id': f'req_{int(time.time())}',
+            'zone': 'Zone générée automatiquement',
+            'objectif': 'Collecte automatique basée sur analyse prédictive',
+            'origine': 'Génération automatique - Scénario actif détecté',
+            'urgence': 'Haute',
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'type_requete': 'SIGINT multi-sources',
+            'scenario_id': 'auto_scenario_001',
+            'scenario_name': 'Auto-Generated Request',
+            'status': 'pending',
+            'created_at': datetime.now().isoformat(),
+            'priority_score': 0.78,
+            'documents_analysés': 5,
+            'confidence_level': 0.70
+        }
+        
+        return jsonify({'request': new_request, 'message': 'Requête générée avec succès'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/collection-requests/<request_id>/status', methods=['PUT'])
+def update_collection_request_status(request_id):
+    """Mettre à jour le statut d'une requête de collecte"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if new_status not in ['pending', 'in_progress', 'completed', 'cancelled']:
+            return jsonify({'error': 'Statut invalide'}), 400
+        
+        # Simulation de mise à jour
+        updated_request = {
+            'id': request_id,
+            'status': new_status,
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        return jsonify({'request': updated_request, 'message': 'Statut mis à jour'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

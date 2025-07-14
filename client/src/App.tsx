@@ -15,6 +15,7 @@ import Scenarios from "@/pages/scenarios";
 import Analytics from "@/pages/analytics";
 import Prescriptions from "@/pages/prescriptions";
 import Reports from "@/pages/reports";
+import CollectionRequests from "@/pages/collection-requests";
 import Admin from "@/pages/admin";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -96,6 +97,11 @@ function Router() {
       <Route path="/reports">
         <ProtectedRoute>
           <Reports />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/collection-requests">
+        <ProtectedRoute>
+          <CollectionRequests />
         </ProtectedRoute>
       </Route>
       <Route path="/admin">

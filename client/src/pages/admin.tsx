@@ -42,6 +42,8 @@ export default function Admin() {
     clearance_level: 1,
     password: ''
   });
+  const [isGeneratingTestData, setIsGeneratingTestData] = useState(false);
+  const [isClearingTestData, setIsClearingTestData] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -324,6 +326,74 @@ export default function Admin() {
 
   const providerInfo = getLlmProviderInfo();
 
+  // Queries for database statistics
+  const { data: dbStats, isLoading: dbStatsLoading } = useQuery({
+    queryKey: ['/api/admin/database_stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/database_stats');
+      if (!response.ok) throw new Error('Failed to fetch database stats');
+      return response.json();
+    }
+  });
+
+  // Mutation for generating test data
+  const generateTestDataMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/admin/generate_test_data', {
+        method: 'POST'
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/database_stats'] });
+      toast({
+        title: "Données de test générées",
+        description: data.message || "Les données de test ont été générées avec succès"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la génération des données de test",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutation for clearing test data
+  const clearTestDataMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/admin/clear_test_data', {
+        method: 'POST'
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/database_stats'] });
+      toast({
+        title: "Données de test supprimées",
+        description: data.message || "Les données de test ont été supprimées avec succès"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression des données de test",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleGenerateTestData = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir générer des données de test ? Cela ajoutera de nouvelles données à la base.')) {
+      generateTestDataMutation.mutate();
+    }
+  };
+
+  const handleClearTestData = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer toutes les données de test ? Cette action est irréversible.')) {
+      clearTestDataMutation.mutate();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -343,7 +413,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="llm" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-800">
+        <TabsList className="grid w-full grid-cols-5 bg-slate-800">
           <TabsTrigger value="llm">
             <Brain className="w-4 h-4 mr-2" />
             LLM
@@ -355,6 +425,10 @@ export default function Admin() {
           <TabsTrigger value="users">
             <Users className="w-4 h-4 mr-2" />
             Utilisateurs
+          </TabsTrigger>
+          <TabsTrigger value="testdata">
+            <TestTube className="w-4 h-4 mr-2" />
+            Données de Test
           </TabsTrigger>
           <TabsTrigger value="database">
             <Database className="w-4 h-4 mr-2" />
@@ -813,6 +887,75 @@ export default function Admin() {
               </div>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        <TabsContent value="testdata" className="space-y-6">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <TestTube className="w-5 h-5 mr-2" />
+                Gestion des données de test
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Génération de données</h3>
+                  <p className="text-gray-400">
+                    Générez des données de test réalistes pour tester les fonctionnalités du système.
+                  </p>
+                  <Button 
+                    onClick={handleGenerateTestData}
+                    className="bg-green-600 hover:bg-green-700 w-full"
+                    disabled={generateTestDataMutation.isPending}
+                  >
+                    {generateTestDataMutation.isPending ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <TestTube className="w-4 h-4 mr-2" />
+                    )}
+                    Générer des données de test
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Suppression de données</h3>
+                  <p className="text-gray-400">
+                    Supprimez toutes les données de test. Les utilisateurs seront conservés.
+                  </p>
+                  <Button 
+                    onClick={handleClearTestData}
+                    variant="outline"
+                    className="border-red-600 text-red-400 hover:bg-red-900 w-full"
+                    disabled={clearTestDataMutation.isPending}
+                  >
+                    {clearTestDataMutation.isPending ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
+                    Supprimer les données de test
+                  </Button>
+                </div>
+              </div>
+              
+              {dbStats?.stats && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Statistiques de la base de données</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(dbStats.stats).map(([table, count]) => (
+                      <Card key={table} className="bg-slate-700 border-slate-600">
+                        <CardContent className="p-4 text-center">
+                          <div className="text-2xl font-bold text-white">{count}</div>
+                          <div className="text-sm text-gray-400 capitalize">{table.replace('_', ' ')}</div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="database" className="space-y-6">

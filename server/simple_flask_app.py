@@ -1679,7 +1679,41 @@ def test_collection_scenario():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/generate_test_data', methods=['POST'])
+def generate_test_data():
+    """Générer des données de test pour l'application"""
+    try:
+        result = db.generate_test_data()
+        return jsonify(result), 200 if result.get('success') else 500
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Erreur lors de la génération des données de test: {str(e)}"
+        }), 500
 
+@app.route('/api/admin/clear_test_data', methods=['POST'])
+def clear_test_data():
+    """Supprimer toutes les données de test"""
+    try:
+        result = db.clear_test_data()
+        return jsonify(result), 200 if result.get('success') else 500
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Erreur lors de la suppression des données de test: {str(e)}"
+        }), 500
+
+@app.route('/api/admin/database_stats', methods=['GET'])
+def get_database_stats():
+    """Obtenir les statistiques de la base de données"""
+    try:
+        stats = db.get_database_stats()
+        return jsonify({"stats": stats}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

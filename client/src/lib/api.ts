@@ -1,5 +1,8 @@
 import { apiRequest } from "./queryClient";
 
+// Re-export apiRequest for use in other files
+export { apiRequest };
+
 export interface LoginCredentials {
   username: string;
   password: string;

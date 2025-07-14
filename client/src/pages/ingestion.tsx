@@ -1,357 +1,552 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ingestionApi } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, Database, FileText, Activity, AlertCircle, CheckCircle } from "lucide-react";
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  Download, 
+  Upload, 
+  FileText, 
+  Activity, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
+  RefreshCw,
+  Database,
+  Play,
+  Eye,
+  Search
+} from 'lucide-react';
+import { apiRequest } from '@/lib/api';
 
 export default function Ingestion() {
-  const [jsonData, setJsonData] = useState("");
-  const [stixData, setStixData] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
 
-  const { data: statusData, isLoading } = useQuery({
+  // Récupération du statut d'ingestion
+  const { data: ingestionStatus, isLoading: statusLoading } = useQuery({
     queryKey: ['/api/ingestion/status'],
-    queryFn: ingestionApi.getStatus,
-    refetchInterval: 5000,
+    refetchInterval: 5000 // Actualisation toutes les 5 secondes
   });
 
-  const ingestMutation = useMutation({
-    mutationFn: ingestionApi.ingestData,
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Data ingested successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/ingestion/status'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/threats/realtime'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to ingest data",
-        variant: "destructive",
-      });
-    },
+  // Mutation pour tester l'ingestion
+  const testIngestionMutation = useMutation({
+    mutationFn: () => apiRequest('/api/ingestion/test', {
+      method: 'POST',
+      body: JSON.stringify({ test_scenario: 'comprehensive_ingestion' })
+    }),
+    onSuccess: (data) => {
+      setTestResult(data);
+    }
   });
-
-  const handleJsonSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const parsedData = JSON.parse(jsonData);
-      ingestMutation.mutate({
-        format: 'json',
-        content: parsedData.content || jsonData,
-        source: parsedData.source || { type: 'manual', reliability: 0.7 },
-        timestamp: new Date().toISOString(),
-      });
-      setJsonData("");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid JSON format",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStixSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const parsedData = JSON.parse(stixData);
-      ingestMutation.mutate({
-        format: 'stix',
-        ...parsedData,
-      });
-      setStixData("");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid STIX format",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleFileUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      ingestMutation.mutate({
-        format: 'unstructured',
-        file_content: content,
-        file_type: selectedFile.type,
-        filename: selectedFile.name,
-        content: content,
-        source: { type: 'file_upload', reliability: 0.6 },
-        timestamp: new Date().toISOString(),
-      });
-      setSelectedFile(null);
-    };
-    reader.readAsText(selectedFile);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'text-green-400';
-      case 'processing':
-        return 'text-orange-400';
-      case 'error':
-        return 'text-red-400';
+      case 'operational':
+        return 'bg-green-500';
+      case 'degraded':
+        return 'bg-yellow-500';
+      case 'offline':
+        return 'bg-red-500';
       default:
-        return 'text-gray-400';
+        return 'bg-gray-500';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active':
-        return <CheckCircle className="w-4 h-4 text-green-400" />;
-      case 'processing':
-        return <Activity className="w-4 h-4 text-orange-400 animate-spin" />;
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-400" />;
+      case 'operational':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'degraded':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'offline':
+        return <XCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <Database className="w-4 h-4 text-gray-400" />;
+        return <Activity className="h-4 w-4 text-gray-500" />;
     }
   };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      // Simuler l'upload
+      setUploadProgress(0);
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+    }
+  };
+
+  const getThreatLevelColor = (level: string) => {
+    switch (level) {
+      case 'HIGH':
+        return 'bg-red-500';
+      case 'MEDIUM':
+        return 'bg-yellow-500';
+      case 'LOW':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getClassificationColor = (classification: string) => {
+    switch (classification) {
+      case 'TOP SECRET':
+        return 'bg-red-600';
+      case 'SECRET':
+        return 'bg-orange-600';
+      case 'CONFIDENTIEL':
+        return 'bg-yellow-600';
+      case 'NON CLASSIFIÉ':
+        return 'bg-green-600';
+      default:
+        return 'bg-gray-600';
+    }
+  };
+
+  if (statusLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Ingestion des Données</h1>
-          <p className="text-gray-400">Ingérer et traiter les données d'intelligence de diverses sources</p>
+        <h1 className="text-3xl font-bold">Ingestion de Données</h1>
+        <div className="flex items-center space-x-2">
+          <Database className="h-5 w-5 text-blue-500" />
+          <span className="text-sm text-gray-600">Système d'ingestion</span>
         </div>
       </div>
 
-      {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Sources Actives</p>
-                <p className="text-2xl font-bold text-white">
-                  {statusData?.sources?.filter(s => s.status === 'operational').length || 0}
-                </p>
-              </div>
-              <Database className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="status" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="status">Statut des Sources</TabsTrigger>
+          <TabsTrigger value="test">Test d'Ingestion</TabsTrigger>
+          <TabsTrigger value="upload">Upload de Documents</TabsTrigger>
+          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+        </TabsList>
 
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">File d'attente</p>
-                <p className="text-2xl font-bold text-white">
-                  {statusData?.sources?.reduce((sum, s) => sum + (s.queue_size || 0), 0) || 0}
-                </p>
-              </div>
-              <Activity className="w-8 h-8 text-orange-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800 border-slate-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400">Taux de Succès</p>
-                <p className="text-2xl font-bold text-white">
-                  {statusData?.success_rate ? `${(statusData.success_rate * 100).toFixed(1)}%` : 'N/A'}
-                </p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-success" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Data Sources Status */}
-      <Card className="bg-dark-surface border-dark-border">
-        <CardHeader>
-          <CardTitle className="text-white">Data Sources Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center p-4 bg-dark-elevated rounded-lg animate-pulse">
-                  <div className="h-4 bg-gray-700 rounded w-1/4 mr-4" />
-                  <div className="h-4 bg-gray-700 rounded w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {statusData?.sources?.map((source, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-dark-elevated rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    {getStatusIcon(source.status)}
-                    <div>
-                      <h4 className="font-medium text-white">{source.name}</h4>
-                      <p className="text-sm text-gray-400">
-                        {source.type.toUpperCase()} • {source.last_updated}
-                      </p>
+        <TabsContent value="status" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="h-5 w-5" />
+                <span>Sources de Données</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {ingestionStatus?.sources?.map((source: any) => (
+                  <div
+                    key={source.name}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(source.status)}
+                      <div>
+                        <h3 className="font-medium">{source.name}</h3>
+                        <p className="text-sm text-gray-600">
+                          Type: {source.type} | Débit: {source.throughput}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={source.status === 'operational' ? 'default' : 'destructive'}>
+                        {source.status}
+                      </Badge>
+                      {source.queue_size && (
+                        <Badge variant="outline">
+                          Queue: {source.queue_size}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className={`text-sm ${getStatusColor(source.status)}`}>
-                      {source.status.charAt(0).toUpperCase() + source.status.slice(1)}
-                    </span>
-                    <span className="text-sm text-gray-400">{source.throughput}</span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="test" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Play className="h-5 w-5" />
+                <span>Test d'Ingestion Réaliste</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  onClick={() => testIngestionMutation.mutate()}
+                  disabled={testIngestionMutation.isPending}
+                >
+                  {testIngestionMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Test en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Lancer Test d'Ingestion
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-gray-600">
+                  Teste l'ingestion avec des documents SIGINT, HUMINT et OSINT réalistes
+                </p>
+              </div>
+
+              {testResult && (
+                <div className="space-y-4">
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {testResult.message}
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">Documents Traités</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{testResult.statistics?.total_documents}</div>
+                        <p className="text-xs text-green-600">
+                          {testResult.statistics?.successful_ingestions} succès
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">Temps Moyen</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{testResult.statistics?.average_processing_time}</div>
+                        <p className="text-xs text-gray-600">
+                          Temps de traitement
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">Entités Extraites</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{testResult.statistics?.total_entities_extracted}</div>
+                        <p className="text-xs text-gray-600">
+                          Entités détectées
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
-              )) || (
-                <div className="text-center py-8 text-gray-400">
-                  <Database className="w-12 h-12 mx-auto mb-4" />
-                  <p>No data sources configured</p>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Résultats d'Ingestion</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {testResult.ingestion_results?.map((result: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <FileText className="h-5 w-5 text-blue-500" />
+                              <div>
+                                <h4 className="font-medium">{result.document.title}</h4>
+                                <p className="text-sm text-gray-600">
+                                  {result.document.type} • {result.document.source}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge 
+                                variant="outline" 
+                                className={`${getClassificationColor(result.document.classification)} text-white`}
+                              >
+                                {result.document.classification}
+                              </Badge>
+                              <Badge 
+                                variant="outline"
+                                className={`${getThreatLevelColor(result.threat_scoring.threat_level)} text-white`}
+                              >
+                                {result.threat_scoring.threat_level}
+                              </Badge>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>{result.document.title}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <h4 className="font-medium mb-2">Métadonnées</h4>
+                                        <div className="space-y-1 text-sm">
+                                          <p><span className="font-medium">Type:</span> {result.document.type}</p>
+                                          <p><span className="font-medium">Source:</span> {result.document.source}</p>
+                                          <p><span className="font-medium">Classification:</span> {result.document.classification}</p>
+                                          <p><span className="font-medium">Confiance:</span> {(result.document.metadata.confidence * 100).toFixed(1)}%</p>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-medium mb-2">Scoring de Menace</h4>
+                                        <div className="space-y-1 text-sm">
+                                          <p><span className="font-medium">Score Global:</span> {(result.threat_scoring.overall_score * 100).toFixed(1)}%</p>
+                                          <p><span className="font-medium">Niveau:</span> {result.threat_scoring.threat_level}</p>
+                                          <p><span className="font-medium">Fiabilité Source:</span> {(result.threat_scoring.components.source_reliability * 100).toFixed(1)}%</p>
+                                          <p><span className="font-medium">Pertinence:</span> {(result.threat_scoring.components.content_relevance * 100).toFixed(1)}%</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div>
+                                      <h4 className="font-medium mb-2">Entités Extraites</h4>
+                                      <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                          <p><span className="font-medium">Lieux:</span> {result.entities.locations.join(', ')}</p>
+                                          <p><span className="font-medium">Organisations:</span> {result.entities.organizations.join(', ')}</p>
+                                        </div>
+                                        <div>
+                                          <p><span className="font-medium">Véhicules:</span> {result.entities.vehicles.join(', ')}</p>
+                                          <p><span className="font-medium">Indicateurs:</span> {result.entities.threat_indicators.join(', ')}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <h4 className="font-medium mb-2">Contenu</h4>
+                                      <div className="bg-gray-50 p-3 rounded text-sm">
+                                        {result.document.type === 'SIGINT' && (
+                                          <div className="space-y-1">
+                                            <p><span className="font-medium">Fréquence:</span> {result.document.content.frequency}</p>
+                                            <p><span className="font-medium">Localisation:</span> {result.document.content.location}</p>
+                                            <p><span className="font-medium">Transcript:</span> {result.document.content.transcript}</p>
+                                          </div>
+                                        )}
+                                        {result.document.type === 'HUMINT' && (
+                                          <div className="space-y-1">
+                                            <p><span className="font-medium">Rapport:</span> {result.document.content.report_text}</p>
+                                            <p><span className="font-medium">Localisation:</span> {result.document.content.location}</p>
+                                            <p><span className="font-medium">Témoins:</span> {result.document.content.witness_count}</p>
+                                          </div>
+                                        )}
+                                        {result.document.type === 'OSINT' && (
+                                          <div className="space-y-1">
+                                            <p><span className="font-medium">Plateforme:</span> {result.document.content.platform}</p>
+                                            <p><span className="font-medium">Posts analysés:</span> {result.document.content.posts_analyzed}</p>
+                                            <p><span className="font-medium">Sentiment:</span> {result.document.content.sentiment_analysis}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <h4 className="font-medium mb-2">Enrichissement</h4>
+                                      <div className="space-y-1 text-sm">
+                                        <p><span className="font-medium">Contexte:</span> {result.enrichment.historical_context}</p>
+                                        <p><span className="font-medium">Correspondance:</span> {result.enrichment.pattern_matching}</p>
+                                        <p><span className="font-medium">Évaluation:</span> {result.enrichment.risk_assessment}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Recommandations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {testResult.recommendations?.map((recommendation: string, index: number) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-sm">{recommendation}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Manual Data Ingestion */}
-      <Card className="bg-dark-surface border-dark-border">
-        <CardHeader>
-          <CardTitle className="text-white">Manual Data Ingestion</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="json" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-dark-elevated">
-              <TabsTrigger value="json">JSON Data</TabsTrigger>
-              <TabsTrigger value="stix">STIX/TAXII</TabsTrigger>
-              <TabsTrigger value="file">File Upload</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="json" className="space-y-4">
-              <form onSubmit={handleJsonSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="json-data" className="text-gray-300">
-                    JSON Intelligence Data
-                  </Label>
-                  <Textarea
-                    id="json-data"
-                    placeholder='{"content": "Threat intelligence data...", "source": {"type": "manual", "reliability": 0.7}}'
-                    value={jsonData}
-                    onChange={(e) => setJsonData(e.target.value)}
-                    className="min-h-[200px] bg-dark-elevated border-dark-border text-white font-mono"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={ingestMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg"
+        <TabsContent value="upload" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Upload className="h-5 w-5" />
+                <span>Upload de Documents</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,.json"
+                  onChange={handleFileUpload}
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center space-y-2"
                 >
-                  {ingestMutation.isPending ? (
-                    <>
-                      <Activity className="w-4 h-4 mr-2 animate-spin" />
-                      Traitement...
-                    </>
-                  ) : (
-                    <>
-                      <Database className="w-4 h-4 mr-2" />
-                      Ingérer Données JSON
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
+                  <FileText className="h-12 w-12 text-gray-400" />
+                  <span className="text-lg font-medium">
+                    Glisser un fichier ici ou cliquer pour sélectionner
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    PDF, DOC, DOCX, TXT, JSON - Maximum 10MB
+                  </span>
+                </label>
+              </div>
 
-            <TabsContent value="stix" className="space-y-4">
-              <form onSubmit={handleStixSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="stix-data" className="text-gray-300">
-                    STIX 2.1 Object
-                  </Label>
-                  <Textarea
-                    id="stix-data"
-                    placeholder='{"type": "indicator", "id": "indicator--...", "created": "2024-01-01T00:00:00.000Z", "modified": "2024-01-01T00:00:00.000Z", "pattern": "..."}'
-                    value={stixData}
-                    onChange={(e) => setStixData(e.target.value)}
-                    className="min-h-[200px] bg-dark-elevated border-dark-border text-white font-mono"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={ingestMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg"
-                >
-                  {ingestMutation.isPending ? (
-                    <>
-                      <Activity className="w-4 h-4 mr-2 animate-spin" />
-                      Traitement...
-                    </>
-                  ) : (
-                    <>
-                      <Database className="w-4 h-4 mr-2" />
-                      Ingérer Données STIX
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
+              {selectedFile && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <FileText className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <p className="font-medium">{selectedFile.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">En cours</Badge>
+                  </div>
 
-            <TabsContent value="file" className="space-y-4">
-              <form onSubmit={handleFileUpload} className="space-y-4">
-                <div>
-                  <Label htmlFor="file-upload" className="text-gray-300">
-                    Upload File (TXT, PDF, DOCX)
-                  </Label>
-                  <Input
-                    id="file-upload"
-                    type="file"
-                    accept=".txt,.pdf,.docx,.json"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="bg-dark-elevated border-dark-border text-white"
-                    required
-                  />
-                  {selectedFile && (
-                    <p className="text-sm text-gray-400 mt-2">
-                      Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                    </p>
+                  <Progress value={uploadProgress} className="w-full" />
+
+                  {uploadProgress === 100 && (
+                    <Alert>
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Fichier uploadé avec succès. Traitement en cours...
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </div>
-                <Button
-                  type="submit"
-                  disabled={ingestMutation.isPending || !selectedFile}
-                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {ingestMutation.isPending ? (
-                    <>
-                      <Activity className="w-4 h-4 mr-2 animate-spin" />
-                      Traitement...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Télécharger Fichier
-                    </>
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Documents Traités</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,234</div>
+                <p className="text-xs text-muted-foreground">
+                  +12% depuis hier
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Taux de Succès</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">98.2%</div>
+                <p className="text-xs text-muted-foreground">
+                  +0.5% depuis hier
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Temps Moyen</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">2.3s</div>
+                <p className="text-xs text-muted-foreground">
+                  -0.2s depuis hier
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Activité Récente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  { time: '14:30', document: 'rapport_intelligence_001.pdf', status: 'success', type: 'HUMINT' },
+                  { time: '14:25', document: 'sigint_data_batch.json', status: 'success', type: 'SIGINT' },
+                  { time: '14:20', document: 'osint_analysis.txt', status: 'processing', type: 'OSINT' },
+                  { time: '14:15', document: 'classification_error.doc', status: 'error', type: 'UNKNOWN' }
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {item.status === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                      {item.status === 'processing' && <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />}
+                      {item.status === 'error' && <XCircle className="h-4 w-4 text-red-500" />}
+                      <div>
+                        <p className="font-medium">{item.document}</p>
+                        <p className="text-sm text-gray-600">{item.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline">{item.type}</Badge>
+                      <Badge variant={
+                        item.status === 'success' ? 'default' : 
+                        item.status === 'processing' ? 'secondary' : 'destructive'
+                      }>
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

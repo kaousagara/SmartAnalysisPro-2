@@ -177,7 +177,7 @@ def get_user():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/dashboard/stats', methods=['GET'])
+@app.route('/api/dashboard/stats', methods=['GET'])
 def dashboard_stats():
     """Get dashboard statistics"""
     return jsonify({
@@ -192,14 +192,14 @@ def dashboard_stats():
         }
     })
 
-@app.route('/threats/realtime', methods=['GET'])
+@app.route('/api/threats/realtime', methods=['GET'])
 def realtime_threats():
     """Get real-time threats"""
     return jsonify({
         'threats': SAMPLE_THREATS[:10]  # Return first 10 threats
     })
 
-@app.route('/threats/evolution', methods=['GET'])
+@app.route('/api/threats/evolution', methods=['GET'])
 def threat_evolution():
     """Get threat evolution data"""
     return jsonify({
@@ -210,14 +210,14 @@ def threat_evolution():
         }
     })
 
-@app.route('/scenarios', methods=['GET'])
+@app.route('/api/scenarios', methods=['GET'])
 def get_scenarios():
     """Get active scenarios"""
     return jsonify({
         'scenarios': SAMPLE_SCENARIOS
     })
 
-@app.route('/scenarios/<scenario_id>', methods=['GET'])
+@app.route('/api/scenarios/<scenario_id>', methods=['GET'])
 def get_scenario(scenario_id):
     """Get specific scenario"""
     scenario = next((s for s in SAMPLE_SCENARIOS if s['id'] == scenario_id), None)
@@ -225,7 +225,7 @@ def get_scenario(scenario_id):
         return jsonify({'scenario': scenario})
     return jsonify({'error': 'Scenario not found'}), 404
 
-@app.route('/ingestion/status', methods=['GET'])
+@app.route('/api/ingestion/status', methods=['GET'])
 def ingestion_status():
     """Get data ingestion status"""
     return jsonify({
@@ -272,7 +272,184 @@ def ingestion_status():
         ]
     })
 
-@app.route('/actions', methods=['GET'])
+@app.route('/api/ingestion/test', methods=['POST'])
+def test_ingestion():
+    """Tester l'ingestion avec des données réalistes"""
+    try:
+        data = request.get_json()
+        
+        # Simuler différents types de documents d'ingestion
+        test_documents = [
+            {
+                'id': 'doc_ingestion_001',
+                'type': 'SIGINT',
+                'classification': 'SECRET',
+                'title': 'Interception communications - Secteur Gao',
+                'source': 'Station écoute GA-Alpha',
+                'timestamp': datetime.now().isoformat(),
+                'content': {
+                    'raw_data': 'INTERCEPTED_COMM_142.5MHZ_20250714_1640Z',
+                    'frequency': '142.5 MHz',
+                    'location': '16.2728°N, 0.0402°W',
+                    'duration': '00:12:34',
+                    'signal_strength': '-67 dBm',
+                    'encryption': 'Partial',
+                    'language': 'Français/Arabe',
+                    'participants': 3,
+                    'transcript': 'Conversation partiellement cryptée. Mots-clés détectés: [véhicule], [nord], [demain], [opération]'
+                },
+                'metadata': {
+                    'confidence': 0.72,
+                    'quality_score': 0.85,
+                    'analyst_notes': 'Communications suspectes coordonnées',
+                    'keywords': ['véhicule', 'nord', 'opération', 'demain'],
+                    'threat_indicators': ['coordination suspecte', 'timing inhabituel']
+                }
+            },
+            {
+                'id': 'doc_ingestion_002',
+                'type': 'HUMINT',
+                'classification': 'CONFIDENTIEL',
+                'title': 'Rapport agent local - Mouvements Kidal',
+                'source': 'Agent KI-7',
+                'timestamp': datetime.now().isoformat(),
+                'content': {
+                    'report_text': 'Observation de convoi de 4 véhicules type pick-up, sans plaques, direction Sud-Est vers 14h30. Population locale rapporte activité inhabituelle depuis 48h. Commerçants locaux inquiets, plusieurs ont fermé boutiques prématurément.',
+                    'location': 'Kidal - Route N15',
+                    'witness_count': 7,
+                    'vehicle_description': '4 pick-up Toyota Hilux, couleur beige/sable, sans plaques visibles',
+                    'time_observed': '14:30 local time',
+                    'direction': 'Sud-Est vers zone rurale',
+                    'additional_info': 'Conducteurs portaient uniformes non identifiés, équipement radio visible'
+                },
+                'metadata': {
+                    'confidence': 0.68,
+                    'reliability_score': 0.75,
+                    'agent_experience': 'Expérimenté (5 ans)',
+                    'cross_referenced': False,
+                    'threat_assessment': 'Moyen',
+                    'follow_up_required': True
+                }
+            },
+            {
+                'id': 'doc_ingestion_003',
+                'type': 'OSINT',
+                'classification': 'NON CLASSIFIÉ',
+                'title': 'Analyse réseaux sociaux - Activité région Mali',
+                'source': 'Monitoring automatique',
+                'timestamp': datetime.now().isoformat(),
+                'content': {
+                    'platform': 'Twitter/Facebook/Telegram',
+                    'posts_analyzed': 15420,
+                    'relevant_posts': 47,
+                    'sentiment_analysis': 'Négatif (72%)',
+                    'key_themes': ['sécurité dégradée', 'présence groupes armés', 'population inquiète'],
+                    'geolocation_data': 'Gao, Kidal, Tombouctou',
+                    'language_distribution': {'Français': 65, 'Arabe': 20, 'Bambara': 15},
+                    'trending_hashtags': ['#MaliSecurity', '#Gao', '#SécuritéDégradée']
+                },
+                'metadata': {
+                    'confidence': 0.79,
+                    'automated_analysis': True,
+                    'human_verification': False,
+                    'data_volume': 'Élevé',
+                    'collection_period': '72h',
+                    'alerts_generated': 3
+                }
+            }
+        ]
+        
+        # Simuler le processus d'ingestion
+        ingestion_results = []
+        for doc in test_documents:
+            # Validation du document
+            validation_result = {
+                'document_id': doc['id'],
+                'validation_status': 'VALID',
+                'format_check': 'PASSED',
+                'classification_check': 'PASSED',
+                'metadata_check': 'PASSED',
+                'content_analysis': 'COMPLETED'
+            }
+            
+            # Extraction d'entités
+            entities_extracted = {
+                'locations': ['Gao', 'Kidal', 'Tombouctou'],
+                'organizations': ['Station écoute GA-Alpha', 'Agent KI-7'],
+                'persons': ['Agent KI-7'],
+                'vehicles': ['Toyota Hilux'],
+                'frequencies': ['142.5 MHz'] if doc['type'] == 'SIGINT' else [],
+                'timestamps': [doc['timestamp']],
+                'threat_indicators': doc['metadata'].get('threat_indicators', [])
+            }
+            
+            # Scoring de menace
+            threat_score = {
+                'overall_score': doc['metadata']['confidence'],
+                'components': {
+                    'source_reliability': doc['metadata'].get('reliability_score', 0.7),
+                    'content_relevance': 0.8,
+                    'temporal_relevance': 0.85,
+                    'geographical_relevance': 0.9
+                },
+                'threat_level': 'MEDIUM' if doc['metadata']['confidence'] > 0.7 else 'LOW'
+            }
+            
+            # Enrichissement avec données contextuelles
+            enrichment = {
+                'historical_context': f"Document similaire analysé il y a 48h dans zone {doc['content'].get('location', 'inconnue')}",
+                'related_incidents': 2,
+                'pattern_matching': 'Correspond au pattern "Activité Coordonnée Suspecte"',
+                'risk_assessment': 'Nécessite surveillance accrue'
+            }
+            
+            ingestion_result = {
+                'document': doc,
+                'validation': validation_result,
+                'entities': entities_extracted,
+                'threat_scoring': threat_score,
+                'enrichment': enrichment,
+                'processing_time': f"{abs(hash(doc['id']) % 1000)}ms",
+                'status': 'INGESTED',
+                'next_actions': [
+                    'Analyse croisée avec documents similaires',
+                    'Validation par analyste humain',
+                    'Génération d\'alertes si nécessaire'
+                ]
+            }
+            
+            ingestion_results.append(ingestion_result)
+        
+        # Statistiques globales d'ingestion
+        ingestion_stats = {
+            'total_documents': len(test_documents),
+            'successful_ingestions': len(ingestion_results),
+            'failed_ingestions': 0,
+            'average_processing_time': f"{sum(int(r['processing_time'].replace('ms', '')) for r in ingestion_results) / len(ingestion_results):.0f}ms",
+            'total_entities_extracted': sum(len(r['entities']['locations']) + len(r['entities']['organizations']) + len(r['entities']['persons']) for r in ingestion_results),
+            'threat_distribution': {
+                'HIGH': len([r for r in ingestion_results if r['threat_scoring']['threat_level'] == 'HIGH']),
+                'MEDIUM': len([r for r in ingestion_results if r['threat_scoring']['threat_level'] == 'MEDIUM']),
+                'LOW': len([r for r in ingestion_results if r['threat_scoring']['threat_level'] == 'LOW'])
+            },
+            'ingestion_timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'message': 'Test d\'ingestion réalisé avec succès',
+            'ingestion_results': ingestion_results,
+            'statistics': ingestion_stats,
+            'recommendations': [
+                'Requête de collecte automatique générée pour zone Gao',
+                'Alerte créée pour surveillance accrue secteur Kidal',
+                'Analyse croisée recommandée avec données SIGINT précédentes'
+            ]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/actions', methods=['GET'])
 def get_actions():
     """Get recent actions"""
     return jsonify({

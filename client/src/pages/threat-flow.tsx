@@ -184,24 +184,24 @@ export default function ThreatFlow() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sélection des menaces */}
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white text-sm">Sélectionner une Menace</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+      {/* Sélection des menaces */}
+      <Card className="bg-slate-800 border-slate-700 mb-6">
+        <CardHeader>
+          <CardTitle className="text-white text-sm">Sélectionner une Menace</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {threats.map((threat) => (
               <div
                 key={threat.id}
                 onClick={() => setSelectedThreat(threat.id)}
-                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`p-4 rounded-lg cursor-pointer transition-colors ${
                   selectedThreat === threat.id 
                     ? 'bg-slate-600 border-2 border-blue-500' 
                     : 'bg-slate-700 hover:bg-slate-600'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-white text-sm font-medium">{threat.name}</span>
                   <Badge className={getSeverityColor(threat.severity)}>
                     {threat.severity}
@@ -210,185 +210,202 @@ export default function ThreatFlow() {
                 <div className="text-xs text-gray-400 mb-2">
                   Score: {threat.score.toFixed(2)}
                 </div>
-                <Progress value={threat.score * 100} className="h-1" />
+                <Progress value={threat.score * 100} className="h-2" />
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Flux de traitement */}
-        <div className="lg:col-span-3 space-y-6">
-          {selectedThreatData && (
-            <>
-              {/* Étape 1: QUOI - Menace actuelle */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Target className="w-5 h-5 mr-2 text-red-400" />
-                    1. QUOI - Menace Actuelle
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Flux de traitement hiérarchique horizontal */}
+      {selectedThreatData && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Étape 1: QUOI - Menace actuelle */}
+          <Card className="bg-slate-800 border-slate-700 relative">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center text-lg">
+                <Target className="w-6 h-6 mr-2 text-red-400" />
+                1. QUOI
+              </CardTitle>
+              <div className="text-sm text-gray-400">Menace Actuelle</div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-white font-medium mb-2">{selectedThreatData.name}</h3>
+                <p className="text-gray-400 text-sm mb-3">{selectedThreatData.description}</p>
+                <div className="flex items-center space-x-2 mb-3">
+                  <Badge className={getSeverityColor(selectedThreatData.severity)}>
+                    {selectedThreatData.severity}
+                  </Badge>
+                  <Badge variant="outline" className="text-gray-400">
+                    {selectedThreatData.category}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300 text-sm">Score de menace</span>
+                  <span className="text-white font-bold text-lg">{selectedThreatData.score.toFixed(2)}</span>
+                </div>
+                <Progress value={selectedThreatData.score * 100} className="h-3" />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="text-sm text-gray-300 font-medium">Entités associées:</div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedThreatData.entities.map((entity, index) => (
+                    <Badge key={index} variant="outline" className="text-xs text-gray-400">
+                      {entity}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+            
+            {/* Flèche vers la droite */}
+            <div className="absolute -right-3 top-1/2 transform -translate-y-1/2 hidden lg:block">
+              <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center border-2 border-slate-600">
+                <ArrowRight className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Étape 2: OÙ ÇA VA - Prédictions */}
+          <Card className="bg-slate-800 border-slate-700 relative">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center text-lg">
+                <Brain className="w-6 h-6 mr-2 text-blue-400" />
+                2. OÙ ÇA VA
+              </CardTitle>
+              <div className="text-sm text-gray-400">Prédictions d'Évolution</div>
+            </CardHeader>
+            <CardContent>
+              {relatedPrediction ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="text-white font-medium mb-1">{selectedThreatData.name}</h3>
-                        <p className="text-gray-400 text-sm">{selectedThreatData.description}</p>
+                        <span className="text-gray-300 text-sm">Score actuel</span>
+                        <div className="text-white font-bold text-lg">{relatedPrediction.current_score.toFixed(2)}</div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getSeverityColor(selectedThreatData.severity)}>
-                          {selectedThreatData.severity}
-                        </Badge>
-                        <Badge variant="outline" className="text-gray-400">
-                          {selectedThreatData.category}
-                        </Badge>
+                      <div>
+                        <span className="text-gray-300 text-sm">Score prédit</span>
+                        <div className="flex items-center space-x-2">
+                          {getTrendIcon(relatedPrediction.trend)}
+                          <span className="text-white font-bold text-lg">{relatedPrediction.predicted_score.toFixed(2)}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-300 text-sm">Score de menace</span>
-                        <span className="text-white font-medium">{selectedThreatData.score.toFixed(2)}</span>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-gray-300 text-sm">Confiance</span>
+                        <div className="text-white font-bold text-lg">{(relatedPrediction.confidence * 100).toFixed(0)}%</div>
+                        <Progress value={relatedPrediction.confidence * 100} className="h-2 mt-1" />
                       </div>
-                      <Progress value={selectedThreatData.score * 100} className="h-2" />
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {selectedThreatData.entities.map((entity, index) => (
-                          <Badge key={index} variant="outline" className="text-xs text-gray-400">
-                            {entity}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-center">
-                <ArrowRight className="w-6 h-6 text-gray-400" />
-              </div>
-
-              {/* Étape 2: OÙ ÇA VA - Prédictions */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Brain className="w-5 h-5 mr-2 text-blue-400" />
-                    2. OÙ ÇA VA - Prédictions d'Évolution
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {relatedPrediction ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-300 text-sm">Score actuel</span>
-                          <span className="text-white font-medium">{relatedPrediction.current_score.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-300 text-sm">Score prédit</span>
-                          <div className="flex items-center space-x-2">
-                            {getTrendIcon(relatedPrediction.trend)}
-                            <span className="text-white font-medium">{relatedPrediction.predicted_score.toFixed(2)}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-300 text-sm">Confiance</span>
-                          <span className="text-white font-medium">{(relatedPrediction.confidence * 100).toFixed(0)}%</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
+                      <div>
                         <Badge className={getSeverityColor(relatedPrediction.risk_level)}>
                           Risque: {relatedPrediction.risk_level}
                         </Badge>
-                        <div className="text-sm text-gray-400">
-                          Délai: {relatedPrediction.timeframe}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-sm text-gray-300 font-medium">Facteurs d'influence:</div>
-                        {relatedPrediction.factors.map((factor, index) => (
-                          <div key={index} className="text-xs text-gray-400 flex items-center">
-                            <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
-                            {factor}
-                          </div>
-                        ))}
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-400">
-                      Aucune prédiction disponible pour cette menace
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-center">
-                <ArrowRight className="w-6 h-6 text-gray-400" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-300 font-medium">Facteurs d'influence:</div>
+                    {relatedPrediction.factors.map((factor, index) => (
+                      <div key={index} className="text-xs text-gray-400 flex items-center">
+                        <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
+                        {factor}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="text-sm text-gray-400 bg-slate-700 p-2 rounded">
+                    <Zap className="w-4 h-4 inline mr-1" />
+                    Délai: {relatedPrediction.timeframe}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <Brain className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  Aucune prédiction disponible
+                </div>
+              )}
+            </CardContent>
+            
+            {/* Flèche vers la droite */}
+            <div className="absolute -right-3 top-1/2 transform -translate-y-1/2 hidden lg:block">
+              <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center border-2 border-slate-600">
+                <ArrowRight className="w-4 h-4 text-gray-400" />
               </div>
+            </div>
+          </Card>
 
-              {/* Étape 3: QUE FAIRE - Prescriptions */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Shield className="w-5 h-5 mr-2 text-green-400" />
-                    3. QUE FAIRE - Actions Recommandées
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {relatedPrescriptions.length > 0 ? (
-                    <div className="space-y-4">
-                      {relatedPrescriptions.map((prescription) => (
-                        <div key={prescription.id} className="p-4 bg-slate-700 rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-white font-medium">{prescription.title}</h3>
-                            <div className="flex items-center space-x-2">
-                              <Badge className={getPriorityColor(prescription.priority)}>
-                                {prescription.priority}
+          {/* Étape 3: QUE FAIRE - Prescriptions */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center text-lg">
+                <Shield className="w-6 h-6 mr-2 text-green-400" />
+                3. QUE FAIRE
+              </CardTitle>
+              <div className="text-sm text-gray-400">Actions Recommandées</div>
+            </CardHeader>
+            <CardContent>
+              {relatedPrescriptions.length > 0 ? (
+                <div className="space-y-4">
+                  {relatedPrescriptions.map((prescription) => (
+                    <div key={prescription.id} className="p-4 bg-slate-700 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-white font-medium text-sm">{prescription.title}</h3>
+                        <div className="flex items-center space-x-1">
+                          <Badge className={getPriorityColor(prescription.priority)} size="sm">
+                            {prescription.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <div className="text-sm text-gray-300 font-medium">Actions:</div>
+                          {prescription.actions.slice(0, 3).map((action) => (
+                            <div key={action.id} className="flex items-center space-x-2 text-xs">
+                              {getStatusIcon(action.status)}
+                              <span className="text-gray-400">{action.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="text-sm text-gray-300 font-medium">Ressources:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {prescription.resources.slice(0, 2).map((resource, index) => (
+                              <Badge key={index} variant="outline" className="text-xs text-gray-400">
+                                <Users className="w-3 h-3 mr-1" />
+                                {resource}
                               </Badge>
-                              <Badge variant="outline" className="text-gray-400">
-                                {prescription.category}
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <div className="text-sm text-gray-300 font-medium">Actions:</div>
-                              {prescription.actions.map((action) => (
-                                <div key={action.id} className="flex items-center space-x-2 text-sm">
-                                  {getStatusIcon(action.status)}
-                                  <span className="text-gray-400">{action.description}</span>
-                                </div>
-                              ))}
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="text-sm text-gray-300 font-medium">Ressources nécessaires:</div>
-                              <div className="flex flex-wrap gap-1">
-                                {prescription.resources.map((resource, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs text-gray-400">
-                                    <Users className="w-3 h-3 mr-1" />
-                                    {resource}
-                                  </Badge>
-                                ))}
-                              </div>
-                              <div className="text-xs text-gray-400 mt-2">
-                                Délai estimé: {prescription.timeline}
-                              </div>
-                            </div>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                        
+                        <div className="text-xs text-gray-400 bg-slate-800 p-2 rounded flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Délai: {prescription.timeline}
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-400">
-                      Aucune prescription disponible pour cette menace
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  Aucune prescription disponible
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1029,6 +1029,139 @@ def update_collection_request_status(request_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/collection-requests/<request_id>/documents', methods=['GET'])
+def get_collection_request_documents(request_id):
+    """Récupérer les documents analysés pour une requête de collecte"""
+    try:
+        # Données simulées basées sur des documents réels d'analyse de renseignement
+        documents = [
+            {
+                'id': 'doc_001',
+                'title': 'Rapport SIGINT - Activité radio secteur Gao',
+                'type': 'SIGINT',
+                'classification': 'SECRET',
+                'date_created': '2025-07-13T14:30:00Z',
+                'source': 'Station d\'écoute Gao',
+                'confidence_score': 0.75,
+                'content': {
+                    'resume': 'Interception de communications radio dans le secteur Est de Gao. Plusieurs transmissions non identifiées sur fréquences 142.5 MHz et 156.8 MHz.',
+                    'details': 'Communications interceptées entre 14h30 et 16h45 le 13/07/2025. Contenu partiellement crypté. Identification de 3 émetteurs distincts. Géolocalisation approximative: 16.2728°N, 0.0402°W.',
+                    'key_points': [
+                        'Fréquences inhabituelles pour la zone',
+                        'Chiffrement partiel détecté',
+                        'Mouvements coordonnés suggérés',
+                        'Activité accrue par rapport à la normale'
+                    ]
+                },
+                'gaps_identified': [
+                    'Contenu exact des communications cryptées',
+                    'Identification des émetteurs',
+                    'Intention réelle des communications'
+                ]
+            },
+            {
+                'id': 'doc_002',
+                'title': 'Rapport HUMINT - Témoignage population locale',
+                'type': 'HUMINT',
+                'classification': 'CONFIDENTIEL',
+                'date_created': '2025-07-13T18:00:00Z',
+                'source': 'Agent local GA-7',
+                'confidence_score': 0.60,
+                'content': {
+                    'resume': 'Témoignages de la population locale concernant des mouvements inhabituels dans la zone rurale Est de Gao.',
+                    'details': 'Plusieurs témoins rapportent le passage de véhicules non identifiés dans la nuit du 12 au 13 juillet. Véhicules de type pick-up, sans plaques d\'immatriculation visibles. Estimés à 4-6 véhicules.',
+                    'key_points': [
+                        'Véhicules non identifiés',
+                        'Mouvement nocturne inhabituel',
+                        'Population inquiète',
+                        'Zone habituellement calme'
+                    ]
+                },
+                'gaps_identified': [
+                    'Identification précise des véhicules',
+                    'Nombre exact de personnes',
+                    'Destination finale',
+                    'Lien avec activités illégales'
+                ]
+            },
+            {
+                'id': 'doc_003',
+                'title': 'Analyse IMINT - Images satellite secteur Gao',
+                'type': 'IMINT',
+                'classification': 'SECRET',
+                'date_created': '2025-07-14T09:15:00Z',
+                'source': 'Satellite reconnaissance',
+                'confidence_score': 0.45,
+                'content': {
+                    'resume': 'Images satellite montrant des modifications dans les patterns de circulation et des structures temporaires.',
+                    'details': 'Analyse comparative des images des 10-14 juillet 2025. Détection de structures temporaires (probablement tentes/abris) dans une zone habituellement vide. Traces de véhicules récentes visibles.',
+                    'key_points': [
+                        'Structures temporaires détectées',
+                        'Traces de véhicules récentes',
+                        'Changement dans les patterns habituels',
+                        'Zone d\'intérêt: 16.274°N, 0.038°W'
+                    ]
+                },
+                'gaps_identified': [
+                    'Nature exacte des structures',
+                    'Nombre de personnes présentes',
+                    'Durée prévue de l\'installation',
+                    'Activités menées sur place'
+                ]
+            },
+            {
+                'id': 'doc_004',
+                'title': 'Rapport contextuel - Situation sécuritaire régionale',
+                'type': 'OSINT',
+                'classification': 'NON CLASSIFIÉ',
+                'date_created': '2025-07-12T16:00:00Z',
+                'source': 'Synthèse sources ouvertes',
+                'confidence_score': 0.80,
+                'content': {
+                    'resume': 'Contexte sécuritaire régional et évolution des menaces dans la région de Gao.',
+                    'details': 'Augmentation des tensions dans la région depuis début juillet. Plusieurs incidents rapportés dans les zones limitrophes. Présence accrue de groupes non identifiés.',
+                    'key_points': [
+                        'Tensions régionales en hausse',
+                        'Incidents récents dans zones limitrophes',
+                        'Groupes non identifiés actifs',
+                        'Contexte sécuritaire dégradé'
+                    ]
+                },
+                'gaps_identified': [
+                    'Lien entre incidents régionaux',
+                    'Identification des groupes actifs',
+                    'Intentions stratégiques',
+                    'Évolution prévisible'
+                ]
+            }
+        ]
+        
+        # Calcul des statistiques d'analyse
+        total_documents = len(documents)
+        avg_confidence = sum(doc['confidence_score'] for doc in documents) / total_documents
+        gaps_count = sum(len(doc['gaps_identified']) for doc in documents)
+        
+        analysis_summary = {
+            'total_documents': total_documents,
+            'average_confidence': round(avg_confidence, 2),
+            'total_gaps_identified': gaps_count,
+            'document_types': list(set(doc['type'] for doc in documents)),
+            'classification_levels': list(set(doc['classification'] for doc in documents)),
+            'analysis_period': {
+                'start': '2025-07-12T16:00:00Z',
+                'end': '2025-07-14T09:15:00Z'
+            }
+        }
+        
+        return jsonify({
+            'request_id': request_id,
+            'documents': documents,
+            'analysis_summary': analysis_summary
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/collection-requests/test-scenario', methods=['POST'])
 def test_collection_scenario():
     """Tester un scénario complet de génération automatique de requêtes"""

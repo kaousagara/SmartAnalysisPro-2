@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { 
   FileText, 
   Clock, 
@@ -22,7 +25,10 @@ import {
   Activity,
   Users,
   Database,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -43,6 +49,179 @@ interface CollectionRequest {
   estimated_completion?: string;
   documents_analysed?: number;
   confidence_level?: number;
+}
+
+interface Document {
+  id: string;
+  title: string;
+  type: string;
+  classification: string;
+  date_created: string;
+  source: string;
+  confidence_score: number;
+  content: {
+    resume: string;
+    details: string;
+    key_points: string[];
+  };
+  gaps_identified: string[];
+}
+
+interface DocumentsResponse {
+  request_id: string;
+  documents: Document[];
+  analysis_summary: {
+    total_documents: number;
+    average_confidence: number;
+    total_gaps_identified: number;
+    document_types: string[];
+    classification_levels: string[];
+    analysis_period: {
+      start: string;
+      end: string;
+    };
+  };
+}
+
+// Composant pour afficher les documents analysés
+function DocumentsModal({ requestId, requestTitle }: { requestId: string; requestTitle: string }) {
+  const { data: documentsData, isLoading } = useQuery<DocumentsResponse>({
+    queryKey: [`/api/collection-requests/${requestId}/documents`],
+    enabled: !!requestId,
+  });
+
+  const getClassificationColor = (classification: string) => {
+    switch (classification) {
+      case 'SECRET': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200';
+      case 'CONFIDENTIEL': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200';
+      case 'NON CLASSIFIÉ': return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'SIGINT': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200';
+      case 'HUMINT': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200';
+      case 'IMINT': return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200';
+      case 'OSINT': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200';
+      case 'TECHINT': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-200';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <RefreshCw className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Chargement des documents...</span>
+      </div>
+    );
+  }
+
+  if (!documentsData) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <p>Aucun document trouvé</p>
+      </div>
+    );
+  }
+
+  const { documents, analysis_summary } = documentsData;
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-2">Documents analysés pour: {requestTitle}</h3>
+        
+        {/* Résumé de l'analyse */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+            <div className="text-blue-600 dark:text-blue-400 text-sm">Total documents</div>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{analysis_summary.total_documents}</div>
+          </div>
+          <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+            <div className="text-green-600 dark:text-green-400 text-sm">Confiance moyenne</div>
+            <div className="text-2xl font-bold text-green-900 dark:text-green-100">{(analysis_summary.average_confidence * 100).toFixed(0)}%</div>
+          </div>
+          <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
+            <div className="text-orange-600 dark:text-orange-400 text-sm">Lacunes détectées</div>
+            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{analysis_summary.total_gaps_identified}</div>
+          </div>
+          <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+            <div className="text-purple-600 dark:text-purple-400 text-sm">Types de sources</div>
+            <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{analysis_summary.document_types.length}</div>
+          </div>
+        </div>
+      </div>
+
+      <ScrollArea className="h-96">
+        <div className="space-y-4">
+          {documents.map((doc) => (
+            <Card key={doc.id} className="border-l-4 border-l-blue-500">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg mb-2">{doc.title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={getTypeColor(doc.type)}>{doc.type}</Badge>
+                      <Badge className={getClassificationColor(doc.classification)}>
+                        <Shield className="h-3 w-3 mr-1" />
+                        {doc.classification}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <p><strong>Source:</strong> {doc.source}</p>
+                      <p><strong>Date:</strong> {new Date(doc.date_created).toLocaleDateString('fr-FR')}</p>
+                      <p><strong>Confiance:</strong> {(doc.confidence_score * 100).toFixed(0)}%</p>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Résumé</h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{doc.content.resume}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Détails</h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{doc.content.details}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Points clés</h4>
+                    <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      {doc.content.key_points.map((point, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2 text-orange-600 dark:text-orange-400">Lacunes identifiées</h4>
+                    <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      {doc.gaps_identified.map((gap, index) => (
+                        <li key={index} className="flex items-start">
+                          <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-0.5 flex-shrink-0" />
+                          {gap}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
 }
 
 export default function CollectionRequests() {
@@ -354,7 +533,27 @@ export default function CollectionRequests() {
 
                         {request.documents_analysed && (
                           <div className="flex items-center space-x-4 text-sm text-gray-400">
-                            <span>📊 {request.documents_analysés} documents analysés</span>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 p-1 h-auto"
+                                >
+                                  <Database className="w-4 h-4 mr-1" />
+                                  {request.documents_analysés} documents analysés
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-6xl h-[80vh] bg-gray-900 border-gray-700 text-white">
+                                <DialogHeader>
+                                  <DialogTitle>Documents Analysés</DialogTitle>
+                                </DialogHeader>
+                                <DocumentsModal 
+                                  requestId={request.id} 
+                                  requestTitle={request.objectif} 
+                                />
+                              </DialogContent>
+                            </Dialog>
                             {request.confidence_level && (
                               <span>🎯 Confiance: {Math.round(request.confidence_level * 100)}%</span>
                             )}

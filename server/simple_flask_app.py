@@ -1083,14 +1083,39 @@ def generate_report():
 def download_report(report_id):
     """Télécharger un rapport"""
     try:
-        # Simuler le téléchargement
-        return jsonify({
-            'message': 'Téléchargement du rapport initié',
-            'report_id': report_id,
-            'download_url': f'/reports/{report_id}/download'
-        })
+        from flask import Response
+        from io import BytesIO
+        
+        # Générer un contenu PDF simulé
+        pdf_content = generate_fake_pdf_content(report_id)
+        
+        # Créer la réponse avec le bon type MIME
+        response = Response(
+            pdf_content,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=rapport_{report_id}.pdf',
+                'Content-Type': 'application/pdf'
+            }
+        )
+        
+        return response
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+def generate_fake_pdf_content(report_id):
+    """Générer un contenu PDF simulé"""
+    # Création d'un PDF simple avec des données simulées
+    pdf_header = b'%PDF-1.4\n'
+    pdf_catalog = b'1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n'
+    pdf_pages = b'2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n'
+    pdf_page = b'3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n/Contents 4 0 R\n/Resources <<\n/Font <<\n/F1 5 0 R\n>>\n>>\n>>\nendobj\n'
+    pdf_content = b'4 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n100 700 Td\n(Rapport ' + report_id.encode() + b') Tj\nET\nendstream\nendobj\n'
+    pdf_font = b'5 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n>>\nendobj\n'
+    pdf_xref = b'xref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000074 00000 n \n0000000120 00000 n \n0000000179 00000 n \n0000000251 00000 n \n'
+    pdf_trailer = b'trailer\n<<\n/Size 6\n/Root 1 0 R\n>>\nstartxref\n338\n%%EOF\n'
+    
+    return pdf_header + pdf_catalog + pdf_pages + pdf_page + pdf_content + pdf_font + pdf_xref + pdf_trailer
 
 @app.route('/api/reports/templates', methods=['GET'])
 def get_report_templates():

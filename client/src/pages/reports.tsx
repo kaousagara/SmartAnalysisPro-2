@@ -132,10 +132,17 @@ export default function Reports() {
 
   const handleDownloadReport = async (reportId: string) => {
     try {
+      console.log(`Downloading report ${reportId}`);
+      
       const response = await fetch(`/api/reports/${reportId}/download`);
+      console.log('Download response status:', response.status);
+      console.log('Download response headers:', response.headers.get('content-type'));
+      
       if (!response.ok) throw new Error('Failed to download report');
       
       const blob = await response.blob();
+      console.log('Blob size:', blob.size, 'type:', blob.type);
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -146,10 +153,11 @@ export default function Reports() {
       document.body.removeChild(a);
       
       toast({
-        title: "Téléchargement initié",
-        description: "Le téléchargement du rapport a commencé.",
+        title: "Téléchargement réussi",
+        description: `Le rapport ${reportId} a été téléchargé avec succès.`,
       });
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "Erreur",
         description: "Impossible de télécharger le rapport.",

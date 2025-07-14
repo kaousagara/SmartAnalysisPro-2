@@ -42,10 +42,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
     .then(response => {
       res.status(response.status);
-      return response.json();
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        return response.text();
+      }
     })
     .then(data => {
-      res.json(data);
+      if (typeof data === 'string') {
+        res.send(data);
+      } else {
+        res.json(data);
+      }
     })
     .catch(error => {
       log(`Proxy error: ${error.message}`, 'proxy');

@@ -27,10 +27,22 @@ class Database:
         except Exception as e:
             print(f"Erreur de connexion à la base de données: {e}")
     
+    def get_connection(self):
+        """Obtenir une connexion valide, reconnecter si nécessaire"""
+        try:
+            if self.connection is None or self.connection.closed:
+                self.connect()
+            return self.connection
+        except Exception as e:
+            print(f"Erreur lors de la vérification de la connexion: {e}")
+            self.connect()
+            return self.connection
+    
     def init_tables(self):
         """Initialiser les tables nécessaires"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             
             # Créer toutes les tables du système
             self._create_all_tables(cursor)
@@ -189,7 +201,8 @@ class Database:
     def get_user_by_username(self, username: str) -> Optional[Dict]:
         """Récupérer un utilisateur par nom d'utilisateur"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             cursor.execute("""
                 SELECT id, username, password, clearance_level, name, email, is_active, 
                        created_at, updated_at
@@ -209,7 +222,8 @@ class Database:
     def get_user_by_id(self, user_id: int) -> Optional[Dict]:
         """Récupérer un utilisateur par ID"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             cursor.execute("""
                 SELECT id, username, clearance_level, name, email, is_active, 
                        created_at, updated_at
@@ -229,7 +243,8 @@ class Database:
     def get_all_users(self) -> List[Dict]:
         """Récupérer tous les utilisateurs"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             cursor.execute("""
                 SELECT id, username, clearance_level, name, email, is_active, 
                        created_at, updated_at
@@ -251,7 +266,8 @@ class Database:
                    name: str, email: str) -> Optional[Dict]:
         """Créer un nouvel utilisateur"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             
             # Vérifier si l'utilisateur existe déjà
             cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
@@ -283,7 +299,8 @@ class Database:
                    name: str = None, email: str = None, is_active: bool = None) -> Optional[Dict]:
         """Mettre à jour un utilisateur"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             
             # Construire la requête de mise à jour dynamiquement
             update_fields = []
@@ -329,7 +346,8 @@ class Database:
     def delete_user(self, user_id: int) -> bool:
         """Supprimer un utilisateur (suppression logique)"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             cursor.execute("""
                 UPDATE users 
                 SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
@@ -360,7 +378,8 @@ class Database:
     def update_password(self, user_id: int, new_password: str) -> bool:
         """Mettre à jour le mot de passe d'un utilisateur"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             hashed_password = generate_password_hash(new_password)
             
             cursor.execute("""
@@ -379,7 +398,8 @@ class Database:
     def generate_test_data(self) -> Dict:
         """Générer des données de test pour le système"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             
             # Supprimer les données existantes (sauf users)
             cursor.execute("DELETE FROM threat_scores")
@@ -507,7 +527,8 @@ class Database:
             cursor.close()
             
             # Compter les enregistrements créés
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             counts = {}
             for table in ['data_sources', 'threats', 'scenarios', 'actions', 'alerts', 'prescriptions']:
                 cursor.execute(f"SELECT COUNT(*) FROM {table}")
@@ -530,7 +551,8 @@ class Database:
     def clear_test_data(self) -> Dict:
         """Supprimer toutes les données de test (sauf utilisateurs)"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             
             # Supprimer dans l'ordre inverse des dépendances
             cursor.execute("DELETE FROM threat_scores")
@@ -558,7 +580,8 @@ class Database:
     def get_database_stats(self) -> Dict:
         """Obtenir les statistiques de la base de données"""
         try:
-            cursor = self.connection.cursor()
+            connection = self.get_connection()
+            cursor = connection.cursor()
             stats = {}
             
             tables = ['users', 'data_sources', 'threats', 'scenarios', 'actions', 'alerts', 'prescriptions', 'threat_scores']

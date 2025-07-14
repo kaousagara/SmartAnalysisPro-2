@@ -657,7 +657,7 @@ def get_signal_analysis():
 
 # ===================== REPORT ROUTES =====================
 
-@app.route('/reports', methods=['GET'])
+@app.route('/api/reports', methods=['GET'])
 def get_reports():
     """Récupérer tous les rapports"""
     try:
@@ -711,7 +711,7 @@ def get_reports():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/reports/<report_id>', methods=['GET'])
+@app.route('/api/reports/<report_id>', methods=['GET'])
 def get_report(report_id):
     """Récupérer un rapport spécifique"""
     try:
@@ -740,7 +740,7 @@ def get_report(report_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/reports/generate', methods=['POST'])
+@app.route('/api/reports/generate', methods=['POST'])
 def generate_report():
     """Générer un nouveau rapport"""
     try:
@@ -753,7 +753,7 @@ def generate_report():
                 return jsonify({'error': f'Champ manquant: {field}'}), 400
         
         # Générer un ID unique pour le rapport
-        report_id = f"RPT-{datetime.now().strftime('%Y')}-{str(len(reports) + 1).zfill(3)}"
+        report_id = f"RPT-{datetime.now().strftime('%Y')}-{str(datetime.now().microsecond).zfill(6)}"
         
         # Créer le nouveau rapport
         new_report = {
@@ -789,7 +789,7 @@ def generate_report():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/reports/<report_id>/download', methods=['GET'])
+@app.route('/api/reports/<report_id>/download', methods=['GET'])
 def download_report(report_id):
     """Télécharger un rapport"""
     try:
@@ -802,7 +802,7 @@ def download_report(report_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/reports/templates', methods=['GET'])
+@app.route('/api/reports/templates', methods=['GET'])
 def get_report_templates():
     """Récupérer les modèles de rapport"""
     try:

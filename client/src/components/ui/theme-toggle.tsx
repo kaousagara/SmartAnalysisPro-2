@@ -3,34 +3,39 @@ import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    // Vérifier le thème initial
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    const isDarkMode = currentTheme === 'dark';
-    setIsDark(isDarkMode);
+    // Initialiser le thème au montage
+    const savedTheme = localStorage.getItem('theme');
+    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && true); // Par défaut sombre pour l'intelligence
     
-    // Appliquer le thème au document
-    if (isDarkMode) {
+    setIsDark(shouldBeDark);
+    
+    // Appliquer immédiatement la classe
+    if (shouldBeDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Sauvegarder le thème par défaut si pas encore défini
+    if (!savedTheme) {
+      localStorage.setItem('theme', 'dark');
+    }
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = isDark ? 'light' : 'dark';
-    setIsDark(!isDark);
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
     
-    // Mettre à jour le localStorage
-    localStorage.setItem('theme', newTheme);
-    
-    // Appliquer le thème au document
-    if (newTheme === 'dark') {
+    // Appliquer la classe dark
+    if (newIsDark) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   };
 
@@ -39,7 +44,8 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+      className="h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
+      title={isDark ? 'Passer au thème clair' : 'Passer au thème sombre'}
     >
       {isDark ? (
         <Sun className="h-4 w-4 transition-all" />

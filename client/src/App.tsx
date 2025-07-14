@@ -27,8 +27,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-white">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center space-x-2 text-foreground">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <span>Loading...</span>
         </div>
@@ -101,6 +101,17 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // S'assurer que le thème par défaut est appliqué au démarrage
+    const savedTheme = localStorage.getItem('theme');
+    if (!savedTheme) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

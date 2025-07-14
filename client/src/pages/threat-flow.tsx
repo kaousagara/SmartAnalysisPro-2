@@ -147,6 +147,8 @@ export default function ThreatFlow() {
   };
 
   const getStatusIcon = (status: string) => {
+    if (!status) return <Eye className="w-4 h-4 text-gray-400" />;
+    
     switch (status.toLowerCase()) {
       case 'completed': return <CheckCircle className="w-4 h-4 text-green-400" />;
       case 'active': return <Activity className="w-4 h-4 text-blue-400" />;
@@ -372,29 +374,37 @@ export default function ThreatFlow() {
                       <div className="space-y-3">
                         <div className="space-y-2">
                           <div className="text-sm text-gray-300 font-medium">Actions:</div>
-                          {prescription.actions.slice(0, 3).map((action) => (
-                            <div key={action.id} className="flex items-center space-x-2 text-xs">
-                              {getStatusIcon(action.status)}
-                              <span className="text-gray-400">{action.description}</span>
-                            </div>
-                          ))}
+                          {prescription.actions && prescription.actions.length > 0 ? (
+                            prescription.actions.slice(0, 3).map((action) => (
+                              <div key={action.id} className="flex items-center space-x-2 text-xs">
+                                {getStatusIcon(action.completed ? 'completed' : 'pending')}
+                                <span className="text-gray-400">{action.description}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-xs text-gray-500">Aucune action disponible</span>
+                          )}
                         </div>
                         
                         <div className="space-y-2">
                           <div className="text-sm text-gray-300 font-medium">Ressources:</div>
                           <div className="flex flex-wrap gap-1">
-                            {prescription.resources.slice(0, 2).map((resource, index) => (
-                              <Badge key={index} variant="outline" className="text-xs text-gray-400">
-                                <Users className="w-3 h-3 mr-1" />
-                                {resource}
-                              </Badge>
-                            ))}
+                            {prescription.resources_needed && prescription.resources_needed.length > 0 ? (
+                              prescription.resources_needed.slice(0, 2).map((resource, index) => (
+                                <Badge key={index} variant="outline" className="text-xs text-gray-400">
+                                  <Users className="w-3 h-3 mr-1" />
+                                  {resource}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-500">Aucune ressource spécifiée</span>
+                            )}
                           </div>
                         </div>
                         
                         <div className="text-xs text-gray-400 bg-slate-800 p-2 rounded flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          Délai: {prescription.timeline}
+                          Délai: {prescription.estimated_time}
                         </div>
                       </div>
                     </div>

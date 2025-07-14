@@ -298,7 +298,7 @@ export default function Prescriptions() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => executeAction(prescription.id, action.id)}
-                                    className="text-xs"
+                                    className="text-xs bg-blue-600 border-blue-500 text-white hover:bg-blue-700 hover:border-blue-400 transition-all duration-200 font-medium"
                                   >
                                     {action.type === 'automatic' ? (
                                       <>
@@ -324,7 +324,7 @@ export default function Prescriptions() {
                           <Button
                             size="sm"
                             onClick={() => updatePrescriptionStatus(prescription.id, 'in_progress')}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium"
                           >
                             <Activity className="w-4 h-4 mr-1" />
                             Commencer
@@ -333,7 +333,7 @@ export default function Prescriptions() {
                             size="sm"
                             variant="outline"
                             onClick={() => updatePrescriptionStatus(prescription.id, 'dismissed')}
-                            className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                            className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white transition-all duration-200 font-medium"
                           >
                             Rejeter
                           </Button>
@@ -345,7 +345,7 @@ export default function Prescriptions() {
                           <Button
                             size="sm"
                             onClick={() => updatePrescriptionStatus(prescription.id, 'completed')}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 text-white border-green-500 hover:border-green-400 transition-all duration-200 font-medium"
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
                             Marquer terminé

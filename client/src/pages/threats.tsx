@@ -169,7 +169,7 @@ export default function Threats() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleFeedback(threat.id, 'true_positive')}
-                          className="text-green-400 border-green-400 hover:bg-green-400 hover:text-white"
+                          className="bg-green-600 border-green-500 text-white hover:bg-green-700 hover:border-green-400 hover:text-white transition-all duration-200 font-medium"
                         >
                           Valide
                         </Button>
@@ -177,7 +177,7 @@ export default function Threats() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleFeedback(threat.id, 'false_positive')}
-                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                          className="bg-red-600 border-red-500 text-white hover:bg-red-700 hover:border-red-400 hover:text-white transition-all duration-200 font-medium"
                         >
                           Faux +
                         </Button>

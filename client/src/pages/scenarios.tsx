@@ -147,12 +147,12 @@ export default function Scenarios() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-white">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg">
               <Plus className="w-4 h-4 mr-2" />
-              New Scenario
+              Nouveau Scénario
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-dark-surface border-dark-border max-w-2xl">
+          <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-white">Create New Scenario</DialogTitle>
             </DialogHeader>
@@ -216,16 +216,16 @@ export default function Scenarios() {
                   type="button"
                   variant="outline"
                   onClick={() => setIsCreateDialogOpen(false)}
-                  className="border-dark-border text-gray-300 hover:bg-dark-elevated"
+                  className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white transition-all duration-200 font-medium"
                 >
-                  Cancel
+                  Annuler
                 </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg"
                 >
-                  {createMutation.isPending ? "Creating..." : "Create Scenario"}
+                  {createMutation.isPending ? "Création..." : "Créer Scénario"}
                 </Button>
               </div>
             </form>
@@ -324,8 +324,8 @@ export default function Scenarios() {
                       size="sm"
                       onClick={() => handleStatusToggle(scenario.id, scenario.status)}
                       className={`${scenario.status === 'active' ? 
-                        'text-error border-error hover:bg-error' : 
-                        'text-success border-success hover:bg-success'} hover:text-white`}
+                        'bg-red-600 border-red-500 text-white hover:bg-red-700 hover:border-red-400' : 
+                        'bg-green-600 border-green-500 text-white hover:bg-green-700 hover:border-green-400'} transition-all duration-200 font-medium`}
                     >
                       {scenario.status === 'active' ? (
                         <Pause className="w-4 h-4" />
@@ -337,7 +337,7 @@ export default function Scenarios() {
                       variant="outline"
                       size="sm"
                       onClick={() => deleteMutation.mutate(scenario.id)}
-                      className="text-error border-error hover:bg-error hover:text-white"
+                      className="bg-red-600 border-red-500 text-white hover:bg-red-700 hover:border-red-400 hover:text-white transition-all duration-200 font-medium"
                       disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -359,10 +359,10 @@ export default function Scenarios() {
               </p>
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create First Scenario
+                Créer Premier Scénario
               </Button>
             </CardContent>
           </Card>

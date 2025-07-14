@@ -258,17 +258,17 @@ export default function Ingestion() {
                 <Button
                   type="submit"
                   disabled={ingestMutation.isPending}
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg"
                 >
                   {ingestMutation.isPending ? (
                     <>
                       <Activity className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Traitement...
                     </>
                   ) : (
                     <>
                       <Database className="w-4 h-4 mr-2" />
-                      Ingest JSON Data
+                      Ingérer Données JSON
                     </>
                   )}
                 </Button>
@@ -293,17 +293,17 @@ export default function Ingestion() {
                 <Button
                   type="submit"
                   disabled={ingestMutation.isPending}
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg"
                 >
                   {ingestMutation.isPending ? (
                     <>
                       <Activity className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Traitement...
                     </>
                   ) : (
                     <>
                       <Database className="w-4 h-4 mr-2" />
-                      Ingest STIX Data
+                      Ingérer Données STIX
                     </>
                   )}
                 </Button>
@@ -333,17 +333,17 @@ export default function Ingestion() {
                 <Button
                   type="submit"
                   disabled={ingestMutation.isPending || !selectedFile}
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-400 transition-all duration-200 font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {ingestMutation.isPending ? (
                     <>
                       <Activity className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Traitement...
                     </>
                   ) : (
                     <>
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload File
+                      Télécharger Fichier
                     </>
                   )}
                 </Button>

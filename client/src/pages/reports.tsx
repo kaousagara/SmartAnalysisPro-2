@@ -108,12 +108,43 @@ export default function Reports() {
     generateReportMutation.mutate(reportForm);
   };
 
+  const handleViewReport = async (reportId: string) => {
+    try {
+      const response = await fetch(`/api/reports/${reportId}`);
+      if (!response.ok) throw new Error('Failed to fetch report');
+      
+      const data = await response.json();
+      // Ouvrir dans une nouvelle fenêtre ou modale
+      window.open(`/reports/${reportId}`, '_blank');
+      
+      toast({
+        title: "Rapport ouvert",
+        description: "Le rapport s'ouvre dans une nouvelle fenêtre.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ouvrir le rapport.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDownloadReport = async (reportId: string) => {
     try {
       const response = await fetch(`/api/reports/${reportId}/download`);
       if (!response.ok) throw new Error('Failed to download report');
       
-      const data = await response.json();
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport_${reportId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
       toast({
         title: "Téléchargement initié",
         description: "Le téléchargement du rapport a commencé.",
@@ -459,7 +490,8 @@ export default function Reports() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                          onClick={() => handleViewReport(report.id)}
+                          className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-all duration-200 font-medium"
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           Voir
@@ -468,7 +500,7 @@ export default function Reports() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDownloadReport(report.id)}
-                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                          className="bg-blue-600 border-blue-500 text-white hover:bg-blue-700 hover:border-blue-400 hover:text-white transition-all duration-200 font-medium"
                         >
                           <Download className="w-4 h-4 mr-2" />
                           Télécharger
@@ -515,11 +547,21 @@ export default function Reports() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleViewReport(report.id)}
+                        className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500 hover:text-white transition-all duration-200 font-medium"
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         Voir
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDownloadReport(report.id)} className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDownloadReport(report.id)} 
+                        className="bg-blue-600 border-blue-500 text-white hover:bg-blue-700 hover:border-blue-400 hover:text-white transition-all duration-200 font-medium"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Télécharger
                       </Button>
@@ -562,7 +604,12 @@ export default function Reports() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleViewReport(report.id)}
+                        className="bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700 hover:border-yellow-400 hover:text-white transition-all duration-200 font-medium"
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         Continuer
                       </Button>
@@ -605,7 +652,11 @@ export default function Reports() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="bg-purple-600 border-purple-500 text-white hover:bg-purple-700 hover:border-purple-400 hover:text-white transition-all duration-200 font-medium"
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Utiliser
                       </Button>

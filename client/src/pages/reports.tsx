@@ -48,11 +48,11 @@ export default function Reports() {
   const getClassificationColor = (classification: string) => {
     switch (classification) {
       case "TOP SECRET":
-        return "bg-error bg-opacity-20 text-error border-error";
+        return "bg-red-500 bg-opacity-20 text-red-400 border-red-500";
       case "SECRET":
-        return "bg-warning bg-opacity-20 text-warning border-warning";
+        return "bg-orange-500 bg-opacity-20 text-orange-400 border-orange-500";
       case "CONFIDENTIAL":
-        return "bg-primary bg-opacity-20 text-primary border-primary";
+        return "bg-blue-500 bg-opacity-20 text-blue-400 border-blue-500";
       default:
         return "bg-gray-500 bg-opacity-20 text-gray-400 border-gray-500";
     }
@@ -61,9 +61,9 @@ export default function Reports() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Published":
-        return "bg-success bg-opacity-20 text-success border-success";
+        return "bg-green-500 bg-opacity-20 text-green-400 border-green-500";
       case "Draft":
-        return "bg-warning bg-opacity-20 text-warning border-warning";
+        return "bg-orange-500 bg-opacity-20 text-orange-400 border-orange-500";
       default:
         return "bg-gray-500 bg-opacity-20 text-gray-400 border-gray-500";
     }

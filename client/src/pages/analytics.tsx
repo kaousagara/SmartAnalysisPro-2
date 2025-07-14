@@ -23,14 +23,14 @@ export default function Analytics() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Analytics</h1>
-          <p className="text-gray-400">Advanced threat analysis and intelligence metrics</p>
+          <p className="text-gray-400">Analyse avancée des menaces et métriques d'intelligence</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" className="border-dark-border text-gray-300 hover:bg-dark-elevated">
+          <Button variant="outline" className="border-slate-700 text-gray-300 hover:bg-slate-800">
             <Filter className="w-4 h-4 mr-2" />
-            Filter
+            Filtre
           </Button>
-          <Button variant="outline" className="border-dark-border text-gray-300 hover:bg-dark-elevated">
+          <Button variant="outline" className="border-slate-700 text-gray-300 hover:bg-slate-800">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
@@ -39,38 +39,38 @@ export default function Analytics() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-dark-surface border-dark-border">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Detection Rate</p>
+                <p className="text-sm text-gray-400">Taux de Détection</p>
                 <p className="text-2xl font-bold text-white">94.2%</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-success" />
+              <TrendingUp className="w-8 h-8 text-green-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-dark-surface border-dark-border">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Precision</p>
+                <p className="text-sm text-gray-400">Précision</p>
                 <p className="text-2xl font-bold text-white">91.7%</p>
               </div>
-              <BarChart className="w-8 h-8 text-primary" />
+              <BarChart className="w-8 h-8 text-blue-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-dark-surface border-dark-border">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Response Time</p>
+                <p className="text-sm text-gray-400">Temps de Réponse</p>
                 <p className="text-2xl font-bold text-white">320ms</p>
               </div>
-              <LineChart className="w-8 h-8 text-warning" />
+              <LineChart className="w-8 h-8 text-orange-400" />
             </div>
           </CardContent>
         </Card>

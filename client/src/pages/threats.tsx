@@ -22,21 +22,21 @@ export default function Threats() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'severity-critical';
+        return 'bg-red-500 bg-opacity-25 text-red-300 border border-red-400';
       case 'high':
-        return 'severity-high';
+        return 'bg-orange-500 bg-opacity-25 text-orange-300 border border-orange-400';
       case 'medium':
-        return 'severity-medium';
+        return 'bg-yellow-500 bg-opacity-25 text-yellow-300 border border-yellow-400';
       default:
-        return 'severity-low';
+        return 'bg-gray-500 bg-opacity-25 text-gray-300 border border-gray-400';
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 0.75) return 'threat-score-critical';
-    if (score >= 0.60) return 'threat-score-high';
-    if (score >= 0.40) return 'threat-score-medium';
-    return 'threat-score-low';
+    if (score >= 0.75) return 'text-red-300 font-semibold';
+    if (score >= 0.60) return 'text-orange-300 font-semibold';
+    if (score >= 0.40) return 'text-yellow-300 font-medium';
+    return 'text-gray-300 font-normal';
   };
 
   const handleFeedback = async (threatId: string, feedback: string) => {
@@ -67,30 +67,30 @@ export default function Threats() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Threat Detection</h1>
-          <p className="text-gray-400">Monitor and analyze security threats in real-time</p>
+          <h1 className="text-2xl font-bold text-white">Détection des Menaces</h1>
+          <p className="text-gray-400">Surveiller et analyser les menaces de sécurité en temps réel</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="text-error border-error">
-            {activeThreatCount} Active
+          <Badge variant="outline" className="text-red-400 border-red-400">
+            {activeThreatCount} Actives
           </Badge>
-          <Badge variant="outline" className="text-warning border-warning">
-            Avg Score: {averageScore.toFixed(2)}
+          <Badge variant="outline" className="text-orange-400 border-orange-400">
+            Score Moyen: {averageScore.toFixed(2)}
           </Badge>
         </div>
       </div>
 
       {/* Search and Filter */}
-      <Card className="bg-dark-surface border-dark-border">
+      <Card className="bg-slate-800 border-slate-700">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search threats..."
+                placeholder="Rechercher des menaces..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-dark-elevated border-dark-border text-white"
+                className="pl-10 bg-slate-700 border-slate-600 text-white"
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -98,13 +98,13 @@ export default function Threats() {
               <select
                 value={selectedSeverity}
                 onChange={(e) => setSelectedSeverity(e.target.value)}
-                className="bg-dark-elevated border-dark-border text-white rounded-md px-3 py-2"
+                className="bg-slate-700 border-slate-600 text-white rounded-md px-3 py-2"
               >
-                <option value="">All Severities</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="">Toutes les Sévérités</option>
+                <option value="critical">Critique</option>
+                <option value="high">Élevé</option>
+                <option value="medium">Moyen</option>
+                <option value="low">Faible</option>
               </select>
             </div>
           </div>
@@ -113,20 +113,20 @@ export default function Threats() {
 
       {/* Threats List */}
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-dark-surface">
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline View</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-slate-800">
+          <TabsTrigger value="list">Vue Liste</TabsTrigger>
+          <TabsTrigger value="timeline">Vue Chronologique</TabsTrigger>
         </TabsList>
         
         <TabsContent value="list" className="space-y-4">
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
-                <Card key={i} className="bg-dark-surface border-dark-border animate-pulse">
+                <Card key={i} className="bg-slate-800 border-slate-700 animate-pulse">
                   <CardContent className="p-6">
-                    <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                    <div className="h-6 bg-gray-700 rounded w-1/4 mb-4" />
-                    <div className="h-3 bg-gray-700 rounded w-1/2" />
+                    <div className="h-4 bg-slate-700 rounded w-3/4 mb-2" />
+                    <div className="h-6 bg-slate-700 rounded w-1/4 mb-4" />
+                    <div className="h-3 bg-slate-700 rounded w-1/2" />
                   </CardContent>
                 </Card>
               ))}
@@ -134,7 +134,7 @@ export default function Threats() {
           ) : (
             <div className="space-y-4">
               {filteredThreats.map((threat) => (
-                <Card key={threat.id} className="bg-dark-surface border-dark-border hover:border-gray-600 transition-colors">
+                <Card key={threat.id} className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -169,17 +169,17 @@ export default function Threats() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleFeedback(threat.id, 'true_positive')}
-                          className="text-success border-success hover:bg-success hover:text-white"
+                          className="text-green-400 border-green-400 hover:bg-green-400 hover:text-white"
                         >
-                          Valid
+                          Valide
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleFeedback(threat.id, 'false_positive')}
-                          className="text-error border-error hover:bg-error hover:text-white"
+                          className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
                         >
-                          False +
+                          Faux +
                         </Button>
                       </div>
                     </div>
@@ -188,14 +188,14 @@ export default function Threats() {
               ))}
               
               {filteredThreats.length === 0 && (
-                <Card className="bg-dark-surface border-dark-border">
+                <Card className="bg-slate-800 border-slate-700">
                   <CardContent className="p-12 text-center">
                     <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-white mb-2">No threats found</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">Aucune menace trouvée</h3>
                     <p className="text-gray-400">
                       {searchTerm || selectedSeverity ? 
-                        'Try adjusting your search or filter criteria' : 
-                        'No active threats detected at this time'}
+                        'Essayez d\'ajuster vos critères de recherche ou de filtre' : 
+                        'Aucune menace active détectée pour le moment'}
                     </p>
                   </CardContent>
                 </Card>
@@ -205,15 +205,15 @@ export default function Threats() {
         </TabsContent>
         
         <TabsContent value="timeline">
-          <Card className="bg-dark-surface border-dark-border">
+          <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white">Threat Timeline</CardTitle>
+              <CardTitle className="text-white">Chronologie des Menaces</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12 text-gray-400">
                 <TrendingUp className="w-12 h-12 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Timeline View</h3>
-                <p>Timeline visualization coming soon</p>
+                <h3 className="text-lg font-semibold mb-2">Vue Chronologique</h3>
+                <p>Visualisation chronologique à venir</p>
               </div>
             </CardContent>
           </Card>

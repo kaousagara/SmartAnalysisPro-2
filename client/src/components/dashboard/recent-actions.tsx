@@ -26,12 +26,12 @@ export function RecentActions() {
 
   const getActionColor = (type: string) => {
     switch (type) {
-      case 'sigint':
-        return 'bg-primary bg-opacity-20 text-primary';
-      case 'humint':
-        return 'bg-warning bg-opacity-20 text-warning';
-      case 'network_monitoring':
-        return 'bg-success bg-opacity-20 text-success';
+      case 'SIGINT_COLLECTION':
+        return 'bg-blue-500 bg-opacity-20 text-blue-400';
+      case 'THREAT_ANALYSIS':
+        return 'bg-orange-500 bg-opacity-20 text-orange-400';
+      case 'NETWORK_MONITORING':
+        return 'bg-green-500 bg-opacity-20 text-green-400';
       default:
         return 'bg-gray-500 bg-opacity-20 text-gray-400';
     }
@@ -65,18 +65,18 @@ export function RecentActions() {
 
   if (isLoading) {
     return (
-      <Card className="bg-dark-surface border-dark-border">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Recent Actions & Prescriptions</CardTitle>
+          <CardTitle className="text-white">Actions Récentes & Prescriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-start space-x-4 p-4 bg-dark-elevated rounded-lg animate-pulse">
-                <div className="w-8 h-8 bg-gray-700 rounded-full" />
+              <div key={i} className="flex items-start space-x-4 p-4 bg-slate-700 rounded-lg animate-pulse">
+                <div className="w-8 h-8 bg-slate-600 rounded-full" />
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-gray-700 rounded w-1/2" />
+                  <div className="h-4 bg-slate-600 rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-slate-600 rounded w-1/2" />
                 </div>
               </div>
             ))}
@@ -90,22 +90,22 @@ export function RecentActions() {
   const recentActions = actions.slice(0, 10); // Show last 10 actions
 
   return (
-    <Card className="bg-dark-surface border-dark-border">
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
-        <CardTitle className="text-white">Recent Actions & Prescriptions</CardTitle>
+        <CardTitle className="text-white">Actions Récentes & Prescriptions</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {recentActions.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-sm">No recent actions</p>
+              <p className="text-sm">Aucune action récente</p>
             </div>
           ) : (
             recentActions.map((action) => (
               <div
                 key={action.id}
-                className="flex items-start space-x-4 p-4 bg-dark-elevated rounded-lg hover:bg-gray-800 transition-colors"
+                className="flex items-start space-x-4 p-4 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
               >
                 <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${getActionColor(action.type)}`}>
                   {getActionIcon(action.type)}

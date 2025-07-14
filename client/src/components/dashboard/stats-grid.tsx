@@ -14,12 +14,12 @@ export function StatsGrid() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="bg-dark-surface border-dark-border">
+          <Card key={i} className="bg-slate-800 border-slate-700">
             <CardContent className="p-6">
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-4" />
-                <div className="h-8 bg-gray-700 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-gray-700 rounded w-full" />
+                <div className="h-4 bg-slate-700 rounded w-3/4 mb-4" />
+                <div className="h-8 bg-slate-700 rounded w-1/2 mb-2" />
+                <div className="h-3 bg-slate-700 rounded w-full" />
               </div>
             </CardContent>
           </Card>
@@ -30,32 +30,32 @@ export function StatsGrid() {
 
   const statCards = [
     {
-      title: 'Active Threats',
+      title: 'Menaces Actives',
       value: stats?.active_threats || 0,
       icon: AlertTriangle,
-      trend: { value: '+5 from last hour', positive: false },
-      color: 'text-error',
+      trend: { value: '+5 depuis la dernière heure', positive: false },
+      color: 'text-red-400',
     },
     {
-      title: 'Avg Threat Score',
+      title: 'Score Moyen',
       value: stats?.avg_score?.toFixed(2) || '0.00',
       icon: TrendingUp,
-      trend: { value: '+0.12 from baseline', positive: false },
-      color: 'text-warning',
+      trend: { value: '+0.12 depuis la baseline', positive: false },
+      color: 'text-orange-400',
     },
     {
-      title: 'Data Sources',
+      title: 'Sources de Données',
       value: stats?.data_sources || 0,
       icon: Database,
-      trend: { value: 'All operational', positive: true },
-      color: 'text-success',
+      trend: { value: 'Toutes opérationnelles', positive: true },
+      color: 'text-green-400',
     },
     {
-      title: 'False Positives',
+      title: 'Faux Positifs',
       value: `${((stats?.false_positive_rate || 0) * 100).toFixed(1)}%`,
       icon: Percent,
-      trend: { value: '-1.8% improvement', positive: true },
-      color: 'text-accent-orange',
+      trend: { value: '-1.8% amélioration', positive: true },
+      color: 'text-blue-400',
     },
   ];
 
@@ -64,7 +64,7 @@ export function StatsGrid() {
       {statCards.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card key={stat.title} className="bg-dark-surface border-dark-border">
+          <Card key={stat.title} className="bg-slate-800 border-slate-700">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-gray-400">{stat.title}</h3>
@@ -74,7 +74,7 @@ export function StatsGrid() {
                 {stat.value}
               </div>
               <p className={`text-sm flex items-center ${
-                stat.trend.positive ? 'text-success' : 'text-error'
+                stat.trend.positive ? 'text-green-400' : 'text-red-400'
               }`}>
                 {stat.trend.positive ? (
                   <ArrowDown className="w-3 h-3 mr-1" />

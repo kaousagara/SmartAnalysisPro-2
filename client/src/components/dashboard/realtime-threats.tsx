@@ -15,36 +15,36 @@ export function RealtimeThreats() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return 'bg-error bg-opacity-20 text-error border-error';
+        return 'bg-red-500 bg-opacity-20 text-red-400 border-red-500';
       case 'high':
-        return 'bg-warning bg-opacity-20 text-warning border-warning';
+        return 'bg-orange-500 bg-opacity-20 text-orange-400 border-orange-500';
       case 'medium':
-        return 'bg-yellow-500 bg-opacity-20 text-yellow-500 border-yellow-500';
+        return 'bg-yellow-500 bg-opacity-20 text-yellow-400 border-yellow-500';
       default:
         return 'bg-gray-500 bg-opacity-20 text-gray-400 border-gray-500';
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 0.75) return 'text-error';
-    if (score >= 0.60) return 'text-warning';
-    if (score >= 0.40) return 'text-yellow-500';
+    if (score >= 0.75) return 'text-red-400';
+    if (score >= 0.60) return 'text-orange-400';
+    if (score >= 0.40) return 'text-yellow-400';
     return 'text-gray-400';
   };
 
   if (isLoading) {
     return (
-      <Card className="bg-dark-surface border-dark-border">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Real-time Threats</CardTitle>
+          <CardTitle className="text-white">Menaces en Temps Réel</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-dark-border rounded-lg p-4 animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                <div className="h-6 bg-gray-700 rounded w-1/4 mb-2" />
-                <div className="h-3 bg-gray-700 rounded w-1/2" />
+              <div key={i} className="border border-slate-700 rounded-lg p-4 animate-pulse">
+                <div className="h-4 bg-slate-700 rounded w-3/4 mb-2" />
+                <div className="h-6 bg-slate-700 rounded w-1/4 mb-2" />
+                <div className="h-3 bg-slate-700 rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -56,13 +56,13 @@ export function RealtimeThreats() {
   const threats = threatsData?.threats || [];
 
   return (
-    <Card className="bg-dark-surface border-dark-border">
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white">Real-time Threats</CardTitle>
+          <CardTitle className="text-white">Menaces en Temps Réel</CardTitle>
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-            <span className="text-xs text-gray-400">Live</span>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-xs text-gray-400">En Direct</span>
           </div>
         </div>
       </CardHeader>
@@ -70,13 +70,13 @@ export function RealtimeThreats() {
         <div className="space-y-4">
           {threats.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              No active threats detected
+              Aucune menace active détectée
             </div>
           ) : (
             threats.map((threat) => (
               <div
                 key={threat.id}
-                className="border border-dark-border rounded-lg p-4 hover:border-gray-600 transition-colors"
+                className="border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-white">

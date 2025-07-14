@@ -15,11 +15,11 @@ export function ActiveScenarios() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'scenario-active';
+        return 'bg-red-500 bg-opacity-20 text-red-400';
       case 'partial':
-        return 'scenario-partial';
+        return 'bg-orange-500 bg-opacity-20 text-orange-400';
       default:
-        return 'scenario-inactive';
+        return 'bg-gray-500 bg-opacity-20 text-gray-400';
     }
   };
 
@@ -47,17 +47,17 @@ export function ActiveScenarios() {
 
   if (isLoading) {
     return (
-      <Card className="bg-dark-surface border-dark-border">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Active Scenarios</CardTitle>
+          <CardTitle className="text-white">Scénarios Actifs</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[1, 2].map((i) => (
-              <div key={i} className="border border-dark-border rounded-lg p-4 animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-700 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-gray-700 rounded w-2/3" />
+              <div key={i} className="border border-slate-700 rounded-lg p-4 animate-pulse">
+                <div className="h-4 bg-slate-600 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-slate-600 rounded w-1/2 mb-2" />
+                <div className="h-3 bg-slate-600 rounded w-2/3" />
               </div>
             ))}
           </div>
@@ -70,16 +70,16 @@ export function ActiveScenarios() {
   const activeScenarios = scenarios.filter(s => s.status === 'active' || s.status === 'partial');
 
   return (
-    <Card className="bg-dark-surface border-dark-border">
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white">Active Scenarios</CardTitle>
+          <CardTitle className="text-white">Scénarios Actifs</CardTitle>
           <Button
             size="sm"
-            className="bg-primary hover:bg-primary/90 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="w-4 h-4 mr-1" />
-            New Scenario
+            Nouveau Scénario
           </Button>
         </div>
       </CardHeader>
@@ -88,13 +88,13 @@ export function ActiveScenarios() {
           {activeScenarios.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-sm">No active scenarios</p>
+              <p className="text-sm">Aucun scénario actif</p>
             </div>
           ) : (
             activeScenarios.map((scenario) => (
               <div
                 key={scenario.id}
-                className="border border-dark-border rounded-lg p-4 hover:border-gray-600 transition-colors"
+                className="border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-white">

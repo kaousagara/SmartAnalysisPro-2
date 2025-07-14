@@ -268,32 +268,8 @@ def ingestion_status():
         ]
     })
 
-@app.route('/actions/recent', methods=['GET'])
-def recent_actions():
-    """Get recent actions"""
-    return jsonify({
-        'actions': [
-            {
-                'id': 'action_001',
-                'type': 'SIGINT_COLLECTION',
-                'description': 'Initiated SIGINT collection for Mali region',
-                'priority': 'high',
-                'status': 'in_progress',
-                'timestamp': '2024-01-15T11:45:00Z'
-            },
-            {
-                'id': 'action_002',
-                'type': 'THREAT_ANALYSIS',
-                'description': 'Analyzed malware sample threat_002',
-                'priority': 'critical',
-                'status': 'completed',
-                'timestamp': '2024-01-15T11:30:00Z'
-            }
-        ]
-    })
-
 @app.route('/actions', methods=['GET'])
-def recent_actions():
+def get_actions():
     """Get recent actions"""
     return jsonify({
         'actions': [

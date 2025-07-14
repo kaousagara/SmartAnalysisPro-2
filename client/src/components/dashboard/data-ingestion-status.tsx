@@ -13,12 +13,12 @@ export function DataIngestionStatus() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-success';
-      case 'processing':
-        return 'bg-warning';
+      case 'operational':
+        return 'bg-green-400';
+      case 'degraded':
+        return 'bg-orange-400';
       case 'error':
-        return 'bg-error';
+        return 'bg-red-400';
       default:
         return 'bg-gray-500';
     }
@@ -39,16 +39,16 @@ export function DataIngestionStatus() {
 
   if (isLoading) {
     return (
-      <Card className="bg-dark-surface border-dark-border">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Data Ingestion Status</CardTitle>
+          <CardTitle className="text-white">État de l'Ingestion des Données</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-3 bg-dark-elevated rounded-lg animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-700 rounded w-1/2" />
+              <div key={i} className="p-3 bg-slate-700 rounded-lg animate-pulse">
+                <div className="h-4 bg-slate-600 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-slate-600 rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -60,10 +60,10 @@ export function DataIngestionStatus() {
   const sources = statusData?.sources || [];
 
   return (
-    <Card className="bg-dark-surface border-dark-border">
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white">Data Ingestion Status</CardTitle>
+          <CardTitle className="text-white">État de l'Ingestion des Données</CardTitle>
           <Button
             variant="ghost"
             size="sm"
@@ -78,13 +78,13 @@ export function DataIngestionStatus() {
         <div className="space-y-4">
           {sources.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              No data sources configured
+              Aucune source de données configurée
             </div>
           ) : (
             sources.map((source, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-dark-elevated rounded-lg"
+                className="flex items-center justify-between p-3 bg-slate-700 rounded-lg"
               >
                 <div className="flex items-center space-x-3">
                   <div className={`w-3 h-3 rounded-full ${getStatusColor(source.status)}`} />
@@ -92,8 +92,8 @@ export function DataIngestionStatus() {
                     <p className="text-sm font-medium text-white">{source.name}</p>
                     <p className="text-xs text-gray-400">
                       {source.status === 'processing' && source.queue_size
-                        ? `Processing queue: ${source.queue_size} items`
-                        : `Last updated: ${source.last_updated}`}
+                        ? `File d'attente: ${source.queue_size} éléments`
+                        : `Dernière mise à jour: ${source.last_updated}`}
                     </p>
                   </div>
                 </div>

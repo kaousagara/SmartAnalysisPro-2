@@ -16,13 +16,13 @@ export function Sidebar() {
   const { user } = useAuth();
 
   return (
-    <div className="w-64 bg-dark-surface border-r border-dark-border">
+    <div className="w-64 bg-slate-900 border-r border-slate-700">
       <div className="p-6">
         <div className="flex items-center space-x-3 mb-8">
-          <Brain className="text-primary text-2xl" />
+          <Brain className="text-blue-400 text-2xl" />
           <div>
-            <h1 className="text-lg font-semibold text-white">Intel Analysis</h1>
-            <p className="text-xs text-gray-400">v2.0 Secure</p>
+            <h1 className="text-lg font-semibold text-white">Analyse Intel</h1>
+            <p className="text-xs text-gray-400">v2.0 Sécurisé</p>
           </div>
         </div>
 
@@ -33,33 +33,33 @@ export function Sidebar() {
             
             return (
               <Link key={item.name} href={item.href}>
-                <a
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                <div
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-primary bg-opacity-20 text-primary'
-                      : 'text-gray-300 hover:bg-dark-elevated hover:text-white'
+                      ? 'bg-blue-600 bg-opacity-20 text-blue-400'
+                      : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.name}</span>
-                </a>
+                </div>
               </Link>
             );
           })}
         </nav>
       </div>
 
-      <div className="absolute bottom-0 w-64 p-6 border-t border-dark-border">
+      <div className="absolute bottom-0 w-64 p-6 border-t border-slate-700">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
             <User className="text-white text-sm" />
           </div>
           <div>
             <p className="text-sm font-medium text-white">
-              {user?.name || 'Unknown User'}
+              {user?.name || 'Utilisateur Inconnu'}
             </p>
             <p className="text-xs text-gray-400">
-              Level {user?.clearance_level || 0} Clearance
+              Niveau {user?.clearance_level || 0} Clearance
             </p>
           </div>
         </div>

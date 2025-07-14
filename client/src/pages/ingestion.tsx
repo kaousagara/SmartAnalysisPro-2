@@ -104,11 +104,11 @@ export default function Ingestion() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'text-success';
+        return 'text-green-400';
       case 'processing':
-        return 'text-warning';
+        return 'text-orange-400';
       case 'error':
-        return 'text-error';
+        return 'text-red-400';
       default:
         return 'text-gray-400';
     }
@@ -117,11 +117,11 @@ export default function Ingestion() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active':
-        return <CheckCircle className="w-4 h-4 text-success" />;
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
       case 'processing':
-        return <Activity className="w-4 h-4 text-warning animate-spin" />;
+        return <Activity className="w-4 h-4 text-orange-400 animate-spin" />;
       case 'error':
-        return <AlertCircle className="w-4 h-4 text-error" />;
+        return <AlertCircle className="w-4 h-4 text-red-400" />;
       default:
         return <Database className="w-4 h-4 text-gray-400" />;
     }
@@ -131,46 +131,46 @@ export default function Ingestion() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Data Ingestion</h1>
-          <p className="text-gray-400">Ingest and process intelligence data from various sources</p>
+          <h1 className="text-2xl font-bold text-white">Ingestion des Données</h1>
+          <p className="text-gray-400">Ingérer et traiter les données d'intelligence de diverses sources</p>
         </div>
       </div>
 
       {/* Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-dark-surface border-dark-border">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Active Sources</p>
+                <p className="text-sm text-gray-400">Sources Actives</p>
                 <p className="text-2xl font-bold text-white">
-                  {statusData?.sources?.filter(s => s.status === 'active').length || 0}
+                  {statusData?.sources?.filter(s => s.status === 'operational').length || 0}
                 </p>
               </div>
-              <Database className="w-8 h-8 text-primary" />
+              <Database className="w-8 h-8 text-blue-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-dark-surface border-dark-border">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Processing Queue</p>
+                <p className="text-sm text-gray-400">File d'attente</p>
                 <p className="text-2xl font-bold text-white">
                   {statusData?.sources?.reduce((sum, s) => sum + (s.queue_size || 0), 0) || 0}
                 </p>
               </div>
-              <Activity className="w-8 h-8 text-warning" />
+              <Activity className="w-8 h-8 text-orange-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-dark-surface border-dark-border">
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-400">Success Rate</p>
+                <p className="text-sm text-gray-400">Taux de Succès</p>
                 <p className="text-2xl font-bold text-white">
                   {statusData?.success_rate ? `${(statusData.success_rate * 100).toFixed(1)}%` : 'N/A'}
                 </p>

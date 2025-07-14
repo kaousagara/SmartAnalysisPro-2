@@ -36,11 +36,11 @@ export function AlertsBanner() {
     switch (severity) {
       case 'critical':
       case 'error':
-        return 'bg-error bg-opacity-20 border-error text-error';
+        return 'bg-red-500 bg-opacity-20 border-red-500 text-red-400';
       case 'warning':
-        return 'bg-warning bg-opacity-20 border-warning text-warning';
+        return 'bg-orange-500 bg-opacity-20 border-orange-500 text-orange-400';
       default:
-        return 'bg-primary bg-opacity-20 border-primary text-primary';
+        return 'bg-blue-500 bg-opacity-20 border-blue-500 text-blue-400';
     }
   };
 

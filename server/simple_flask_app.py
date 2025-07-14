@@ -292,6 +292,38 @@ def recent_actions():
         ]
     })
 
+@app.route('/actions', methods=['GET'])
+def recent_actions():
+    """Get recent actions"""
+    return jsonify({
+        'actions': [
+            {
+                'id': 'action_001',
+                'type': 'SIGINT_COLLECTION',
+                'description': 'Collection SIGINT initiée pour la région Mali',
+                'priority': 'high',
+                'status': 'in_progress',
+                'timestamp': '2024-01-15T11:45:00Z'
+            },
+            {
+                'id': 'action_002',
+                'type': 'THREAT_ANALYSIS',
+                'description': 'Analyse de l\'échantillon de malware threat_002',
+                'priority': 'critical',
+                'status': 'completed',
+                'timestamp': '2024-01-15T11:30:00Z'
+            },
+            {
+                'id': 'action_003',
+                'type': 'NETWORK_MONITORING',
+                'description': 'Surveillance réseau activée pour IP suspecte',
+                'priority': 'medium',
+                'status': 'active',
+                'timestamp': '2024-01-15T11:15:00Z'
+            }
+        ]
+    })
+
 @app.route('/alerts', methods=['GET'])
 def get_alerts():
     """Get active alerts"""
@@ -301,10 +333,18 @@ def get_alerts():
                 'id': 'alert_001',
                 'type': 'threat',
                 'severity': 'critical',
-                'title': 'High Threat Score Detected',
-                'message': 'Threat threat_002 has exceeded critical threshold',
+                'title': 'Score de Menace Élevé Détecté',
+                'message': 'La menace threat_002 a dépassé le seuil critique',
                 'timestamp': '2024-01-15T11:45:00Z',
                 'threat_id': 'threat_002'
+            },
+            {
+                'id': 'alert_002',
+                'type': 'system',
+                'severity': 'warning',
+                'title': 'Latence Système Élevée',
+                'message': 'Temps de réponse élevé détecté sur le module d\'analyse',
+                'timestamp': '2024-01-15T11:30:00Z'
             }
         ]
     })

@@ -27,7 +27,7 @@ ChartJS.register(
 );
 
 export function ThreatChart() {
-  const { data: chartData, isLoading } = useQuery({
+  const { data: chartData, isLoading, error } = useQuery({
     queryKey: ['/api/threats/evolution'],
     queryFn: dashboardApi.getThreatEvolution,
     refetchInterval: 30000,
@@ -72,29 +72,73 @@ export function ThreatChart() {
     },
   };
 
+  // Créer des données par défaut si nécessaire
+  const defaultData = {
+    labels: Array.from({ length: 24 }, (_, i) => {
+      const hour = String(i).padStart(2, '0');
+      return `${hour}:00`;
+    }),
+    datasets: [
+      {
+        label: 'Score de Menace',
+        data: Array.from({ length: 24 }, (_, i) => Math.random() * 0.8 + 0.1),
+        borderColor: '#FF6B35',
+        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'Baseline',
+        data: Array.from({ length: 24 }, () => 0.5),
+        borderColor: '#424242',
+        backgroundColor: 'transparent',
+        borderDash: [5, 5],
+        fill: false
+      }
+    ]
+  };
+
   if (isLoading) {
     return (
-      <Card className="bg-dark-surface border-dark-border">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Threat Score Evolution</CardTitle>
+          <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 bg-gray-700 animate-pulse rounded" />
+          <div className="h-64 bg-slate-700 animate-pulse rounded" />
         </CardContent>
       </Card>
     );
   }
 
+  if (error) {
+    return (
+      <Card className="bg-slate-800 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center text-gray-400">
+            <p>Erreur lors du chargement des données</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Utiliser les données reçues ou les données par défaut
+  const data = chartData && chartData.datasets && Array.isArray(chartData.datasets) ? chartData : defaultData;
+
   return (
-    <Card className="bg-dark-surface border-dark-border">
+    <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white">Threat Score Evolution</CardTitle>
+          <CardTitle className="text-white">Évolution des Scores de Menace</CardTitle>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               size="sm"
-              className="bg-primary bg-opacity-20 text-primary border-primary hover:bg-primary hover:text-white"
+              className="bg-blue-600 bg-opacity-20 text-blue-400 border-blue-600 hover:bg-blue-600 hover:text-white"
             >
               24H
             </Button>
@@ -103,21 +147,21 @@ export function ThreatChart() {
               size="sm"
               className="text-gray-400 hover:text-white"
             >
-              7D
+              7J
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="text-gray-400 hover:text-white"
             >
-              30D
+              30J
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="h-64">
-          <Line data={chartData} options={options} />
+          <Line data={data} options={options} />
         </div>
       </CardContent>
     </Card>

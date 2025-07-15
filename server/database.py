@@ -614,7 +614,7 @@ class Database:
 
             cursor.execute("""
                 SELECT id, name, description, score, severity, status, 
-                       category, source, entities, created_at as timestamp
+                       source_id, metadata, created_at as timestamp
                 FROM threats 
                 ORDER BY created_at DESC
             """)
@@ -637,8 +637,7 @@ class Database:
 
             cursor.execute("""
                 SELECT id, name, description, conditions, actions, 
-                       status, priority, conditions_met, total_conditions, 
-                       last_triggered, created_at
+                       status, priority, validity_window, created_at
                 FROM scenarios 
                 ORDER BY priority ASC
             """)
@@ -660,8 +659,7 @@ class Database:
 
             cursor.execute("""
                 SELECT id, name, description, conditions, actions, 
-                       status, priority, conditions_met, total_conditions, 
-                       last_triggered, created_at
+                       status, priority, validity_window, created_at
                 FROM scenarios 
                 WHERE id = %s
             """, (scenario_id,))

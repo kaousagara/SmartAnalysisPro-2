@@ -1887,6 +1887,23 @@ def get_deep_learning_config():
             'training_enabled': True,
             'auto_retrain': True,
             'retrain_interval_hours': 24,
+            # Configuration des modèles
+            'classification_model': 'random_forest',
+            'classification_features': 50,
+            'classification_trees': 100,
+            'regression_model': 'linear_regression',
+            'regression_alpha': 1.0,
+            'regression_max_iter': 1000,
+            'clustering_model': 'kmeans',
+            'clustering_clusters': 5,
+            'clustering_eps': 0.5,
+            # Hyperparamètres
+            'learning_rate': 0.01,
+            'batch_size': 32,
+            'epochs': 100,
+            'validation_split': 0.2,
+            'early_stopping_patience': 10,
+            'cross_validation': False,
             'model_configs': {
                 'threat_classifier': {
                     'hidden_layers': [128, 64, 32],
@@ -1925,11 +1942,54 @@ def update_deep_learning_config():
         if not data:
             return jsonify({'error': 'Données manquantes'}), 400
         
+        # Valider les paramètres
+        validation_errors = []
+        
+        # Validation des modèles
+        valid_classification_models = ['random_forest', 'gradient_boosting', 'svm', 'neural_network']
+        valid_regression_models = ['linear_regression', 'ridge_regression', 'lasso_regression', 'elastic_net', 'decision_tree']
+        valid_clustering_models = ['kmeans', 'dbscan', 'hierarchical', 'gaussian_mixture']
+        
+        if data.get('classification_model') and data['classification_model'] not in valid_classification_models:
+            validation_errors.append(f"Modèle de classification invalide: {data['classification_model']}")
+        
+        if data.get('regression_model') and data['regression_model'] not in valid_regression_models:
+            validation_errors.append(f"Modèle de régression invalide: {data['regression_model']}")
+        
+        if data.get('clustering_model') and data['clustering_model'] not in valid_clustering_models:
+            validation_errors.append(f"Modèle de clustering invalide: {data['clustering_model']}")
+        
+        # Validation des paramètres numériques
+        if data.get('learning_rate') is not None and (data['learning_rate'] <= 0 or data['learning_rate'] > 1):
+            validation_errors.append("Le taux d'apprentissage doit être entre 0 et 1")
+        
+        if data.get('batch_size') is not None and data['batch_size'] <= 0:
+            validation_errors.append("La taille du batch doit être positive")
+        
+        if data.get('epochs') is not None and data['epochs'] <= 0:
+            validation_errors.append("Le nombre d'époques doit être positif")
+        
+        if data.get('validation_split') is not None and (data['validation_split'] < 0.1 or data['validation_split'] > 0.4):
+            validation_errors.append("Le ratio de validation doit être entre 0.1 et 0.4")
+        
+        if validation_errors:
+            return jsonify({'error': 'Erreurs de validation', 'details': validation_errors}), 400
+        
+        # Simuler la mise à jour de la configuration
+        # En mode production, ici on mettrait à jour le service deep learning
+        logger.info(f"Configuration deep learning mise à jour: {data}")
+        
         return jsonify({
-            'message': 'Configuration mise à jour avec succès',
-            'config': data
+            'message': 'Configuration des modèles ML mise à jour avec succès',
+            'config': data,
+            'models_updated': {
+                'classification': data.get('classification_model', 'random_forest'),
+                'regression': data.get('regression_model', 'linear_regression'),
+                'clustering': data.get('clustering_model', 'kmeans')
+            }
         })
     except Exception as e:
+        logger.error(f"Erreur lors de la mise à jour de la configuration: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/deep-learning/retrain', methods=['POST'])

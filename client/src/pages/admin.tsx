@@ -981,6 +981,169 @@ export default function Admin() {
                 )}
               </div>
 
+              {/* Configuration des modèles ML */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">Modèle de Classification</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="classification-model" className="text-gray-300">
+                        Algorithme
+                      </Label>
+                      <Select 
+                        value={deepLearningConfig.classification_model || 'random_forest'} 
+                        onValueChange={(value) => setDeepLearningConfig(prev => ({ ...prev, classification_model: value }))}
+                      >
+                        <SelectTrigger className="bg-slate-600 border-slate-500 text-white">
+                          <SelectValue placeholder="Choisir un modèle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="random_forest">Random Forest</SelectItem>
+                          <SelectItem value="gradient_boosting">Gradient Boosting</SelectItem>
+                          <SelectItem value="svm">Support Vector Machine</SelectItem>
+                          <SelectItem value="neural_network">Réseau de Neurones</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="classification-features" className="text-gray-300">
+                        Nombre de caractéristiques
+                      </Label>
+                      <Input
+                        id="classification-features"
+                        type="number"
+                        value={deepLearningConfig.classification_features || 50}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, classification_features: parseInt(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="classification-trees" className="text-gray-300">
+                        Arbres/Estimateurs
+                      </Label>
+                      <Input
+                        id="classification-trees"
+                        type="number"
+                        value={deepLearningConfig.classification_trees || 100}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, classification_trees: parseInt(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500 text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">Modèle de Régression</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="regression-model" className="text-gray-300">
+                        Algorithme
+                      </Label>
+                      <Select 
+                        value={deepLearningConfig.regression_model || 'linear_regression'} 
+                        onValueChange={(value) => setDeepLearningConfig(prev => ({ ...prev, regression_model: value }))}
+                      >
+                        <SelectTrigger className="bg-slate-600 border-slate-500 text-white">
+                          <SelectValue placeholder="Choisir un modèle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="linear_regression">Régression Linéaire</SelectItem>
+                          <SelectItem value="ridge_regression">Régression Ridge</SelectItem>
+                          <SelectItem value="lasso_regression">Régression Lasso</SelectItem>
+                          <SelectItem value="elastic_net">Elastic Net</SelectItem>
+                          <SelectItem value="decision_tree">Arbre de Décision</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="regression-alpha" className="text-gray-300">
+                        Paramètre Alpha ({deepLearningConfig.regression_alpha || 1.0})
+                      </Label>
+                      <Input
+                        id="regression-alpha"
+                        type="range"
+                        min="0.01"
+                        max="10"
+                        step="0.01"
+                        value={deepLearningConfig.regression_alpha || 1.0}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, regression_alpha: parseFloat(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="regression-max-iter" className="text-gray-300">
+                        Itérations maximales
+                      </Label>
+                      <Input
+                        id="regression-max-iter"
+                        type="number"
+                        value={deepLearningConfig.regression_max_iter || 1000}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, regression_max_iter: parseInt(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500 text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">Modèle de Clustering</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="clustering-model" className="text-gray-300">
+                        Algorithme
+                      </Label>
+                      <Select 
+                        value={deepLearningConfig.clustering_model || 'kmeans'} 
+                        onValueChange={(value) => setDeepLearningConfig(prev => ({ ...prev, clustering_model: value }))}
+                      >
+                        <SelectTrigger className="bg-slate-600 border-slate-500 text-white">
+                          <SelectValue placeholder="Choisir un modèle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="kmeans">K-Means</SelectItem>
+                          <SelectItem value="dbscan">DBSCAN</SelectItem>
+                          <SelectItem value="hierarchical">Clustering Hiérarchique</SelectItem>
+                          <SelectItem value="gaussian_mixture">Mélange Gaussien</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="clustering-clusters" className="text-gray-300">
+                        Nombre de clusters
+                      </Label>
+                      <Input
+                        id="clustering-clusters"
+                        type="number"
+                        value={deepLearningConfig.clustering_clusters || 5}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, clustering_clusters: parseInt(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="clustering-eps" className="text-gray-300">
+                        Epsilon (DBSCAN) ({deepLearningConfig.clustering_eps || 0.5})
+                      </Label>
+                      <Input
+                        id="clustering-eps"
+                        type="range"
+                        min="0.1"
+                        max="2.0"
+                        step="0.1"
+                        value={deepLearningConfig.clustering_eps || 0.5}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, clustering_eps: parseFloat(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               {/* Configuration générale */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="bg-slate-700 border-slate-600">
@@ -1087,6 +1250,99 @@ export default function Admin() {
                 </Card>
               </div>
 
+              {/* Configuration avancée */}
+              <Card className="bg-slate-700 border-slate-600">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">Configuration Avancée des Hyperparamètres</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="text-md font-semibold text-white">Paramètres d'Entraînement</h4>
+                      <div>
+                        <Label htmlFor="learning-rate" className="text-gray-300">
+                          Taux d'apprentissage ({deepLearningConfig.learning_rate || 0.01})
+                        </Label>
+                        <Input
+                          id="learning-rate"
+                          type="range"
+                          min="0.001"
+                          max="0.1"
+                          step="0.001"
+                          value={deepLearningConfig.learning_rate || 0.01}
+                          onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, learning_rate: parseFloat(e.target.value) }))}
+                          className="bg-slate-600 border-slate-500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="batch-size" className="text-gray-300">
+                          Taille du batch
+                        </Label>
+                        <Input
+                          id="batch-size"
+                          type="number"
+                          value={deepLearningConfig.batch_size || 32}
+                          onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, batch_size: parseInt(e.target.value) }))}
+                          className="bg-slate-600 border-slate-500 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="epochs" className="text-gray-300">
+                          Nombre d'époques
+                        </Label>
+                        <Input
+                          id="epochs"
+                          type="number"
+                          value={deepLearningConfig.epochs || 100}
+                          onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, epochs: parseInt(e.target.value) }))}
+                          className="bg-slate-600 border-slate-500 text-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <h4 className="text-md font-semibold text-white">Validation et Performance</h4>
+                      <div>
+                        <Label htmlFor="validation-split" className="text-gray-300">
+                          Ratio de validation ({deepLearningConfig.validation_split || 0.2})
+                        </Label>
+                        <Input
+                          id="validation-split"
+                          type="range"
+                          min="0.1"
+                          max="0.4"
+                          step="0.05"
+                          value={deepLearningConfig.validation_split || 0.2}
+                          onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, validation_split: parseFloat(e.target.value) }))}
+                          className="bg-slate-600 border-slate-500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="early-stopping" className="text-gray-300">
+                          Arrêt anticipé (patience)
+                        </Label>
+                        <Input
+                          id="early-stopping"
+                          type="number"
+                          value={deepLearningConfig.early_stopping_patience || 10}
+                          onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, early_stopping_patience: parseInt(e.target.value) }))}
+                          className="bg-slate-600 border-slate-500 text-white"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="cross-validation" className="text-gray-300">
+                          Validation croisée (K-fold)
+                        </Label>
+                        <Switch
+                          id="cross-validation"
+                          checked={deepLearningConfig.cross_validation || false}
+                          onCheckedChange={(checked) => setDeepLearningConfig(prev => ({ ...prev, cross_validation: checked }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Actions */}
               <div className="flex justify-between items-center">
                 <div className="flex space-x-4">
@@ -1106,6 +1362,14 @@ export default function Admin() {
                   >
                     <Activity className="w-4 h-4 mr-2" />
                     {retrainModelsMutation.isPending ? 'Réentraînement...' : 'Réentraîner modèles'}
+                  </Button>
+                  <Button 
+                    onClick={() => window.open('/deep-learning', '_blank')}
+                    variant="outline"
+                    className="border-green-600 text-green-400 hover:bg-green-900"
+                  >
+                    <Cpu className="w-4 h-4 mr-2" />
+                    Interface Avancée
                   </Button>
                 </div>
                 <div className="flex items-center space-x-2">

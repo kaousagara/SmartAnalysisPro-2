@@ -277,9 +277,9 @@ export default function Ingestion() {
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">{testResult.statistics?.total_documents}</div>
-                        <p className="text-xs text-green-600">
+                        <div className="text-xs text-green-600">
                           {testResult.statistics?.successful_ingestions} succès
-                        </p>
+                        </div>
                       </CardContent>
                     </Card>
 
@@ -289,9 +289,9 @@ export default function Ingestion() {
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">{testResult.statistics?.average_processing_time}</div>
-                        <p className="text-xs text-gray-600">
+                        <div className="text-xs text-gray-600">
                           Temps de traitement
-                        </p>
+                        </div>
                       </CardContent>
                     </Card>
 
@@ -301,9 +301,9 @@ export default function Ingestion() {
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">{testResult.statistics?.total_entities_extracted}</div>
-                        <p className="text-xs text-gray-600">
+                        <div className="text-xs text-gray-600">
                           Entités détectées
-                        </p>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>

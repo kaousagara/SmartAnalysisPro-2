@@ -1,0 +1,59 @@
+Upload réussi: 
+Object { document: {…}, message: "Document uploadé et traité avec succès", processing_time: "1607ms", recommendations: (3) […], status: "PROCESSED", success: true }
+ingestion.tsx:131:15
+Warning: validateDOMNesting(...): <div> cannot appear as a descendant of <p>.
+div
+Badge@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/badge.tsx:35:15
+p
+div
+div
+div
+div
+div
+_c9@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/card.tsx:114:9
+div
+_c@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/card.tsx:20:8
+div
+_c9@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/card.tsx:114:9
+div
+_c@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/card.tsx:20:8
+div
+Primitive</Node<@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=0f9a8716:42:44
+Presence@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VERXE52W.js?v=0f9a8716:24:33
+TabsContent<@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=0f9a8716:387:75
+_c5@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/tabs.tsx:72:9
+div
+Primitive</Node<@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BOL2CCOG.js?v=0f9a8716:42:44
+Provider@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=0f9a8716:38:47
+Tabs<@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=0f9a8716:273:9
+div
+Ingestion@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/pages/ingestion.tsx:42:51
+div
+div
+div
+ProtectedRoute@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/App.tsx?v=9DvSPgafvDYC_FYKSep3o:42:24
+Route@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0f9a8716:323:13
+Switch@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0f9a8716:379:14
+Router
+Provider@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=0f9a8716:38:47
+TooltipProvider@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=0f9a8716:68:7
+ThemeProvider@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/components/ui/theme-provider.tsx:24:30
+QueryClientProvider@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=0f9a8716:2804:27
+App@https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/src/App.tsx?v=9DvSPgafvDYC_FYKSep3o:292:12 react-dom.development.js:86:30
+    React 10
+    workLoop scheduler.development.js:266
+    flushWork scheduler.development.js:239
+    performWorkUntilDeadline scheduler.development.js:533
+    (Asynchrone : EventHandlerNonNull)
+    js scheduler.development.js:571
+    js scheduler.development.js:633
+    __require chunk-WOOG5QLI.js:12
+    js index.js:6
+    __require chunk-WOOG5QLI.js:12
+    React 2
+    __require chunk-WOOG5QLI.js:12
+    js React
+    __require chunk-WOOG5QLI.js:12
+    js React
+    __require chunk-WOOG5QLI.js:12
+    <anonyme> react-dom_client.js:38

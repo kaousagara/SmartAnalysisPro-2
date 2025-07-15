@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import json
 import redis
 from server.config import Config
+from server.models.deep_learning_models import DeepLearningThreatEngine
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ class ThreatService:
         except:
             self.redis_client = None
         self.alert_threshold = Config.THREAT_ALERT_THRESHOLD
+        self.deep_learning_engine = DeepLearningThreatEngine()
     
     def process_threat_data(self, raw_data: Dict) -> Dict:
         """Process raw threat data and calculate threat score"""

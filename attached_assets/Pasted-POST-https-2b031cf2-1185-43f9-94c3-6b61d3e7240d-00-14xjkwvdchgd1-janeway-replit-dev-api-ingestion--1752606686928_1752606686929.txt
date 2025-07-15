@@ -1,0 +1,96 @@
+POST
+https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/ingestion/upload
+[HTTP/1.1 500 Internal Server Error 211ms]
+
+	
+POST
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/ingestion/upload
+État
+500
+Internal Server Error
+VersionHTTP/1.1
+Transfert468 o (taille 78 o)
+Politique de référentstrict-origin-when-cross-origin
+Résolution DNSSystème
+
+	
+Content-Length
+	78
+Content-Type
+	application/json; charset=utf-8
+Date
+	Tue, 15 Jul 2025 19:10:07 GMT
+Etag
+	W/"4e-TaoRoMiLSD5eTcFgPRySWEshzhA"
+Replit-Cluster
+	janeway
+X-Powered-By
+	Express
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3
+Authorization
+	Bearer null
+Connection
+	keep-alive
+Content-Length
+	12885
+Content-Type
+	multipart/form-data; boundary=----geckoformboundaryf5537f0a65569e0bc884d9caae9483aa
+Host
+	2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev
+Origin
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev
+Priority
+	u=4
+Referer
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/ingestion
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0
+Erreur réponse: {"error":"File upload failed","details":"Request failed with status code 401"} ingestion.tsx:119:17
+    mutationFn ingestion.tsx:119
+    fn mutation.ts:170
+    run retryer.ts:153
+    start retryer.ts:218
+    execute mutation.ts:208
+    mutate mutationObserver.ts:125
+    mutate useMutation.ts:52
+    handleFileUpload ingestion.tsx:155
+    React 23
+    <anonyme> main.tsx:5
+Erreur upload détaillée: Error: Erreur 500: {"error":"File upload failed","details":"Request failed with status code 401"}
+    mutationFn ingestion.tsx:120
+    fn mutation.ts:170
+    run retryer.ts:153
+    start retryer.ts:218
+    execute mutation.ts:208
+    mutate mutationObserver.ts:125
+    mutate useMutation.ts:52
+    handleFileUpload ingestion.tsx:155
+    React 23
+    <anonymous> main.tsx:5
+ingestion.tsx:131:15
+    onError ingestion.tsx:131
+    execute mutation.ts:243
+    mutate mutationObserver.ts:125
+    mutate useMutation.ts:52
+    handleFileUpload ingestion.tsx:155
+    React 23
+    <anonyme> main.tsx:5
+
+​
+

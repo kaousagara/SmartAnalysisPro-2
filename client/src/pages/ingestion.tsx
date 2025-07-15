@@ -104,7 +104,12 @@ export default function Ingestion() {
       const formData = new FormData();
       formData.append('file', file);
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('local_auth_token');
+      console.log('Token récupéré:', token);
+      
+      if (!token) {
+        throw new Error('Token d\'authentification manquant. Veuillez vous reconnecter.');
+      }
       
       const response = await fetch('/api/ingestion/upload', {
         method: 'POST',

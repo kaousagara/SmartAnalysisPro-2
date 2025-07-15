@@ -9,7 +9,8 @@ from server.models.deep_learning_models import DeepLearningThreatEngine
 logger = logging.getLogger(__name__)
 
 class ThreatService:
-    def __init__(self):
+
+def __init__(self):
         try:
             self.redis_client = redis.from_url(Config.REDIS_URL)
         except:
@@ -17,31 +18,147 @@ class ThreatService:
         self.alert_threshold = Config.THREAT_ALERT_THRESHOLD
         self.deep_learning_engine = DeepLearningThreatEngine()
     
-    def process_threat_data(self, raw_data: Dict) -> Dict:
-        """Process raw threat data and calculate threat score"""
+    def _calculate_enhanced_threat_score(self, base_score: float, dl_data: Dict) -> float:
+        """Calculer un score de menace enrichi avec deep learning"""
         try:
-            # Simplified processing for demo
+            enhanced_score = base_score
+            
+            # Intégrer score d'anomalie
+            anomaly_analysis = dl_data.get('anomaly_detection', {})
+            if anomaly_analysis.get('is_anomaly', False):
+                anomaly_boost = anomaly_analysis.get('anomaly_score', 0.0) * 0.3
+                enhanced_score = min(1.0, enhanced_score + anomaly_boost)
+            
+            # Intégrer classification de sévérité
+            severity_analysis = dl_data.get('severity_classification', {})
+            if severity_analysis.get('confidence', 0) > 0.7:
+                severity_class = severity_analysis.get('predicted_class', 'medium')
+                severity_weights = {
+                    'low': 0.8,
+                    'medium': 1.0,
+                    'high': 1.2,
+                    'critical': 1.4
+                }
+                severity_multiplier = severity_weights.get(severity_class, 1.0)
+                enhanced_score = min(1.0, enhanced_score * severity_multiplier)
+            
+            return enhanced_score
+            
+        except Exception as e:
+            logger.error(f"Erreur calcul score enrichi: {str(e)}")
+            return base_score
+    
+    def _determine_enhanced_severity(self, score: float, dl_data: Dict) -> str:
+        """Déterminer la sévérité avec analyse deep learning"""
+        try:
+            # Utiliser prédiction DL si fiable
+            severity_analysis = dl_data.get('severity_classification', {})
+            if severity_analysis.get('confidence', 0) > 0.8:
+                return severity_analysis.get('predicted_class', 'medium')
+            
+            # Sinon utiliser méthode traditionnelle basée sur le score
+            if score >= 0.8:
+                return 'critical'
+            elif score >= 0.6:
+                return 'high'
+            elif score >= 0.4:
+                return 'medium'
+            else:
+                return 'low'
+                
+        except Exception as e:
+            logger.error(f"Erreur détermination sévérité: {str(e)}")
+            return self._determine_severity(score)
+    
+    def _calculate_enhanced_confidence(self, data: Dict, dl_data: Dict) -> float:
+        """Calculer la confiance enrichie avec deep learning"""
+        try:
+            base_confidence = self._calculate_confidence(data)
+            
+            # Facteur de qualité des données
+            quality_score = data.get('quality_indicators', {}).get('overall_score', 0.5)
+            
+            # Confiance des modèles DL
+            anomaly_confidence = 1.0 - dl_data.get('anomaly_detection', {}).get('reconstruction_error', 0.5)
+            severity_confidence = dl_data.get('severity_classification', {}).get('confidence', 0.5)
+            
+            # Moyenne pondérée
+            enhanced_confidence = (
+                base_confidence * 0.4 +
+                quality_score * 0.2 +
+                anomaly_confidence * 0.2 +
+                severity_confidence * 0.2
+            )
+            
+            return min(1.0, max(0.0, enhanced_confidence))
+            
+        except Exception as e:
+            logger.error(f"Erreur calcul confiance enrichie: {str(e)}")
+            return 0.5
+    
+    def _calculate_simple_score(self, data: Dict) -> float:
+        """Méthode de calcul de score simple (existante)"""
+        # Implémentation simplifiée pour la démo
+        text = data.get('text', '')
+        score = min(1.0, len(text) / 1000)
+        return score
+    
+    def _determine_severity(self, score: float) -> str:
+        """Méthode de détermination de sévérité simple (existante)"""
+        if score >= 0.8:
+            return 'critical'
+        elif score >= 0.6:
+            return 'high'
+        elif score >= 0.4:
+            return 'medium'
+        else:
+            return 'low'
+    
+    def _calculate_confidence(self, data: Dict) -> float:
+        """Méthode de calcul de confiance simple (existante)"""
+        # Implémentation simplifiée
+        source_reliability = data.get('source', {}).get('reliability', 0.5)
+        return source_reliability
+    
+    def process_threat_data(self, raw_data: Dict) -> Dict:
+        """Process threat data with deep learning enhancement"""
+        try:
+            # Les données arrivent déjà enrichies par le deep learning depuis DataIngestionService
             normalized_data = raw_data
             
-            # Calculate threat score (simplified)
-            threat_score = self._calculate_simple_score(normalized_data)
+            # Calculer le score de base
+            base_threat_score = self._calculate_simple_score(normalized_data)
             
-            # Determine severity level
-            severity = self._determine_severity(threat_score)
+            # Intégrer les analyses deep learning si disponibles
+            dl_data = normalized_data.get('deep_learning', {})
+            enhanced_score = self._calculate_enhanced_threat_score(base_threat_score, dl_data)
             
-            # Store in cache for real-time access
+            # Déterminer la sévérité (utiliser prédiction DL si disponible et fiable)
+            severity = self._determine_enhanced_severity(enhanced_score, dl_data)
+            
+            # Prédiction d'évolution si suffisamment de données
             threat_id = f"threat_{datetime.now().timestamp()}"
+            evolution_prediction = None
+            
+            try:
+                evolution_prediction = self.deep_learning_engine.predict_threat_evolution([normalized_data])
+            except Exception as e:
+                logger.warning(f"Erreur prédiction évolution: {str(e)}")
             
             threat_data = {
                 'id': threat_id,
-                'score': threat_score,
+                'score': enhanced_score,
+                'base_score': base_threat_score,
                 'severity': severity,
                 'timestamp': datetime.now().isoformat(),
                 'raw_data': normalized_data,
+                'deep_learning_analysis': dl_data,
+                'evolution_prediction': evolution_prediction,
                 'metadata': {
                     'processing_time': datetime.now().isoformat(),
-                    'model_version': '2.0',
-                    'confidence': self._calculate_confidence(normalized_data)
+                    'model_version': '3.0',  # Version avec DL
+                    'confidence': self._calculate_enhanced_confidence(normalized_data, dl_data),
+                    'quality_score': normalized_data.get('quality_indicators', {}).get('overall_score', 0.5)
                 }
             }
             

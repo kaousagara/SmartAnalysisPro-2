@@ -196,20 +196,30 @@ class DataIngestionResource(Resource):
             data = request.get_json()
             format_type = data.get('format', 'json')
             
-            # Ingest data
+            # Ingest data with deep learning enhancement
             normalized_data = data_ingestion_service.ingest_data(data, format_type)
             
-            # Process for threat scoring
+            # Process for threat scoring with DL integration
             threat_data = threat_service.process_threat_data(normalized_data)
             
             # Evaluate scenarios
             triggered_scenarios = scenario_service.evaluate_scenarios(threat_data)
             
-            return {
+            # Prepare enhanced response
+            response = {
                 'threat_data': threat_data,
                 'triggered_scenarios': triggered_scenarios,
-                'ingestion_id': threat_data['id']
-            }, 201
+                'ingestion_id': threat_data['id'],
+                'deep_learning_analysis': {
+                    'anomaly_detected': threat_data.get('deep_learning_analysis', {}).get('anomaly_detection', {}).get('is_anomaly', False),
+                    'predicted_severity': threat_data.get('deep_learning_analysis', {}).get('severity_classification', {}).get('predicted_class', 'unknown'),
+                    'quality_score': threat_data.get('metadata', {}).get('quality_score', 0.0),
+                    'enhanced_score': threat_data.get('score', 0.0),
+                    'base_score': threat_data.get('base_score', 0.0)
+                }
+            }
+            
+            return response, 201
             
         except Exception as e:
             logger.error(f"Data ingestion error: {str(e)}")

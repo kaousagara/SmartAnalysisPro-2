@@ -320,9 +320,9 @@ export default function Ingestion() {
                               <FileText className="h-5 w-5 text-blue-500" />
                               <div>
                                 <h4 className="font-medium">{result.document.title}</h4>
-                                <p className="text-sm text-gray-600">
+                                <div className="text-sm text-gray-600">
                                   {result.document.type} • {result.document.source}
-                                </p>
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">

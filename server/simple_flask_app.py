@@ -362,6 +362,7 @@ def ingestion_status():
     })
 
 @app.route('/api/ingestion/upload', methods=['POST'])
+@jwt_required()
 def upload_document():
     """Uploader et traiter un document"""
     try:

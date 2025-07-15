@@ -100,26 +100,35 @@ export default function Ingestion() {
 
   // Mutation pour uploader un fichier
   const uploadFileMutation = useMutation({
-    mutationFn: (file: File) => {
+    mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
       
-      return fetch('/api/ingestion/upload', {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('/api/ingestion/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData
-      }).then(response => {
-        if (!response.ok) {
-          throw new Error('Erreur lors de l\'upload');
-        }
-        return response.json();
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erreur réponse:', errorText);
+        throw new Error(`Erreur ${response.status}: ${errorText}`);
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
+      console.log('Upload réussi:', data);
       setTestResult(data);
       setUploadProgress(100);
     },
     onError: (error) => {
-      console.error('Erreur upload:', error);
+      console.error('Erreur upload détaillée:', error);
       setUploadProgress(0);
     }
   });

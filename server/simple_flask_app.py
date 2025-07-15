@@ -13,6 +13,25 @@ from routes.deep_learning_routes import deep_learning_bp
 app = Flask(__name__)
 CORS(app)
 
+# Simple token validation function
+def token_required(f):
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].replace('Bearer ', '')
+        
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+        
+        # Simple validation - in production, use proper JWT validation
+        if not (token.startswith('local_token_') or token.startswith('db_token_')):
+            return jsonify({'message': 'Token is invalid!'}), 401
+        
+        return f(*args, **kwargs)
+    
+    decorated.__name__ = f.__name__
+    return decorated
+
 # Register blueprints
 app.register_blueprint(deep_learning_bp)
 
@@ -362,7 +381,7 @@ def ingestion_status():
     })
 
 @app.route('/api/ingestion/upload', methods=['POST'])
-@jwt_required()
+@token_required
 def upload_document():
     """Uploader et traiter un document"""
     try:

@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Settings, Database, Brain, Users, Bell, Save, TestTube, RefreshCw, UserPlus, Edit, Trash2, Shield } from "lucide-react";
+import { Settings, Database, Brain, Users, Bell, Save, TestTube, RefreshCw, UserPlus, Edit, Trash2, Shield, Activity, Cpu, Zap } from "lucide-react";
 
 export default function Admin() {
   const [llmProvider, setLlmProvider] = useState("chatgpt");
@@ -44,6 +44,16 @@ export default function Admin() {
   });
   const [isGeneratingTestData, setIsGeneratingTestData] = useState(false);
   const [isClearingTestData, setIsClearingTestData] = useState(false);
+  const [deepLearningConfig, setDeepLearningConfig] = useState({
+    enabled: true,
+    training_enabled: true,
+    auto_retrain: true,
+    retrain_interval_hours: 24,
+    anomaly_threshold: 0.3,
+    prediction_confidence_min: 0.7,
+    severity_threshold: 0.8
+  });
+  const [isRetrainingModels, setIsRetrainingModels] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -54,6 +64,57 @@ export default function Admin() {
       const response = await fetch('/api/admin/users');
       if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
+    }
+  });
+
+  // Queries for deep learning
+  const { data: deepLearningModels, isLoading: modelsLoading } = useQuery({
+    queryKey: ['/api/admin/deep-learning/models'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/deep-learning/models');
+      if (!response.ok) throw new Error('Failed to fetch models');
+      return response.json();
+    }
+  });
+
+  const { data: deepLearningConfigData, isLoading: configLoading } = useQuery({
+    queryKey: ['/api/admin/deep-learning/config'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/deep-learning/config');
+      if (!response.ok) throw new Error('Failed to fetch config');
+      return response.json();
+    }
+  });
+
+  // Mutations for deep learning
+  const updateDeepLearningConfigMutation = useMutation({
+    mutationFn: async (config) => {
+      return await apiRequest('/api/admin/deep-learning/config', {
+        method: 'POST',
+        body: config
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/deep-learning/config'] });
+      toast({
+        title: "Configuration mise à jour",
+        description: "La configuration deep learning a été mise à jour avec succès"
+      });
+    }
+  });
+
+  const retrainModelsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/admin/deep-learning/retrain', {
+        method: 'POST'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/deep-learning/models'] });
+      toast({
+        title: "Réentraînement lancé",
+        description: "Le réentraînement des modèles a été lancé avec succès"
+      });
     }
   });
 
@@ -422,9 +483,9 @@ export default function Admin() {
             <Users className="w-4 h-4 mr-2" />
             Utilisateurs
           </TabsTrigger>
-          <TabsTrigger value="testdata">
-            <TestTube className="w-4 h-4 mr-2" />
-            Données de Test
+          <TabsTrigger value="deep-learning">
+            <Cpu className="w-4 h-4 mr-2" />
+            Deep Learning
           </TabsTrigger>
           <TabsTrigger value="database">
             <Database className="w-4 h-4 mr-2" />
@@ -885,71 +946,175 @@ export default function Admin() {
           </Dialog>
         </TabsContent>
 
-        <TabsContent value="testdata" className="space-y-6">
+        <TabsContent value="deep-learning" className="space-y-6">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
-                <TestTube className="w-5 h-5 mr-2" />
-                Gestion des données de test
+                <Cpu className="w-5 h-5 mr-2" />
+                Configuration Deep Learning
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* État des modèles */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {deepLearningModels?.models ? Object.entries(deepLearningModels.models).map(([key, model]) => (
+                  <Card key={key} className="bg-slate-700 border-slate-600">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-white">{model.name}</h3>
+                        <Badge className={model.status === 'active' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-yellow-500 bg-opacity-20 text-yellow-400'}>
+                          {model.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-400 mb-2">{model.description}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-300">Précision: {(model.accuracy * 100).toFixed(1)}%</span>
+                        <span className="text-gray-300">{model.type}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )) : (
+                  <div className="col-span-3 text-center py-8 text-gray-400">
+                    <Cpu className="w-8 h-8 mx-auto mb-4" />
+                    <p>Chargement des modèles...</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Configuration générale */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Génération de données</h3>
-                  <p className="text-gray-400">
-                    Générez des données de test réalistes pour tester les fonctionnalités du système.
-                  </p>
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">Configuration générale</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="dl-enabled" className="text-gray-300">
+                        Deep Learning activé
+                      </Label>
+                      <Switch
+                        id="dl-enabled"
+                        checked={deepLearningConfig.enabled}
+                        onCheckedChange={(checked) => setDeepLearningConfig(prev => ({ ...prev, enabled: checked }))}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="training-enabled" className="text-gray-300">
+                        Entraînement activé
+                      </Label>
+                      <Switch
+                        id="training-enabled"
+                        checked={deepLearningConfig.training_enabled}
+                        onCheckedChange={(checked) => setDeepLearningConfig(prev => ({ ...prev, training_enabled: checked }))}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="auto-retrain" className="text-gray-300">
+                        Réentraînement automatique
+                      </Label>
+                      <Switch
+                        id="auto-retrain"
+                        checked={deepLearningConfig.auto_retrain}
+                        onCheckedChange={(checked) => setDeepLearningConfig(prev => ({ ...prev, auto_retrain: checked }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="retrain-interval" className="text-gray-300">
+                        Intervalle de réentraînement (heures)
+                      </Label>
+                      <Input
+                        id="retrain-interval"
+                        type="number"
+                        value={deepLearningConfig.retrain_interval_hours}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, retrain_interval_hours: parseInt(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500 text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-700 border-slate-600">
+                  <CardHeader>
+                    <CardTitle className="text-white text-lg">Seuils de détection</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="anomaly-threshold" className="text-gray-300">
+                        Seuil d'anomalie ({deepLearningConfig.anomaly_threshold})
+                      </Label>
+                      <Input
+                        id="anomaly-threshold"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={deepLearningConfig.anomaly_threshold}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, anomaly_threshold: parseFloat(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confidence-threshold" className="text-gray-300">
+                        Confiance minimale ({deepLearningConfig.prediction_confidence_min})
+                      </Label>
+                      <Input
+                        id="confidence-threshold"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={deepLearningConfig.prediction_confidence_min}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, prediction_confidence_min: parseFloat(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="severity-threshold" className="text-gray-300">
+                        Seuil de sévérité ({deepLearningConfig.severity_threshold})
+                      </Label>
+                      <Input
+                        id="severity-threshold"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={deepLearningConfig.severity_threshold}
+                        onChange={(e) => setDeepLearningConfig(prev => ({ ...prev, severity_threshold: parseFloat(e.target.value) }))}
+                        className="bg-slate-600 border-slate-500"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-4">
                   <Button 
-                    onClick={handleGenerateTestData}
-                    className="bg-green-600 hover:bg-green-700 w-full"
-                    disabled={generateTestDataMutation.isPending}
+                    onClick={() => updateDeepLearningConfigMutation.mutate(deepLearningConfig)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={updateDeepLearningConfigMutation.isPending}
                   >
-                    {generateTestDataMutation.isPending ? (
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <TestTube className="w-4 h-4 mr-2" />
-                    )}
-                    Générer des données de test
+                    <Save className="w-4 h-4 mr-2" />
+                    {updateDeepLearningConfigMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder configuration'}
+                  </Button>
+                  <Button 
+                    onClick={() => retrainModelsMutation.mutate()}
+                    variant="outline"
+                    className="border-slate-600 text-gray-300 hover:bg-slate-700"
+                    disabled={retrainModelsMutation.isPending}
+                  >
+                    <Activity className="w-4 h-4 mr-2" />
+                    {retrainModelsMutation.isPending ? 'Réentraînement...' : 'Réentraîner modèles'}
                   </Button>
                 </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Suppression de données</h3>
-                  <p className="text-gray-400">
-                    Supprimez toutes les données de test. Les utilisateurs seront conservés.
-                  </p>
-                  <Button 
-                    onClick={handleClearTestData}
-                    variant="outline"
-                    className="border-red-600 text-red-400 hover:bg-red-900 w-full"
-                    disabled={clearTestDataMutation.isPending}
-                  >
-                    {clearTestDataMutation.isPending ? (
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4 mr-2" />
-                    )}
-                    Supprimer les données de test
-                  </Button>
+                <div className="flex items-center space-x-2">
+                  <Activity className="w-4 h-4 text-green-400" />
+                  <span className="text-sm text-gray-300">
+                    {deepLearningModels?.statistics?.models_loaded ? 'Modèles chargés' : 'Modèles en cours de chargement'}
+                  </span>
                 </div>
               </div>
-              
-              {dbStats?.stats && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Statistiques de la base de données</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {Object.entries(dbStats.stats).map(([table, count]) => (
-                      <Card key={table} className="bg-slate-700 border-slate-600">
-                        <CardContent className="p-4 text-center">
-                          <div className="text-2xl font-bold text-white">{count}</div>
-                          <div className="text-sm text-gray-400 capitalize">{table.replace('_', ' ')}</div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

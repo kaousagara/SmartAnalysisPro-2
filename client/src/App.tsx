@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import Dashboard from "@/pages/dashboard";
 import Threats from "@/pages/threats";
 import Ingestion from "@/pages/ingestion";
+import IngestionPipeline from "@/pages/ingestion-pipeline";
 import Scenarios from "@/pages/scenarios";
 import Analytics from "@/pages/analytics";
 import DeepLearning from "@/pages/deep-learning";
@@ -74,6 +75,11 @@ function Router() {
       <Route path="/ingestion">
         <ProtectedRoute>
           <Ingestion />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/ingestion-pipeline">
+        <ProtectedRoute>
+          <IngestionPipeline />
         </ProtectedRoute>
       </Route>
       <Route path="/scenarios">

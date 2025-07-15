@@ -3,10 +3,10 @@ import logging
 from typing import Dict, List, Optional
 from datetime import datetime
 import hashlib
-import stix2
 import requests
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from .deep_learning_service import deep_learning_service
 
 logger = logging.getLogger(__name__)
@@ -70,25 +70,22 @@ class DataIngestionService:
             raise
     
     def _validate_stix_data(self, data: Dict) -> Dict:
-        """Validate STIX 2.1 data"""
+        """Validate STIX 2.1 data (fallback method without stix2)"""
         try:
-            # Parse STIX object
-            stix_obj = stix2.parse(data)
-            
-            # Extract relevant information
+            # Simple STIX object parsing without stix2 library
             extracted_data = {
-                'content': str(stix_obj.get('description', '')),
+                'content': str(data.get('description', data.get('pattern', ''))),
                 'source': {
-                    'id': str(stix_obj.get('id', '')),
-                    'type': str(stix_obj.get('type', '')),
-                    'created': str(stix_obj.get('created', '')),
+                    'id': str(data.get('id', 'unknown')),
+                    'type': str(data.get('type', 'unknown')),
+                    'created': str(data.get('created', datetime.now().isoformat())),
                     'reliability': 0.8  # Default reliability for STIX data
                 },
-                'timestamp': str(stix_obj.get('created', datetime.now().isoformat())),
+                'timestamp': str(data.get('created', datetime.now().isoformat())),
                 'metadata': {
                     'format': 'stix',
                     'version': self.schema_version,
-                    'stix_type': str(stix_obj.get('type', ''))
+                    'stix_type': str(data.get('type', ''))
                 }
             }
             

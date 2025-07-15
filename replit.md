@@ -22,7 +22,8 @@ This is a comprehensive intelligence analysis system designed for threat detecti
 - **Documentation**: Complete project documentation generated
 - **Deployment**: Ready for production deployment
 
-### Documentation Generated (July 14, 2025)
+### Documentation Generated (July 15, 2025)
+- ✅ **README.md**: Main project documentation with quick start guide
 - ✅ **PROJET_INTELLIGENCE_ANALYSIS.md**: Complete technical documentation
 - ✅ **PRESENTATION_EXECUTIF.md**: Executive summary and key benefits
 - ✅ **GUIDE_UTILISATION.md**: User guide with step-by-step instructions

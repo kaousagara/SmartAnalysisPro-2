@@ -72,6 +72,28 @@ Une fois connecté, vous accédez au tableau de bord principal qui affiche :
 3. Définissez les actions
 4. Surveillez l'exécution
 
+### 📄 **Ingestion de documents**
+**Fonctionnalités :**
+- Upload par glisser-déposer
+- Analyse automatique avec deep learning
+- Extraction d'entités et métadonnées
+- Scoring de menaces en temps réel
+
+**Formats supportés :**
+- TXT, PDF, JSON, XML, CSV
+- Documents texte et structurés
+- Rapports et briefings
+
+**Utilisation :**
+1. Allez dans la section "Ingestion de données"
+2. Glissez-déposez vos fichiers ou cliquez "Choisir un fichier"
+3. L'analyse se fait automatiquement en < 2 secondes
+4. Consultez les résultats : score de menace, entités, classification
+
+**Test du système :**
+- Utilisez "Lancer Test d'Ingestion" pour tester avec des documents réalistes
+- Vérifiez les performances avec des exemples SIGINT, HUMINT, OSINT
+
 ---
 
 ## Administration

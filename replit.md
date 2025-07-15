@@ -63,6 +63,14 @@ This is a comprehensive intelligence analysis system designed for threat detecti
 - ✅ **Document Processing Verified**: Complete end-to-end file processing with threat scoring and entity extraction
 - ✅ **UI Refinements**: Fixed HTML nesting warnings and improved user feedback during uploads
 
+### Documentation Update (July 15, 2025)
+- ✅ **README.md Complete Overhaul**: Comprehensive documentation covering all system features
+- ✅ **Technical Architecture Details**: Detailed frontend/backend architecture documentation
+- ✅ **API Documentation**: Complete endpoint documentation with examples
+- ✅ **Performance Metrics**: Added performance benchmarks and optimization details
+- ✅ **Security Documentation**: Comprehensive security features and compliance information
+- ✅ **Version History**: Detailed changelog with current version 2.1.0 status
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

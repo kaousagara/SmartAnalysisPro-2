@@ -7,10 +7,14 @@ from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from services.prescription_service import PrescriptionService
 from database import db
+from routes.deep_learning_routes import deep_learning_bp
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)
+
+# Register blueprints
+app.register_blueprint(deep_learning_bp)
 
 # Initialize services
 prescription_service = PrescriptionService()
@@ -1681,6 +1685,16 @@ def get_database_stats():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/deep-learning/status', methods=['GET'])
+def deep_learning_status():
+    """Obtenir le statut du système deep learning"""
+    try:
+        from services.deep_learning_service import deep_learning_service
+        stats = deep_learning_service.get_model_statistics()
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({"error": str(e), "models_loaded": False}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

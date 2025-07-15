@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Ingestion', href: '/ingestion', icon: Upload },
   { name: 'Scénarios', href: '/scenarios', icon: Table },
   { name: 'Analyse Prédictive', href: '/analytics', icon: Brain },
+  { name: 'Deep Learning', href: '/deep-learning', icon: Brain },
   { name: 'Prescriptions', href: '/prescriptions', icon: Clipboard },
   { name: 'Flux de Traitement', href: '/threat-flow', icon: ArrowRight },
   { name: 'Requêtes de Collecte', href: '/collection-requests', icon: Target },

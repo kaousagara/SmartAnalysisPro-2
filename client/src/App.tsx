@@ -13,6 +13,7 @@ import Threats from "@/pages/threats";
 import Ingestion from "@/pages/ingestion";
 import Scenarios from "@/pages/scenarios";
 import Analytics from "@/pages/analytics";
+import DeepLearning from "@/pages/deep-learning";
 import Prescriptions from "@/pages/prescriptions";
 import Reports from "@/pages/reports";
 import CollectionRequests from "@/pages/collection-requests";
@@ -83,6 +84,11 @@ function Router() {
       <Route path="/analytics">
         <ProtectedRoute>
           <Analytics />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/deep-learning">
+        <ProtectedRoute>
+          <DeepLearning />
         </ProtectedRoute>
       </Route>
       <Route path="/prescriptions">

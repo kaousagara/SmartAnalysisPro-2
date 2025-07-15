@@ -72,51 +72,82 @@ export default function Ingestion() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      // Simuler l'upload
-      setUploadProgress(0);
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 10;
-        });
-      }, 200);
+  const getClassificationColor = (classification: string) => {
+    switch (classification) {
+      case 'SECRET':
+        return 'bg-red-100 text-red-800';
+      case 'CONFIDENTIEL':
+        return 'bg-orange-100 text-orange-800';
+      case 'NON CLASSIFIÉ':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getThreatLevelColor = (level: string) => {
     switch (level) {
       case 'HIGH':
-        return 'bg-red-500';
+        return 'bg-red-100 text-red-800';
       case 'MEDIUM':
-        return 'bg-yellow-500';
+        return 'bg-yellow-100 text-yellow-800';
       case 'LOW':
-        return 'bg-green-500';
+        return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getClassificationColor = (classification: string) => {
-    switch (classification) {
-      case 'TOP SECRET':
-        return 'bg-red-600';
-      case 'SECRET':
-        return 'bg-orange-600';
-      case 'CONFIDENTIEL':
-        return 'bg-yellow-600';
-      case 'NON CLASSIFIÉ':
-        return 'bg-green-600';
-      default:
-        return 'bg-gray-600';
+  // Mutation pour uploader un fichier
+  const uploadFileMutation = useMutation({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return fetch('/api/ingestion/upload', {
+        method: 'POST',
+        body: formData
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error('Erreur lors de l\'upload');
+        }
+        return response.json();
+      });
+    },
+    onSuccess: (data) => {
+      setTestResult(data);
+      setUploadProgress(100);
+    },
+    onError: (error) => {
+      console.error('Erreur upload:', error);
+      setUploadProgress(0);
+    }
+  });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadProgress(0);
+      setTestResult(null);
+      
+      // Simuler la progression pendant l'upload
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+      
+      // Effectuer l'upload réel
+      uploadFileMutation.mutate(file);
     }
   };
+
+
 
   if (statusLoading) {
     return (
@@ -453,15 +484,102 @@ export default function Ingestion() {
 
                   <Progress value={uploadProgress} className="w-full" />
 
-                  {uploadProgress === 100 && (
-                    <Alert>
+                  {uploadFileMutation.isError && (
+                    <Alert className="border-red-500">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Erreur lors du traitement du fichier. Veuillez réessayer.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {uploadFileMutation.isSuccess && testResult && (
+                    <Alert className="border-green-500">
                       <CheckCircle className="h-4 w-4" />
                       <AlertDescription>
-                        Fichier uploadé avec succès. Traitement en cours...
+                        {testResult.message}
                       </AlertDescription>
                     </Alert>
                   )}
                 </div>
+              )}
+
+              {uploadFileMutation.isSuccess && testResult && testResult.document && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Résultat de l'Analyse</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Informations du Document</h4>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">ID:</span> {testResult.document.id}</p>
+                            <p><span className="font-medium">Nom:</span> {testResult.document.filename}</p>
+                            <p><span className="font-medium">Taille:</span> {(testResult.document.size / 1024).toFixed(2)} KB</p>
+                            <p><span className="font-medium">Type:</span> {testResult.document.type}</p>
+                            <p><span className="font-medium">Classification:</span> 
+                              <Badge className={`ml-2 ${getClassificationColor(testResult.document.classification)}`}>
+                                {testResult.document.classification}
+                              </Badge>
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-medium mb-2">Analyse des Menaces</h4>
+                          <div className="space-y-1 text-sm">
+                            <p><span className="font-medium">Niveau:</span> 
+                              <Badge className={`ml-2 ${getThreatLevelColor(testResult.document.processing.threat_scoring.threat_level)}`}>
+                                {testResult.document.processing.threat_scoring.threat_level}
+                              </Badge>
+                            </p>
+                            <p><span className="font-medium">Score:</span> {testResult.document.processing.threat_scoring.score.toFixed(2)}</p>
+                            <p><span className="font-medium">Confiance:</span> {testResult.document.processing.threat_scoring.confidence.toFixed(2)}</p>
+                            <p><span className="font-medium">Temps:</span> {testResult.processing_time}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-2">Entités Extraites</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p><span className="font-medium">Lieux:</span> {testResult.document.processing.entities_extracted.locations.join(', ')}</p>
+                          </div>
+                          <div>
+                            <p><span className="font-medium">Organisations:</span> {testResult.document.processing.entities_extracted.organizations.join(', ')}</p>
+                          </div>
+                          <div>
+                            <p><span className="font-medium">Personnes:</span> {testResult.document.processing.entities_extracted.persons.join(', ')}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-2">Aperçu du Contenu</h4>
+                        <div className="bg-gray-50 p-3 rounded text-sm">
+                          <p><span className="font-medium">Mots-clés:</span> {testResult.document.processing.keywords.join(', ')}</p>
+                          <p><span className="font-medium">Aperçu:</span> {testResult.document.content.text_preview}</p>
+                          <p><span className="font-medium">Nombre de mots:</span> {testResult.document.content.word_count}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-medium mb-2">Recommandations</h4>
+                        <div className="space-y-1">
+                          {testResult.recommendations.map((rec: string, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <span className="text-sm">{rec}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </CardContent>
           </Card>

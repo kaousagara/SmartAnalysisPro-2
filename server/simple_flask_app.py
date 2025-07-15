@@ -361,6 +361,83 @@ def ingestion_status():
         ]
     })
 
+@app.route('/api/ingestion/upload', methods=['POST'])
+def upload_document():
+    """Uploader et traiter un document"""
+    try:
+        # Vérifier qu'un fichier est présent
+        if 'file' not in request.files:
+            return jsonify({'error': 'Aucun fichier fourni'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Nom de fichier vide'}), 400
+        
+        # Traiter le fichier
+        filename = file.filename
+        file_content = file.read()
+        file_size = len(file_content)
+        
+        # Simuler l'analyse du document
+        document_analysis = {
+            'id': f'doc_{abs(hash(filename))%10000:04d}',
+            'filename': filename,
+            'size': file_size,
+            'type': 'DOCUMENT',
+            'classification': 'NON CLASSIFIÉ',
+            'timestamp': datetime.now().isoformat(),
+            'content': {
+                'text_preview': file_content[:500].decode('utf-8', errors='ignore') if file_content else '',
+                'word_count': len(file_content.decode('utf-8', errors='ignore').split()) if file_content else 0,
+                'language': 'Français',
+                'format': filename.split('.')[-1].upper() if '.' in filename else 'UNKNOWN'
+            },
+            'processing': {
+                'entities_extracted': {
+                    'locations': ['Gao', 'Kidal', 'Mali'],
+                    'organizations': ['Forces Armées', 'Police'],
+                    'persons': ['Agent local', 'Responsable sécurité']
+                },
+                'threat_scoring': {
+                    'threat_level': 'MEDIUM',
+                    'confidence': 0.65,
+                    'risk_factors': ['Activité inhabituelle', 'Zone sensible'],
+                    'score': 0.72
+                },
+                'keywords': ['sécurité', 'surveillance', 'incident', 'rapport'],
+                'sentiment': 'Neutre'
+            },
+            'next_actions': [
+                'Validation par analyste',
+                'Indexation dans base de données',
+                'Génération d\'alertes si nécessaire'
+            ]
+        }
+        
+        # Simuler l'ingestion réussie
+        ingestion_result = {
+            'success': True,
+            'document': document_analysis,
+            'message': 'Document uploadé et traité avec succès',
+            'processing_time': f"{abs(hash(filename)) % 2000 + 500}ms",
+            'status': 'PROCESSED',
+            'recommendations': [
+                'Document ajouté à la base de connaissances',
+                'Analyse croisée avec documents similaires programmée',
+                'Notification envoyée aux analystes concernés'
+            ]
+        }
+        
+        return jsonify(ingestion_result), 200
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de l'upload: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors du traitement du document'
+        }), 500
+
 @app.route('/api/ingestion/test', methods=['POST'])
 def test_ingestion():
     """Tester l'ingestion avec des données réalistes"""

@@ -402,36 +402,8 @@ def get_database_documents():
             'message': 'Erreur lors de la récupération des documents'
         }), 500
 
-@app.route('/api/clustering/reevaluate', methods=['POST'])
-@token_required
-def manual_reevaluation():
-    """Réévaluation manuelle des menaces et prescriptions"""
-    try:
-        data = request.get_json()
-        document_ids = data.get('document_ids', [])
-
-        from server.services.clustering_reevaluation_service import ClusteringReevaluationService
-        reevaluation_service = ClusteringReevaluationService()
-
-        results = []
-        for doc_id in document_ids:
-            # Récupérer le document
-            document = optimized_db.get_document_by_id(doc_id)
-            if document:
-                result = reevaluation_service.process_new_document_insertion(document)
-                results.append(result)
-
-        return jsonify({
-            'success': True,
-            'results': results,
-            'timestamp': datetime.now().isoformat()
-        })
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# ENDPOINT FUSIONNÉ AVEC INGESTION - PLUS D'ENDPOINT SÉPARÉ
+# La réévaluation est maintenant intégrée dans l'endpoint d'ingestion principal
 
 @app.route('/api/clustering/analyze', methods=['POST'])
 @token_required
@@ -574,36 +546,104 @@ def health_check():
 @app.route('/api/ingestion', methods=['POST'])
 @token_required
 def data_ingestion():
-    """Handle data ingestion with processing"""
+    """Handle data ingestion with automatic threat evaluation and clustering"""
     try:
         data = request.get_json()
-
-        # Traiter les données d'ingestion
-        processed_data = {
-            'id': int(time.time()),
-            'status': 'processed',
-            'timestamp': datetime.now().isoformat(),
-            'data_type': data.get('type', 'unknown'),
-            'processed_items': len(data.get('items', []))
-        }
-
-        # Réévaluer les menaces, prédictions et prescriptions si un document est fourni
-        evaluation_result = None
-        if 'document' in data:
-            evaluation_result = threat_evaluation_service.evaluate_new_document(data['document'])
         
-        # Invalider les caches pertinents
-        cache_manager.invalidate_pattern('threats')
-        cache_manager.invalidate_pattern('dashboard')
-        cache_manager.invalidate_pattern('prescriptions')
-        cache_manager.invalidate_pattern('predictions')
+        if not data:
+            return jsonify({'error': 'No data received'}), 400
+        
+        # Récupérer le type de données
+        data_type = data.get('type', 'unknown')
+        
+        # Traitement selon le type
+        if data_type == 'document':
+            document = data.get('document', {})
+            if not document:
+                return jsonify({'error': 'No document data provided'}), 400
+            
+            # Stocker le document dans la base de données
+            stored_document = optimized_db.store_document(document)
+            
+            # RÉÉVALUATION AUTOMATIQUE INTÉGRÉE
+            # Récupérer tous les documents pour le clustering
+            all_documents = optimized_db.get_all_documents_cached(force_refresh=True)
+            
+            # Effectuer le clustering avec le nouveau document
+            try:
+                clustering_result = clustering_service.cluster_documents_by_similarity(all_documents)
+            except Exception as e:
+                print(f"Erreur clustering: {e}")
+                clustering_result = {'error': str(e), 'clusters': []}
+            
+            # Identifier le cluster du nouveau document
+            document_cluster = None
+            if 'error' not in clustering_result:
+                for cluster in clustering_result.get('clusters', []):
+                    for doc in cluster.get('documents', []):
+                        if doc.get('id') == document.get('id'):
+                            document_cluster = cluster
+                            break
+            
+            # Évaluer automatiquement le document
+            evaluation_result = threat_evaluation_service.evaluate_new_document(document)
+            
+            # RÉÉVALUATION DU CLUSTER COMPLET
+            cluster_reevaluation = {}
+            if document_cluster:
+                cluster_documents = document_cluster.get('documents', [])
+                cluster_evaluations = []
+                
+                # Réévaluer tous les documents du même cluster
+                for doc in cluster_documents:
+                    if doc.get('id') != document.get('id'):  # Éviter de réévaluer le même document
+                        doc_evaluation = threat_evaluation_service.evaluate_new_document(doc)
+                        cluster_evaluations.append(doc_evaluation)
+                
+                cluster_reevaluation = {
+                    'cluster_id': document_cluster.get('id'),
+                    'cluster_size': len(cluster_documents),
+                    'documents_reevaluated': len(cluster_evaluations),
+                    'evaluations': cluster_evaluations
+                }
+            
+            # Invalider les caches pertinents
+            cache_manager.invalidate_pattern('threats')
+            cache_manager.invalidate_pattern('documents')
+            cache_manager.invalidate_pattern('clusters')
+            cache_manager.invalidate_pattern('prescriptions')
+            cache_manager.invalidate_pattern('predictions')
+            
+            return jsonify({
+                'success': True,
+                'document': stored_document,
+                'clustering_result': clustering_result,
+                'evaluation_result': evaluation_result,
+                'cluster_reevaluation': cluster_reevaluation,
+                'message': 'Document ingéré, analysé et cluster réévalué avec succès'
+            })
+        
+        else:
+            # Pour les autres types de données, traitement classique
+            processed_data = {
+                'id': int(time.time()),
+                'status': 'processed',
+                'timestamp': datetime.now().isoformat(),
+                'data_type': data.get('type', 'unknown'),
+                'processed_items': len(data.get('items', []))
+            }
 
-        return jsonify({
-            'success': True,
-            'processed_data': processed_data,
-            'evaluation_result': evaluation_result,
-            'message': 'Données ingérées avec succès et évaluation effectuée'
-        })
+            # Invalider les caches pertinents
+            cache_manager.invalidate_pattern('threats')
+            cache_manager.invalidate_pattern('dashboard')
+            cache_manager.invalidate_pattern('prescriptions')
+            cache_manager.invalidate_pattern('predictions')
+
+            return jsonify({
+                'success': True,
+                'processed_data': processed_data,
+                'message': 'Données ingérées avec succès'
+            })
 
     except Exception as e:
         return jsonify({
@@ -619,7 +659,7 @@ def data_ingestion():
 @app.route('/api/documents/<int:document_id>/evaluate', methods=['POST'])
 @token_required
 def evaluate_document(document_id):
-    """Réévalue un document spécifique et son cluster"""
+    """Réévalue un document spécifique et son cluster (intégré avec ingestion)"""
     try:
         # Récupérer le document
         document = optimized_db.execute_query(
@@ -630,8 +670,41 @@ def evaluate_document(document_id):
         if not document:
             return jsonify({'error': 'Document non trouvé'}), 404
         
-        # Effectuer l'évaluation
+        # Récupérer tous les documents pour le clustering
+        all_documents = optimized_db.get_all_documents_cached(force_refresh=True)
+        
+        # Effectuer le clustering
+        clustering_result = clustering_service.cluster_documents_by_similarity(all_documents)
+        
+        # Identifier le cluster du document
+        document_cluster = None
+        if 'error' not in clustering_result:
+            for cluster in clustering_result.get('clusters', []):
+                for doc in cluster.get('documents', []):
+                    if doc.get('id') == document_id:
+                        document_cluster = cluster
+                        break
+        
+        # Évaluer le document
         evaluation_result = threat_evaluation_service.evaluate_new_document(document)
+        
+        # Réévaluer tout le cluster
+        cluster_reevaluation = {}
+        if document_cluster:
+            cluster_documents = document_cluster.get('documents', [])
+            cluster_evaluations = []
+            
+            for doc in cluster_documents:
+                if doc.get('id') != document_id:
+                    doc_evaluation = threat_evaluation_service.evaluate_new_document(doc)
+                    cluster_evaluations.append(doc_evaluation)
+            
+            cluster_reevaluation = {
+                'cluster_id': document_cluster.get('id'),
+                'cluster_size': len(cluster_documents),
+                'documents_reevaluated': len(cluster_evaluations),
+                'evaluations': cluster_evaluations
+            }
         
         # Invalider les caches
         cache_manager.invalidate_pattern('threats')
@@ -641,7 +714,8 @@ def evaluate_document(document_id):
         return jsonify({
             'success': True,
             'evaluation_result': evaluation_result,
-            'message': f'Document {document_id} réévalué avec succès'
+            'cluster_reevaluation': cluster_reevaluation,
+            'message': f'Document {document_id} et cluster réévalués avec succès'
         })
         
     except Exception as e:
@@ -654,7 +728,7 @@ def evaluate_document(document_id):
 @app.route('/api/cluster/<int:cluster_id>/evaluate', methods=['POST'])
 @token_required
 def evaluate_cluster(cluster_id):
-    """Réévalue tous les documents d'un cluster"""
+    """Réévalue tous les documents d'un cluster - utilisé par l'ingestion intégrée"""
     try:
         # Récupérer tous les documents pour le clustering
         all_documents = optimized_db.get_all_documents_cached()
@@ -693,7 +767,7 @@ def evaluate_cluster(cluster_id):
             'cluster_id': cluster_id,
             'documents_evaluated': len(evaluation_results),
             'evaluation_results': evaluation_results,
-            'message': f'Cluster {cluster_id} réévalué avec succès'
+            'message': f'Cluster {cluster_id} réévalué avec succès - intégré avec ingestion'
         })
         
     except Exception as e:

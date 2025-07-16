@@ -408,5 +408,90 @@ class OptimizedDatabase:
         """Récupérer les métriques de performance"""
         return {}
 
+    def store_document(self, document_data: Dict) -> Dict:
+        """Stocker un nouveau document dans la base de données"""
+        try:
+            import time
+            # Préparer les données du document
+            doc_id = document_data.get('id', int(time.time()))
+            name = document_data.get('name', 'Document sans nom')
+            content = document_data.get('content', '')
+            doc_type = document_data.get('type', 'text')
+            threat_score = document_data.get('threat_score', 0.0)
+            
+            # Stocker le document comme une menace
+            insert_query = """
+                INSERT INTO threats (id, name, description, threat_score, severity, status, source, timestamp, classification, category, confidence, metadata)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    description = EXCLUDED.description,
+                    threat_score = EXCLUDED.threat_score,
+                    severity = EXCLUDED.severity,
+                    timestamp = EXCLUDED.timestamp,
+                    metadata = EXCLUDED.metadata
+                RETURNING *
+            """
+            
+            # Déterminer la sévérité basée sur le score
+            if threat_score >= 0.8:
+                severity = 'critical'
+            elif threat_score >= 0.6:
+                severity = 'high'
+            elif threat_score >= 0.4:
+                severity = 'medium'
+            else:
+                severity = 'low'
+            
+            # Métadonnées du document
+            metadata = {
+                'document_type': doc_type,
+                'ingestion_time': datetime.now().isoformat(),
+                'processing_type': 'unified_ingestion',
+                'cluster_analysis': 'pending'
+            }
+            
+            # Exécuter l'insertion
+            result = self.execute_query(
+                insert_query,
+                (
+                    doc_id,
+                    name,
+                    content,
+                    threat_score,
+                    severity,
+                    'active',
+                    'document_ingestion',
+                    datetime.now().isoformat(),
+                    'UNCLASSIFIED',
+                    'document',
+                    min(threat_score + 0.1, 1.0),  # Confidence légèrement supérieure au score
+                    json.dumps(metadata)
+                ),
+                fetch_one=True
+            )
+            
+            # Invalider les caches pertinents
+            self.invalidate_cache(['threats*', 'documents*', 'dashboard*'])
+            
+            return {
+                'id': doc_id,
+                'name': name,
+                'content': content,
+                'type': doc_type,
+                'threat_score': threat_score,
+                'severity': severity,
+                'status': 'stored',
+                'timestamp': datetime.now().isoformat(),
+                'metadata': metadata
+            }
+            
+        except Exception as e:
+            print(f"Erreur lors du stockage du document: {e}")
+            return {
+                'error': str(e),
+                'status': 'failed'
+            }
+
 # Instance globale optimisée
 optimized_db = OptimizedDatabase()

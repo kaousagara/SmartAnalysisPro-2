@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, FileText, Database, AlertTriangle } from 'lucide-react';
+import { Loader2, FileText, Database, AlertTriangle, GitBranch, Zap } from 'lucide-react';
 
 const ThreatEvaluationDemo = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +18,7 @@ const ThreatEvaluationDemo = () => {
     content: '',
     type: 'text'
   });
+  const [activeTab, setActiveTab] = useState('ingestion');
 
   const handleDocumentIngestion = async () => {
     setIsLoading(true);
@@ -136,26 +137,35 @@ const ThreatEvaluationDemo = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
-        <AlertTriangle className="h-6 w-6 text-blue-500" />
-        <h2 className="text-2xl font-bold">Démonstration du Système de Réévaluation</h2>
+        <Zap className="h-6 w-6 text-blue-500" />
+        <h2 className="text-2xl font-bold">Système Unifié d'Ingestion et Réévaluation</h2>
       </div>
 
       <Tabs defaultValue="ingestion" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="ingestion">Ingestion Document</TabsTrigger>
-          <TabsTrigger value="document">Évaluation Document</TabsTrigger>
-          <TabsTrigger value="cluster">Évaluation Cluster</TabsTrigger>
+          <TabsTrigger value="ingestion">
+            <Zap className="h-4 w-4 mr-2" />
+            Ingestion Unifiée
+          </TabsTrigger>
+          <TabsTrigger value="document">
+            <FileText className="h-4 w-4 mr-2" />
+            Évaluation Document
+          </TabsTrigger>
+          <TabsTrigger value="cluster">
+            <GitBranch className="h-4 w-4 mr-2" />
+            Évaluation Cluster
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="ingestion" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5" />
-                <span>Ingestion de Nouveau Document</span>
+                <Zap className="h-5 w-5" />
+                <span>Ingestion Unifiée avec Réévaluation</span>
               </CardTitle>
               <CardDescription>
-                Insérez un nouveau document pour déclencher la réévaluation automatique des menaces, prédictions et prescriptions
+                Ingestion automatique qui déclenche clustering + réévaluation complète des menaces, prédictions et prescriptions
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -202,8 +212,8 @@ const ThreatEvaluationDemo = () => {
                   </>
                 ) : (
                   <>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Insérer Document et Réévaluer
+                    <Zap className="mr-2 h-4 w-4" />
+                    Ingestion Unifiée + Réévaluation
                   </>
                 )}
               </Button>

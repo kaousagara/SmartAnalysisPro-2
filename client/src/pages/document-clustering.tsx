@@ -18,7 +18,8 @@ import {
   Clock,
   Network,
   Target,
-  Zap
+  Zap,
+  Database
 } from 'lucide-react';
 
 interface Document {
@@ -62,6 +63,7 @@ interface ClusteringResult {
 
 export default function DocumentClustering() {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [databaseDocuments, setDatabaseDocuments] = useState<Document[]>([]);
   const [newDocument, setNewDocument] = useState({
     content: '',
     source: '',
@@ -114,6 +116,36 @@ export default function DocumentClustering() {
       setIsLoading(false);
     }
   };
+
+  const loadDatabaseDocuments = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/clustering/database-documents', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des documents de la base');
+      }
+
+      const result = await response.json();
+      setDatabaseDocuments(result.documents);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Charger les documents de la base au démarrage
+  React.useEffect(() => {
+    loadDatabaseDocuments();
+  }, []);
 
   const removeDocument = (id: string) => {
     setDocuments(documents.filter(doc => doc.id !== id));
@@ -198,9 +230,17 @@ export default function DocumentClustering() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Clustering de Documents</h1>
-        <Badge variant="outline" className="text-sm">
-          {documents.length} documents
-        </Badge>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="text-sm">
+            {documents.length} documents utilisateur
+          </Badge>
+          <Badge variant="secondary" className="text-sm">
+            {databaseDocuments.length} documents base
+          </Badge>
+          <Badge variant="default" className="text-sm">
+            {documents.length + databaseDocuments.length} total
+          </Badge>
+        </div>
       </div>
 
       {error && (
@@ -211,10 +251,14 @@ export default function DocumentClustering() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="input">
             <FileText className="w-4 h-4 mr-2" />
             Saisie Documents
+          </TabsTrigger>
+          <TabsTrigger value="database">
+            <Database className="w-4 h-4 mr-2" />
+            Base de données
           </TabsTrigger>
           <TabsTrigger value="analysis">
             <Network className="w-4 h-4 mr-2" />
@@ -311,6 +355,62 @@ export default function DocumentClustering() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="database" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Database className="w-5 h-5 mr-2" />
+                Documents de la Base de Données ({databaseDocuments.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    <strong>Information importante :</strong> Le clustering utilise automatiquement tous les documents 
+                    de la base de données ainsi que les documents que vous ajoutez. Cela permet une analyse plus complète 
+                    et une meilleure détection des patterns.
+                  </p>
+                </div>
+                
+                <Button 
+                  onClick={loadDatabaseDocuments} 
+                  variant="outline"
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? 'Chargement...' : 'Actualiser les documents'}
+                </Button>
+                
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {databaseDocuments.map((doc, index) => (
+                    <div key={index} className="p-3 border rounded-lg bg-gray-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{doc.type}</Badge>
+                          <Badge variant="outline">{doc.source}</Badge>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {new Date(doc.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 truncate">
+                        {doc.content.substring(0, 100)}...
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                
+                {databaseDocuments.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    Aucun document trouvé dans la base de données.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="analysis" className="space-y-4">
           <Card>
             <CardHeader>
@@ -320,23 +420,37 @@ export default function DocumentClustering() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium">Documents</span>
+                    <span className="font-medium">Documents Utilisateur</span>
                   </div>
                   <p className="text-2xl font-bold text-blue-600">{documents.length}</p>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Database className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium">Base de données</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{databaseDocuments.length}</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="font-medium">Prêt pour analyse</span>
+                    <span className="font-medium">Total</span>
                   </div>
                   <p className="text-2xl font-bold text-green-600">
-                    {documents.length >= 2 ? 'Oui' : 'Non'}
+                    {documents.length + databaseDocuments.length}
                   </p>
                 </div>
+              </div>
+              
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <strong>Analyse complète activée :</strong> Le clustering analysera automatiquement tous les {documents.length + databaseDocuments.length} documents 
+                  disponibles pour identifier les patterns et thèmes communs.
+                </p>
               </div>
 
               {isLoading && (

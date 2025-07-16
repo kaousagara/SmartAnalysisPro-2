@@ -473,13 +473,19 @@ def analyze_document_clustering():
     """Analyser le clustering des documents"""
     try:
         data = request.get_json()
-        documents = data.get('documents', [])
+        user_documents = data.get('documents', [])
         
-        if not documents:
-            return jsonify({'error': 'Aucun document fourni pour l\'analyse'}), 400
+        # Récupérer tous les documents de la base de données
+        db_documents = db.get_all_documents()
+        
+        # Combiner les documents utilisateur avec ceux de la base
+        all_documents = db_documents + user_documents
+        
+        if len(all_documents) < 2:
+            return jsonify({'error': 'Pas assez de documents pour l\'analyse (minimum 2 requis)'}), 400
         
         # Effectuer le clustering
-        clustering_result = clustering_service.cluster_documents_by_similarity(documents)
+        clustering_result = clustering_service.cluster_documents_by_similarity(all_documents)
         
         # Générer des insights
         insights = clustering_service.generate_cluster_insights(clustering_result)
@@ -489,7 +495,9 @@ def analyze_document_clustering():
             'clustering_result': clustering_result,
             'insights': insights,
             'summary': {
-                'total_documents': len(documents),
+                'total_documents': len(all_documents),
+                'db_documents': len(db_documents),
+                'user_documents': len(user_documents),
                 'clusters_found': len(clustering_result.get('clusters', [])),
                 'analysis_timestamp': datetime.now().isoformat()
             }
@@ -568,21 +576,34 @@ def batch_clustering_analysis():
     """Analyse de clustering en lot avec génération de prescriptions"""
     try:
         data = request.get_json()
-        documents = data.get('documents', [])
+        user_documents = data.get('documents', [])
         
-        if len(documents) < 2:
-            return jsonify({'error': 'Au moins 2 documents sont requis pour l\'analyse en lot'}), 400
+        # Récupérer tous les documents de la base de données
+        db_documents = db.get_all_documents()
+        
+        # Combiner les documents utilisateur avec ceux de la base
+        all_documents = db_documents + user_documents
+        
+        if len(all_documents) < 2:
+            return jsonify({'error': 'Pas assez de documents pour l\'analyse en lot (minimum 2 requis)'}), 400
+        
+        # Stocker les nouveaux documents utilisateur dans la base
+        for doc in user_documents:
+            db.store_document(doc)
         
         # Effectuer le clustering complet
-        clustering_result = clustering_service.cluster_documents_by_similarity(documents)
+        clustering_result = clustering_service.cluster_documents_by_similarity(all_documents)
         
         # Générer des insights
         insights = clustering_service.generate_cluster_insights(clustering_result)
         
+        # Récupérer les menaces pour l'analyse prescriptive
+        threat_data = db.get_all_threats()
+        
         # Intégrer avec l'analyse prescriptive
         integration_result = clustering_service.integrate_with_prescriptive_analysis(
             clustering_result, 
-            []  # threat_data - récupérer depuis la base
+            threat_data
         )
         
         # Générer des prescriptions automatiques pour chaque cluster à risque
@@ -608,7 +629,9 @@ def batch_clustering_analysis():
             'integration_result': integration_result,
             'prescriptions_generated': prescriptions_generated,
             'summary': {
-                'total_documents': len(documents),
+                'total_documents': len(all_documents),
+                'db_documents': len(db_documents),
+                'user_documents': len(user_documents),
                 'clusters_found': len(clustering_result.get('clusters', [])),
                 'prescriptions_generated': len(prescriptions_generated),
                 'high_risk_clusters': len([c for c in clustering_result.get('clusters', []) 
@@ -622,6 +645,27 @@ def batch_clustering_analysis():
             'success': False,
             'error': str(e),
             'message': 'Erreur lors de l\'analyse en lot'
+        }), 500
+
+@app.route('/api/clustering/database-documents', methods=['GET'])
+@token_required
+def get_database_documents():
+    """Récupérer tous les documents de la base de données"""
+    try:
+        documents = db.get_all_documents()
+        
+        return jsonify({
+            'success': True,
+            'documents': documents,
+            'count': len(documents),
+            'message': f'{len(documents)} documents récupérés de la base de données'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de la récupération des documents'
         }), 500
 
 @app.route('/api/clustering/sample-documents', methods=['GET'])

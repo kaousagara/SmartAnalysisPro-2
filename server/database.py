@@ -673,5 +673,80 @@ class Database:
             print(f"Erreur lors de la récupération du scénario: {e}")
             return None
 
+    def get_all_documents(self):
+        """Récupérer tous les documents stockés dans la base de données"""
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor(cursor_factory=RealDictCursor)
+            
+            # Récupérer tous les documents depuis la table documents
+            cursor.execute("""
+                SELECT id, name, description, metadata, created_at
+                FROM threats 
+                ORDER BY created_at DESC
+            """)
+            
+            rows = cursor.fetchall()
+            cursor.close()
+            
+            documents = []
+            for row in rows:
+                # Convertir les données de menace en format document pour clustering
+                document = {
+                    'id': str(row['id']),
+                    'content': row['description'] or '',
+                    'source': 'Database - Threats',
+                    'type': 'THREAT',
+                    'created_at': row['created_at'].isoformat() if row['created_at'] else None,
+                    'entities': [],
+                    'threat_score': 0.5,
+                    'metadata': row['metadata'] if row['metadata'] else {}
+                }
+                documents.append(document)
+            
+            return documents
+            
+        except Exception as e:
+            print(f"Erreur lors de la récupération des documents: {str(e)}")
+            return []
+
+    def store_document(self, document_data):
+        """Stocker un nouveau document dans la base de données comme menace"""
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+            
+            # Insérer le document comme une menace
+            cursor.execute("""
+                INSERT INTO threats (name, description, score, severity, status, 
+                                   source_id, metadata, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (
+                document_data.get('title', f"Document {document_data.get('id', 'unknown')}"),
+                document_data.get('content', ''),
+                document_data.get('threat_score', 0.5),
+                'medium',  # Default severity
+                'active',
+                1,  # Default source_id
+                json.dumps({
+                    'original_type': document_data.get('type', 'DOCUMENT'),
+                    'original_source': document_data.get('source', 'Unknown'),
+                    'entities': document_data.get('entities', []),
+                    'created_from': 'document_clustering'
+                }),
+                datetime.now()
+            ))
+            
+            document_id = cursor.fetchone()[0]
+            connection.commit()
+            cursor.close()
+            
+            return document_id
+            
+        except Exception as e:
+            print(f"Erreur lors du stockage du document: {str(e)}")
+            return None
+
 # Instance globale de la base de données
 db = Database()

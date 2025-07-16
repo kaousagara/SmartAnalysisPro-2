@@ -34,7 +34,12 @@ export function ThreatChart() {
   
   const { data: chartData, isLoading, error } = useQuery({
     queryKey: ['/api/threats/evolution', timeFilter],
-    queryFn: () => fetch(`/api/threats/evolution?filter=${timeFilter}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/threats/evolution?filter=${timeFilter}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`,
+        'Content-Type': 'application/json'
+      }
+    }).then(res => res.json()),
     refetchInterval: 30000,
   });
 

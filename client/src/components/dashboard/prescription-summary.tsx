@@ -49,9 +49,14 @@ export function PrescriptionSummary() {
 
   const fetchPrescriptionSummary = async () => {
     try {
+      const authHeaders = {
+        'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`,
+        'Content-Type': 'application/json'
+      };
+      
       const [prescriptionsResponse, statsResponse] = await Promise.all([
-        fetch('/api/prescriptions'),
-        fetch('/api/prescriptions/statistics')
+        fetch('/api/prescriptions', { headers: authHeaders }),
+        fetch('/api/prescriptions/statistics', { headers: authHeaders })
       ]);
 
       if (prescriptionsResponse.ok && statsResponse.ok) {
@@ -87,7 +92,12 @@ export function PrescriptionSummary() {
   const fetchPrescriptionDetails = async (prescriptionId: string) => {
     setDetailsLoading(true);
     try {
-      const response = await fetch(`/api/prescriptions/${prescriptionId}`);
+      const response = await fetch(`/api/prescriptions/${prescriptionId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setPrescriptionDetails(data);

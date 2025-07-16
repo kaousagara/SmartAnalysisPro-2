@@ -56,10 +56,17 @@ export default function Prescriptions() {
 
   const fetchPrescriptions = async () => {
     try {
-      const response = await fetch('/api/prescriptions');
+      const response = await fetch('/api/prescriptions', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setPrescriptions(data.prescriptions || []);
+      } else {
+        console.error('Auth error:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching prescriptions:', error);
@@ -72,7 +79,10 @@ export default function Prescriptions() {
     try {
       const response = await fetch(`/api/prescriptions/${id}/status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ status })
       });
 

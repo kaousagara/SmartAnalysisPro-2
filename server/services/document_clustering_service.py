@@ -8,6 +8,9 @@ import json
 from datetime import datetime
 import hashlib
 import re
+import time
+from threading import Lock
+from functools import lru_cache
 
 class DocumentClusteringService:
     def __init__(self):
@@ -23,9 +26,13 @@ class DocumentClusteringService:
         self.cluster_models = {}
         self.similarity_threshold = 0.7
         self.min_cluster_size = 2
+        self.cache_lock = Lock()
+        self.vectorizer_cache = {}
+        self.cluster_cache = {}
         
+    @lru_cache(maxsize=1000)
     def preprocess_text(self, text: str) -> str:
-        """Prétraitement du texte pour l'analyse"""
+        """Prétraitement du texte pour l'analyse avec cache"""
         # Nettoyer le texte
         text = re.sub(r'[^\w\s]', ' ', text.lower())
         text = re.sub(r'\s+', ' ', text.strip())

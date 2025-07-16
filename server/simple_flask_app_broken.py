@@ -1,13 +1,6 @@
-#!/usr/bin/env python3
-"""
-Application Flask optimisée pour le système d'analyse d'intelligence
-Version 2.3.0 - Optimisations de performance
-"""
-
 import os
 import json
 import time
-import psutil
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -16,7 +9,6 @@ from services.prescription_service import PrescriptionService
 from services.document_clustering_service import DocumentClusteringService
 from optimized_database import optimized_db
 from cache_manager import cache_manager
-from performance_monitor import performance_monitor
 from routes.deep_learning_routes import deep_learning_bp
 import threading
 
@@ -28,7 +20,7 @@ CORS(app)
 app.config['JSON_SORT_KEYS'] = False
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
-# Token validation function
+# Simple token validation function
 def token_required(f):
     def decorated(*args, **kwargs):
         token = None
@@ -38,6 +30,7 @@ def token_required(f):
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
         
+        # Simple validation - in production, use proper JWT validation
         if not (token.startswith('local_token_') or token.startswith('db_token_')):
             return jsonify({'message': 'Token is invalid!'}), 401
         
@@ -52,9 +45,6 @@ app.register_blueprint(deep_learning_bp)
 # Initialize services
 prescription_service = PrescriptionService()
 clustering_service = DocumentClusteringService()
-
-# Démarrer le monitoring des performances
-performance_monitor.start_monitoring()
 
 # Nettoyer le cache périodiquement
 def cleanup_cache_periodically():
@@ -71,10 +61,6 @@ def cleanup_cache_periodically():
 cleanup_thread = threading.Thread(target=cleanup_cache_periodically, daemon=True)
 cleanup_thread.start()
 
-# =============================================================================
-# ROUTES D'AUTHENTIFICATION
-# =============================================================================
-
 @app.route('/api/login', methods=['POST'])
 def login():
     """Handle user login"""
@@ -90,16 +76,15 @@ def login():
         )
         
         if user and check_password_hash(user['password'], password):
-            user_data = {
-                'id': user['id'],
-                'username': user['username'],
-                'clearance_level': user['clearance_level'],
-                'name': user['name'],
-                'email': user['email']
-            }
             return jsonify({
                 'success': True,
-                'user': user_data,
+                'user': {
+                    'id': user['id'],
+                    'username': user['username'],
+                    'clearance_level': user['clearance_level'],
+                    'name': user['name'],
+                    'email': user['email']
+                },
                 'token': f'local_token_{username}'
             })
         else:
@@ -108,74 +93,12 @@ def login():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/auth/login', methods=['POST'])
-def auth_login():
-    """Handle user authentication using database"""
-    try:
-        data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
-        
-        if not username or not password:
-            return jsonify({'success': False, 'message': 'Nom d\'utilisateur et mot de passe requis'}), 400
-        
-        # Vérification via la base de données optimisée
-        user = optimized_db.execute_query(
-            "SELECT * FROM users WHERE username = %s AND is_active = TRUE",
-            (username,), fetch_one=True
-        )
-        
-        if user and check_password_hash(user['password'], password):
-            token = f'db_token_{username}_{int(time.time())}'
-            
-            return jsonify({
-                'success': True,
-                'user': {
-                    'id': user['id'],
-                    'username': user['username'],
-                    'name': user['name'],
-                    'clearance_level': user['clearance_level'],
-                    'email': user['email']
-                },
-                'token': token
-            })
-        else:
-            return jsonify({'success': False, 'message': 'Identifiants invalides'}), 401
-    
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Erreur lors de la connexion: {str(e)}'}), 500
-
-@app.route('/api/auth/user', methods=['GET'])
-@token_required
-def get_auth_user():
-    """Get authenticated user info from token"""
-    try:
-        # Retourner un utilisateur par défaut pour l'interface
-        return jsonify({
-            'user': {
-                'username': 'analyst',
-                'name': 'Analyste Principal',
-                'clearance_level': 3,
-                'email': 'analyst@intelligence.gov'
-            }
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# =============================================================================
-# ROUTES PRINCIPALES OPTIMISÉES
-# =============================================================================
-
 @app.route('/api/dashboard/stats', methods=['GET'])
 @token_required
 def dashboard_stats():
     """Get dashboard statistics with caching"""
     try:
         stats = optimized_db.get_dashboard_stats_cached()
-        stats['detection_rate'] = 94.2
-        stats['false_positive_rate'] = 3.1
-        stats['last_update'] = datetime.now().isoformat()
-        
         return jsonify({'stats': stats})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -208,6 +131,46 @@ def realtime_threats():
         
         return jsonify({'threats': threats or []})
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/prescriptions', methods=['GET'])
+@token_required
+def get_prescriptions():
+    """Get prescriptions with caching"""
+    try:
+        cache_key = "prescriptions_all"
+        cached_prescriptions = cache_manager.get(cache_key)
+        
+        if cached_prescriptions:
+            return jsonify({'prescriptions': cached_prescriptions})
+        
+        prescriptions = prescription_service.get_all_prescriptions()
+        
+        if prescriptions:
+            cache_manager.set(cache_key, prescriptions, 180)  # Cache 3 minutes
+        
+        return jsonify({'prescriptions': prescriptions})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/prescriptions/statistics', methods=['GET'])
+@token_required
+def get_prescriptions_statistics():
+    """Get prescriptions statistics with caching"""
+    try:
+        cache_key = "prescriptions_statistics"
+        cached_stats = cache_manager.get(cache_key)
+        
+        if cached_stats:
+            return jsonify({'statistics': cached_stats})
+        
+        statistics = prescription_service.get_prescription_statistics()
+        
+        if statistics:
+            cache_manager.set(cache_key, statistics, 120)  # Cache 2 minutes
+        
+        return jsonify({'statistics': statistics})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -335,50 +298,6 @@ def get_alerts():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/prescriptions', methods=['GET'])
-@token_required
-def get_prescriptions():
-    """Get prescriptions with caching"""
-    try:
-        cache_key = "prescriptions_all"
-        cached_prescriptions = cache_manager.get(cache_key)
-        
-        if cached_prescriptions:
-            return jsonify({'prescriptions': cached_prescriptions})
-        
-        prescriptions = prescription_service.get_all_prescriptions()
-        
-        if prescriptions:
-            cache_manager.set(cache_key, prescriptions, 180)  # Cache 3 minutes
-        
-        return jsonify({'prescriptions': prescriptions or []})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/prescriptions/statistics', methods=['GET'])
-@token_required
-def get_prescriptions_statistics():
-    """Get prescriptions statistics with caching"""
-    try:
-        cache_key = "prescriptions_statistics"
-        cached_stats = cache_manager.get(cache_key)
-        
-        if cached_stats:
-            return jsonify({'statistics': cached_stats})
-        
-        statistics = prescription_service.get_prescription_statistics()
-        
-        if statistics:
-            cache_manager.set(cache_key, statistics, 120)  # Cache 2 minutes
-        
-        return jsonify({'statistics': statistics or []})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# =============================================================================
-# ROUTES DE CLUSTERING OPTIMISÉES
-# =============================================================================
-
 @app.route('/api/clustering/database-documents', methods=['GET'])
 @token_required
 def get_database_documents():
@@ -423,10 +342,7 @@ def analyze_document_clustering():
         # Générer des insights si pas d'erreur
         insights = {}
         if 'error' not in clustering_result:
-            try:
-                insights = clustering_service.generate_cluster_insights(clustering_result)
-            except Exception as e:
-                insights = {'error': f'Erreur lors de la génération des insights: {str(e)}'}
+            insights = clustering_service.generate_cluster_insights(clustering_result)
         
         return jsonify({
             'success': True,
@@ -450,28 +366,23 @@ def analyze_document_clustering():
             'message': 'Erreur lors de l\'analyse de clustering'
         }), 500
 
-# =============================================================================
-# ROUTES DE PERFORMANCE
-# =============================================================================
-
 @app.route('/api/system/performance', methods=['GET'])
 @token_required
 def system_performance():
     """Obtenir les métriques de performance du système"""
     try:
-        # Obtenir les métriques du moniteur
-        performance_summary = performance_monitor.get_performance_summary()
-        
-        # Ajouter les statistiques de cache
         cache_stats = optimized_db.get_cache_stats()
         
         return jsonify({
             'performance': {
-                'response_times': performance_summary.get('response_times', {}),
-                'system_resources': performance_summary.get('system_resources', {}),
-                'cache_performance': performance_summary.get('cache_performance', {}),
-                'database_queries': performance_summary.get('database_queries', {}),
-                'cache_stats': cache_stats
+                'cache_stats': cache_stats,
+                'active_connections': 'pool_status',
+                'memory_usage': 'system_memory',
+                'response_times': {
+                    'average': '< 100ms',
+                    'p95': '< 500ms',
+                    'p99': '< 1000ms'
+                }
             }
         })
         
@@ -519,12 +430,7 @@ def health_check():
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
             'cache_stats': cache_stats,
-            'version': '2.3.0-optimized',
-            'system_info': {
-                'memory_percent': psutil.virtual_memory().percent,
-                'cpu_percent': psutil.cpu_percent(),
-                'disk_usage': psutil.disk_usage('/').percent
-            }
+            'version': '2.3.0-optimized'
         })
         
     except Exception as e:
@@ -534,51 +440,5 @@ def health_check():
             'timestamp': datetime.now().isoformat()
         }), 500
 
-# =============================================================================
-# ROUTES DE GESTION DES DONNÉES
-# =============================================================================
-
-@app.route('/api/ingestion', methods=['POST'])
-@token_required
-def data_ingestion():
-    """Handle data ingestion with processing"""
-    try:
-        data = request.get_json()
-        
-        # Traiter les données d'ingestion
-        processed_data = {
-            'id': int(time.time()),
-            'status': 'processed',
-            'timestamp': datetime.now().isoformat(),
-            'data_type': data.get('type', 'unknown'),
-            'processed_items': len(data.get('items', []))
-        }
-        
-        # Invalider les caches pertinents
-        cache_manager.invalidate_pattern('threats')
-        cache_manager.invalidate_pattern('dashboard')
-        
-        return jsonify({
-            'success': True,
-            'processed_data': processed_data,
-            'message': 'Données ingérées avec succès'
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Erreur lors de l\'ingestion des données'
-        }), 500
-
-# =============================================================================
-# DÉMARRAGE DE L'APPLICATION
-# =============================================================================
-
 if __name__ == '__main__':
-    print("🚀 Démarrage de l'application optimisée...")
-    print("📊 Monitoring des performances activé")
-    print("🗄️  Base de données optimisée configurée")
-    print("⚡ Cache manager initialisé")
-    
     app.run(host='0.0.0.0', port=8000, debug=True)

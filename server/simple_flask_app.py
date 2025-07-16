@@ -14,6 +14,7 @@ from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from services.prescription_service import PrescriptionService
 from services.document_clustering_service import DocumentClusteringService
+from services.threat_evaluation_service import ThreatEvaluationService
 from optimized_database import optimized_db
 from cache_manager import cache_manager
 from performance_monitor import performance_monitor
@@ -52,6 +53,7 @@ app.register_blueprint(deep_learning_bp)
 # Initialize services
 prescription_service = PrescriptionService()
 clustering_service = DocumentClusteringService()
+threat_evaluation_service = ThreatEvaluationService()
 
 # Démarrer le monitoring des performances
 performance_monitor.start_monitoring()
@@ -585,14 +587,22 @@ def data_ingestion():
             'processed_items': len(data.get('items', []))
         }
 
+        # Réévaluer les menaces, prédictions et prescriptions si un document est fourni
+        evaluation_result = None
+        if 'document' in data:
+            evaluation_result = threat_evaluation_service.evaluate_new_document(data['document'])
+        
         # Invalider les caches pertinents
         cache_manager.invalidate_pattern('threats')
         cache_manager.invalidate_pattern('dashboard')
+        cache_manager.invalidate_pattern('prescriptions')
+        cache_manager.invalidate_pattern('predictions')
 
         return jsonify({
             'success': True,
             'processed_data': processed_data,
-            'message': 'Données ingérées avec succès'
+            'evaluation_result': evaluation_result,
+            'message': 'Données ingérées avec succès et évaluation effectuée'
         })
 
     except Exception as e:
@@ -600,6 +610,97 @@ def data_ingestion():
             'success': False,
             'error': str(e),
             'message': 'Erreur lors de l\'ingestion des données'
+        }), 500
+
+# =============================================================================
+# NOUVEAUX ENDPOINTS DE RÉÉVALUATION
+# =============================================================================
+
+@app.route('/api/documents/<int:document_id>/evaluate', methods=['POST'])
+@token_required
+def evaluate_document(document_id):
+    """Réévalue un document spécifique et son cluster"""
+    try:
+        # Récupérer le document
+        document = optimized_db.execute_query(
+            "SELECT * FROM documents WHERE id = %s",
+            (document_id,), fetch_one=True
+        )
+        
+        if not document:
+            return jsonify({'error': 'Document non trouvé'}), 404
+        
+        # Effectuer l'évaluation
+        evaluation_result = threat_evaluation_service.evaluate_new_document(document)
+        
+        # Invalider les caches
+        cache_manager.invalidate_pattern('threats')
+        cache_manager.invalidate_pattern('prescriptions')
+        cache_manager.invalidate_pattern('predictions')
+        
+        return jsonify({
+            'success': True,
+            'evaluation_result': evaluation_result,
+            'message': f'Document {document_id} réévalué avec succès'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de l\'évaluation du document'
+        }), 500
+
+@app.route('/api/cluster/<int:cluster_id>/evaluate', methods=['POST'])
+@token_required
+def evaluate_cluster(cluster_id):
+    """Réévalue tous les documents d'un cluster"""
+    try:
+        # Récupérer tous les documents pour le clustering
+        all_documents = optimized_db.get_all_documents_cached()
+        
+        # Effectuer le clustering
+        clustering_result = clustering_service.cluster_documents_by_similarity(all_documents)
+        
+        if 'error' in clustering_result:
+            return jsonify({'error': f'Erreur clustering: {clustering_result["error"]}'}), 500
+        
+        # Trouver le cluster spécifique
+        target_cluster = None
+        for cluster in clustering_result.get('clusters', []):
+            if cluster.get('id') == cluster_id:
+                target_cluster = cluster
+                break
+        
+        if not target_cluster:
+            return jsonify({'error': 'Cluster non trouvé'}), 404
+        
+        # Évaluer chaque document du cluster
+        evaluation_results = []
+        cluster_documents = target_cluster.get('documents', [])
+        
+        for doc in cluster_documents:
+            evaluation_result = threat_evaluation_service.evaluate_new_document(doc)
+            evaluation_results.append(evaluation_result)
+        
+        # Invalider les caches
+        cache_manager.invalidate_pattern('threats')
+        cache_manager.invalidate_pattern('prescriptions')
+        cache_manager.invalidate_pattern('predictions')
+        
+        return jsonify({
+            'success': True,
+            'cluster_id': cluster_id,
+            'documents_evaluated': len(evaluation_results),
+            'evaluation_results': evaluation_results,
+            'message': f'Cluster {cluster_id} réévalué avec succès'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de l\'évaluation du cluster'
         }), 500
 
 # =============================================================================

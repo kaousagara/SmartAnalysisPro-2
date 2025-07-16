@@ -11,6 +11,7 @@ const navigation = [
   { name: 'Analyse Prédictive', href: '/analytics', icon: Brain },
   { name: 'Deep Learning', href: '/deep-learning', icon: Brain },
   { name: 'Clustering Documents', href: '/document-clustering', icon: Layers },
+  { name: 'Réévaluation', href: '/threat-evaluation', icon: AlertTriangle },
   { name: 'Prescriptions', href: '/prescriptions', icon: Clipboard },
   { name: 'Flux de Traitement', href: '/threat-flow', icon: ArrowRight },
   { name: 'Requêtes de Collecte', href: '/collection-requests', icon: Target },

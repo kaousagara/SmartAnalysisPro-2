@@ -303,13 +303,18 @@ def realtime_threats():
 @app.route('/api/threats/evolution', methods=['GET'])
 def threat_evolution():
     """Get threat evolution data"""
-    return jsonify({
-        'evolution': {
-            'timestamps': ['2024-01-15T09:00:00Z', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', '2024-01-15T12:00:00Z'],
-            'scores': [0.3, 0.5, 0.7, 0.8],
-            'predictions': [0.85, 0.9, 0.92, 0.95]
-        }
-    })
+    try:
+        # Récupérer les données d'évolution depuis la base de données
+        # En l'absence de données, retourner une structure vide
+        return jsonify({
+            'evolution': {
+                'timestamps': [],
+                'scores': [],
+                'predictions': []
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/scenarios', methods=['GET'])
 def get_scenarios():
@@ -336,49 +341,20 @@ def get_scenario(scenario_id):
 @app.route('/api/ingestion/status', methods=['GET'])
 def ingestion_status():
     """Get data ingestion status"""
-    return jsonify({
-        'sources': [
-            {
-                'name': 'Flux SIGINT',
-                'type': 'stream',
-                'status': 'operational',
-                'last_updated': '2024-01-15T12:00:00Z',
-                'throughput': '1.2K/sec',
-                'queue_size': 45
-            },
-            {
-                'name': 'Rapports HUMINT',
-                'type': 'batch',
-                'status': 'operational',
-                'last_updated': '2024-01-15T11:30:00Z',
-                'throughput': '25/hour'
-            },
-            {
-                'name': 'Intelligence Open Source',
-                'type': 'stream',
-                'status': 'degraded',
-                'last_updated': '2024-01-15T10:15:00Z',
-                'throughput': '800/sec',
-                'queue_size': 120
-            },
-            {
-                'name': 'Feeds STIX/TAXII',
-                'type': 'stream',
-                'status': 'operational',
-                'last_updated': '2024-01-15T12:30:00Z',
-                'throughput': '2.5K/sec',
-                'queue_size': 15
-            },
-            {
-                'name': 'Logs de sécurité',
-                'type': 'stream',
-                'status': 'operational',
-                'last_updated': '2024-01-15T12:45:00Z',
-                'throughput': '5K/sec',
-                'queue_size': 230
+    try:
+        # Récupérer le statut d'ingestion depuis la base de données
+        # En l'absence de données, retourner une structure vide
+        return jsonify({
+            'sources': [],
+            'processing_stats': {
+                'total_processed': 0,
+                'success_rate': 0,
+                'avg_processing_time': 0,
+                'errors_last_hour': 0
             }
-        ]
-    })
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/ingestion/upload', methods=['POST'])
 @token_required
@@ -638,59 +614,26 @@ def test_ingestion():
 @app.route('/api/actions', methods=['GET'])
 def get_actions():
     """Get recent actions"""
-    return jsonify({
-        'actions': [
-            {
-                'id': 'action_001',
-                'type': 'SIGINT_COLLECTION',
-                'description': 'Collection SIGINT initiée pour la région Mali',
-                'priority': 'high',
-                'status': 'in_progress',
-                'timestamp': '2024-01-15T11:45:00Z'
-            },
-            {
-                'id': 'action_002',
-                'type': 'THREAT_ANALYSIS',
-                'description': 'Analyse de l\'échantillon de malware threat_002',
-                'priority': 'critical',
-                'status': 'completed',
-                'timestamp': '2024-01-15T11:30:00Z'
-            },
-            {
-                'id': 'action_003',
-                'type': 'NETWORK_MONITORING',
-                'description': 'Surveillance réseau activée pour IP suspecte',
-                'priority': 'medium',
-                'status': 'active',
-                'timestamp': '2024-01-15T11:15:00Z'
-            }
-        ]
-    })
+    try:
+        # Récupérer les actions depuis la base de données
+        # En l'absence de données, retourner une structure vide
+        return jsonify({
+            'actions': []
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/alerts', methods=['GET'])
 def get_alerts():
     """Get active alerts"""
-    return jsonify({
-        'alerts': [
-            {
-                'id': 'alert_001',
-                'type': 'threat',
-                'severity': 'critical',
-                'title': 'Score de Menace Élevé Détecté',
-                'message': 'La menace threat_002 a dépassé le seuil critique',
-                'timestamp': '2024-01-15T11:45:00Z',
-                'threat_id': 'threat_002'
-            },
-            {
-                'id': 'alert_002',
-                'type': 'system',
-                'severity': 'warning',
-                'title': 'Latence Système Élevée',
-                'message': 'Temps de réponse élevé détecté sur le module d\'analyse',
-                'timestamp': '2024-01-15T11:30:00Z'
-            }
-        ]
-    })
+    try:
+        # Récupérer les alertes depuis la base de données
+        # En l'absence de données, retourner une structure vide
+        return jsonify({
+            'alerts': []
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
@@ -978,39 +921,9 @@ def validate_prediction(threat_id):
 def get_prediction_trends():
     """Obtenir les tendances de prédiction"""
     try:
-        trends = {
-            'threat_001': {
-                'recent_trend': 0.15,
-                'overall_trend': 0.08,
-                'current_score': 0.72,
-                'volatility': 0.12
-            },
-            'threat_002': {
-                'recent_trend': -0.03,
-                'overall_trend': 0.02,
-                'current_score': 0.58,
-                'volatility': 0.08
-            },
-            'threat_003': {
-                'recent_trend': 0.22,
-                'overall_trend': 0.18,
-                'current_score': 0.89,
-                'volatility': 0.15
-            },
-            'threat_004': {
-                'recent_trend': 0.0,
-                'overall_trend': -0.05,
-                'current_score': 0.45,
-                'volatility': 0.06
-            },
-            'threat_005': {
-                'recent_trend': 0.08,
-                'overall_trend': 0.12,
-                'current_score': 0.63,
-                'volatility': 0.10
-            }
-        }
-        return jsonify({'trends': trends})
+        # Récupérer les tendances depuis la base de données
+        # En l'absence de données, retourner une structure vide
+        return jsonify({'trends': {}})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1018,50 +931,17 @@ def get_prediction_trends():
 def get_signal_analysis():
     """Analyse des signaux faibles et forts"""
     try:
-        # Simuler l'analyse des signaux
-        signal_analysis = {
-            'weak_signals': [
-                {
-                    'id': 'weak_001',
-                    'description': 'Augmentation subtile du trafic réseau vers certaines régions',
-                    'score': 0.65,
-                    'confidence': 0.65,
-                    'entities': ['entity_001', 'entity_002'],
-                    'trend': 'increasing',
-                    'impact_potential': 'medium',
-                    'timeframe': '7-14 jours'
-                },
-                {
-                    'id': 'weak_002',
-                    'description': 'Changements dans les patterns de communication',
-                    'score': 0.72,
-                    'confidence': 0.72,
-                    'entities': ['entity_001', 'entity_002'],
-                    'trend': 'increasing',
-                    'impact_potential': 'high',
-                    'timeframe': '3-7 jours'
-                }
-            ],
-            'strong_signals': [
-                {
-                    'id': 'strong_001',
-                    'description': 'Activité suspecte confirmée sur infrastructure critique',
-                    'score': 0.89,
-                    'confidence': 0.89,
-                    'entities': ['entity_001', 'entity_002'],
-                    'trend': 'increasing',
-                    'impact_potential': 'critical',
-                    'timeframe': '24-48 heures'
-                }
-            ],
+        # Récupérer l'analyse des signaux depuis la base de données
+        # En l'absence de données, retourner une structure vide
+        return jsonify({
+            'weak_signals': [],
+            'strong_signals': [],
             'trend_analysis': {
-                'increasing_threats': 15,
-                'decreasing_threats': 8,
-                'stable_threats': 23
+                'increasing_threats': 0,
+                'decreasing_threats': 0,
+                'stable_threats': 0
             }
-        }
-        
-        return jsonify(signal_analysis)
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

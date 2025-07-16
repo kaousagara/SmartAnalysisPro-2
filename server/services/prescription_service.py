@@ -265,6 +265,9 @@ class PrescriptionService:
         # Score de crédibilité basé sur l'historique
         credibility_score = self._calculate_credibility_score(threat_data)
         
+        # Analyse de similarité avec autres menaces
+        similarity_analysis = self._analyze_threat_similarity(threat_data)
+        
         # Déterminer la priorité basée sur le score de menace et le delta
         priority = self._determine_priority_with_delta(threat_score, delta_score)
         
@@ -280,7 +283,7 @@ class PrescriptionService:
         prescription = {
             'id': f"presc_{random.randint(1000, 9999)}",
             'title': f"Analyse prédictive - {threat_data.get('name', 'Menace inconnue')}",
-            'description': self._generate_llm_explanation(threat_data, delta_score, entity_centrality),
+            'description': self._generate_llm_explanation_with_similarity(threat_data, delta_score, entity_centrality, similarity_analysis),
             'priority': priority,
             'category': category,
             'threat_id': threat_id,
@@ -294,7 +297,8 @@ class PrescriptionService:
             'delta_score': delta_score,
             'entity_centrality': entity_centrality,
             'credibility_score': credibility_score,
-            'collection_request': collection_request
+            'collection_request': collection_request,
+            'similarity_analysis': similarity_analysis
         }
         
         # Mettre à jour l'historique des prédictions
@@ -626,7 +630,113 @@ class PrescriptionService:
         explanation += f"Recommandation: {action} la surveillance et intensifier la collecte."
 
         return explanation
+    
+    def _generate_llm_explanation_with_similarity(self, threat_data: Dict, delta_score: float, 
+                                                entity_centrality: float, similarity_analysis: Dict) -> str:
+        """Générer une explication enrichie avec analyse de similarité"""
+        base_explanation = self._generate_llm_explanation(threat_data, delta_score, entity_centrality)
+        
+        similar_threats = similarity_analysis.get('similar_threats', [])
+        cluster_analysis = similarity_analysis.get('cluster_analysis')
+        
+        if similar_threats:
+            similarity_info = f" CORRÉLATION: {len(similar_threats)} menace(s) similaire(s) détectée(s)"
+            
+            if cluster_analysis:
+                cluster_score = cluster_analysis.get('aggregated_threat_score', 0)
+                cluster_theme = cluster_analysis.get('theme_analysis', {}).get('dominant_theme', 'general')
+                similarity_info += f" - Score cluster: {cluster_score:.2f}"
+                similarity_info += f" - Thème dominant: {cluster_theme}"
+                
+                # Recommandation basée sur le cluster
+                if cluster_score > 0.7:
+                    similarity_info += " - RECOMMANDATION: Coordination renforcée nécessaire"
+                elif len(similar_threats) > 3:
+                    similarity_info += " - RECOMMANDATION: Surveillance pattern coordonnée"
+        else:
+            similarity_info = " STATUT: Menace isolée, pas de corrélation détectée"
+        
+        return base_explanation + similarity_info
 
+    
+    def _analyze_threat_similarity(self, threat_data: Dict) -> Dict:
+        """Analyser la similarité avec d'autres menaces pour enrichir la prescription"""
+        try:
+            from .similarity_service import similarity_service
+            
+            # Obtenir les menaces récentes
+            recent_threats = self._get_recent_threats()
+            if len(recent_threats) < 2:
+                return {'similar_threats': [], 'cluster_analysis': None}
+            
+            # Ajouter la menace actuelle pour l'analyse
+            all_threats = recent_threats + [threat_data]
+            
+            # Regrouper par similarité
+            clustering_result = similarity_service.group_messages_by_similarity(all_threats)
+            
+            # Trouver le cluster contenant la menace actuelle
+            current_cluster = None
+            threat_id = threat_data.get('id')
+            
+            for cluster in clustering_result.get('clusters', []):
+                for msg in cluster['messages']:
+                    if msg.get('id') == threat_id:
+                        current_cluster = cluster
+                        break
+                if current_cluster:
+                    break
+            
+            similar_threats = []
+            if current_cluster and len(current_cluster['messages']) > 1:
+                # Exclure la menace actuelle
+                similar_threats = [
+                    msg for msg in current_cluster['messages'] 
+                    if msg.get('id') != threat_id
+                ]
+            
+            return {
+                'similar_threats': similar_threats,
+                'cluster_analysis': current_cluster,
+                'total_clusters': len(clustering_result.get('clusters', [])),
+                'analysis_timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Erreur analyse similarité: {str(e)}")
+            return {'similar_threats': [], 'cluster_analysis': None, 'error': str(e)}
+    
+    def _get_recent_threats(self) -> List[Dict]:
+        """Récupérer les menaces récentes pour l'analyse de similarité"""
+        try:
+            # Simuler la récupération de menaces récentes
+            # En production, récupérer depuis la base de données
+            recent_threats = []
+            
+            for i in range(20):  # Dernières 20 menaces
+                threat = {
+                    'id': f'threat_{i}',
+                    'name': f'Menace simulée {i}',
+                    'score': random.uniform(0.3, 0.9),
+                    'timestamp': (datetime.now() - timedelta(hours=random.randint(1, 48))).isoformat(),
+                    'content': f'Contenu de menace simulée {i}',
+                    'metadata': {
+                        'theme_name': random.choice(['sécurité', 'militaire', 'politique']),
+                        'theme_confidence': random.uniform(0.6, 0.9),
+                        'location': random.choice(['Gao', 'Tombouctou', 'Kidal', 'Bamako'])
+                    },
+                    'entities': [
+                        {'name': f'Entité_{random.randint(1, 10)}', 'type': 'organization'},
+                        {'name': f'Lieu_{random.randint(1, 5)}', 'type': 'location'}
+                    ]
+                }
+                recent_threats.append(threat)
+            
+            return recent_threats
+            
+        except Exception as e:
+            logger.error(f"Erreur récupération menaces récentes: {str(e)}")
+            return []
     
     def _update_prediction_history(self, threat_id: str, score: float, prescription_id: str):
         """Mettre à jour l'historique des prédictions"""

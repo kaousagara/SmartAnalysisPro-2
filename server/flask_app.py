@@ -59,23 +59,23 @@ class LoginResource(Resource):
             username = data.get('username')
             password = data.get('password')
             two_fa_code = data.get('two_fa_code')
-            
+
             if not username or not password:
                 return {'message': 'Username and password required'}, 400
-            
+
             user = USERS.get(username)
             if not user or not check_password_hash(user['password'], password):
                 return {'message': 'Invalid credentials'}, 401
-            
+
             # Simple 2FA check (in production, use proper 2FA)
             if two_fa_code != '123456':
                 return {'message': 'Invalid 2FA code'}, 401
-            
+
             access_token = create_access_token(
                 identity=username,
                 expires_delta=Config.JWT_ACCESS_TOKEN_EXPIRES
             )
-            
+
             return {
                 'access_token': access_token,
                 'user': {
@@ -84,7 +84,7 @@ class LoginResource(Resource):
                     'clearance_level': user['clearance_level']
                 }
             }, 200
-            
+
         except Exception as e:
             logger.error(f"Login error: {str(e)}")
             return {'message': 'Login failed'}, 500
@@ -95,16 +95,16 @@ class UserProfileResource(Resource):
         try:
             username = get_jwt_identity()
             user = USERS.get(username)
-            
+
             if not user:
                 return {'message': 'User not found'}, 404
-            
+
             return {
                 'username': username,
                 'name': user['name'],
                 'clearance_level': user['clearance_level']
             }, 200
-            
+
         except Exception as e:
             logger.error(f"User profile error: {str(e)}")
             return {'message': 'Failed to get user profile'}, 500
@@ -115,7 +115,7 @@ class DashboardStatsResource(Resource):
     def get(self):
         try:
             stats = threat_service.get_threat_statistics()
-            
+
             # Add additional dashboard stats
             stats.update({
                 'data_sources': 17,
@@ -123,9 +123,9 @@ class DashboardStatsResource(Resource):
                 'false_positive_rate': 0.062,
                 'system_status': 'operational'
             })
-            
+
             return stats, 200
-            
+
         except Exception as e:
             logger.error(f"Dashboard stats error: {str(e)}")
             return {'message': 'Failed to get dashboard stats'}, 500
@@ -136,9 +136,9 @@ class RealtimeThreatsResource(Resource):
         try:
             limit = request.args.get('limit', 20, type=int)
             threats = threat_service.get_realtime_threats(limit)
-            
+
             return {'threats': threats}, 200
-            
+
         except Exception as e:
             logger.error(f"Realtime threats error: {str(e)}")
             return {'message': 'Failed to get realtime threats'}, 500
@@ -149,26 +149,26 @@ class ThreatEvolutionResource(Resource):
         try:
             # Get time filter from query parameters
             time_filter = request.args.get('filter', '24H')
-            
+
             # Get real threat data from service
             threats = threat_service.get_realtime_threats(limit=100)
-            
+
             # Process data based on time filter
             now = datetime.now()
             labels = []
             data_points = []
-            
+
             if time_filter == '24H':
                 # 24 hours with hourly data points
                 for i in range(24):
                     hour_start = now - timedelta(hours=23-i)
                     hour_label = hour_start.strftime('%H:%M')
-                    
+
                     # Calculate average score for threats in this hour
                     hour_threats = [t for t in threats if 
                                   'timestamp' in t and 
                                   abs((datetime.fromisoformat(t['timestamp'].replace('Z', '')) - hour_start).total_seconds()) < 3600]
-                    
+
                     if hour_threats:
                         avg_score = sum(float(t.get('score', 0)) for t in hour_threats) / len(hour_threats)
                     else:
@@ -176,21 +176,21 @@ class ThreatEvolutionResource(Resource):
                         base_score = 0.4 + (i % 6) * 0.05
                         noise = (hash(str(hour_start)) % 200) / 2000
                         avg_score = min(max(base_score + noise, 0), 1)
-                    
+
                     labels.append(hour_label)
                     data_points.append(round(avg_score, 3))
-                    
+
             elif time_filter == '7J':
                 # 7 days with daily data points
                 for i in range(7):
                     day_start = now - timedelta(days=6-i)
                     day_label = day_start.strftime('%a')
-                    
+
                     # Calculate average score for threats in this day
                     day_threats = [t for t in threats if 
                                   'timestamp' in t and 
                                   abs((datetime.fromisoformat(t['timestamp'].replace('Z', '')) - day_start).days) == 0]
-                    
+
                     if day_threats:
                         avg_score = sum(float(t.get('score', 0)) for t in day_threats) / len(day_threats)
                     else:
@@ -198,21 +198,21 @@ class ThreatEvolutionResource(Resource):
                         base_score = 0.45 + (i % 4) * 0.1
                         noise = (hash(str(day_start)) % 300) / 3000
                         avg_score = min(max(base_score + noise, 0), 1)
-                    
+
                     labels.append(day_label)
                     data_points.append(round(avg_score, 3))
-                    
+
             elif time_filter == '30J':
                 # 30 days with daily data points
                 for i in range(30):
                     day_start = now - timedelta(days=29-i)
                     day_label = day_start.strftime('%d/%m')
-                    
+
                     # Calculate average score for threats in this day
                     day_threats = [t for t in threats if 
                                   'timestamp' in t and 
                                   abs((datetime.fromisoformat(t['timestamp'].replace('Z', '')) - day_start).days) == 0]
-                    
+
                     if day_threats:
                         avg_score = sum(float(t.get('score', 0)) for t in day_threats) / len(day_threats)
                     else:
@@ -221,10 +221,10 @@ class ThreatEvolutionResource(Resource):
                         trend = (i / 30) * 0.2  # Slight upward trend
                         noise = (hash(str(day_start)) % 400) / 4000
                         avg_score = min(max(base_score + trend + noise, 0), 1)
-                    
+
                     labels.append(day_label)
                     data_points.append(round(avg_score, 3))
-            
+
             return {
                 'labels': labels,
                 'datasets': [
@@ -254,7 +254,7 @@ class ThreatEvolutionResource(Resource):
                     }
                 ]
             }, 200
-            
+
         except Exception as e:
             logger.error(f"Threat evolution error: {str(e)}")
             return {'message': 'Failed to get threat evolution'}, 500
@@ -266,16 +266,16 @@ class DataIngestionResource(Resource):
         try:
             data = request.get_json()
             format_type = data.get('format', 'json')
-            
+
             # Ingest data with deep learning enhancement
             normalized_data = data_ingestion_service.ingest_data(data, format_type)
-            
+
             # Process for threat scoring with DL integration
             threat_data = threat_service.process_threat_data(normalized_data)
-            
+
             # Evaluate scenarios
             triggered_scenarios = scenario_service.evaluate_scenarios(threat_data)
-            
+
             # Prepare enhanced response
             response = {
                 'threat_data': threat_data,
@@ -289,9 +289,9 @@ class DataIngestionResource(Resource):
                     'base_score': threat_data.get('base_score', 0.0)
                 }
             }
-            
+
             return response, 201
-            
+
         except Exception as e:
             logger.error(f"Data ingestion error: {str(e)}")
             return {'message': f'Data ingestion failed: {str(e)}'}, 500
@@ -302,7 +302,7 @@ class DataIngestionStatusResource(Resource):
         try:
             status = data_ingestion_service.get_ingestion_status()
             return status, 200
-            
+
         except Exception as e:
             logger.error(f"Ingestion status error: {str(e)}")
             return {'message': 'Failed to get ingestion status'}, 500
@@ -314,18 +314,18 @@ class ScenariosResource(Resource):
         try:
             scenarios = scenario_service.get_active_scenarios()
             return {'scenarios': scenarios}, 200
-            
+
         except Exception as e:
             logger.error(f"Scenarios error: {str(e)}")
             return {'message': 'Failed to get scenarios'}, 500
-    
+
     @jwt_required()
     def post(self):
         try:
             data = request.get_json()
             scenario = scenario_service.create_scenario(data)
             return {'scenario': scenario}, 201
-            
+
         except Exception as e:
             logger.error(f"Create scenario error: {str(e)}")
             return {'message': f'Failed to create scenario: {str(e)}'}, 500
@@ -337,24 +337,24 @@ class ScenarioResource(Resource):
             scenario = scenario_service.get_scenario_by_id(scenario_id)
             if not scenario:
                 return {'message': 'Scenario not found'}, 404
-            
+
             return {'scenario': scenario}, 200
-            
+
         except Exception as e:
             logger.error(f"Get scenario error: {str(e)}")
             return {'message': 'Failed to get scenario'}, 500
-    
+
     @jwt_required()
     def put(self, scenario_id):
         try:
             data = request.get_json()
             scenario = scenario_service.update_scenario(scenario_id, data)
             return {'scenario': scenario}, 200
-            
+
         except Exception as e:
             logger.error(f"Update scenario error: {str(e)}")
             return {'message': f'Failed to update scenario: {str(e)}'}, 500
-    
+
     @jwt_required()
     def delete(self, scenario_id):
         try:
@@ -363,7 +363,7 @@ class ScenarioResource(Resource):
                 return {'message': 'Scenario deleted successfully'}, 200
             else:
                 return {'message': 'Scenario not found'}, 404
-                
+
         except Exception as e:
             logger.error(f"Delete scenario error: {str(e)}")
             return {'message': f'Failed to delete scenario: {str(e)}'}, 500
@@ -376,14 +376,14 @@ class ActionsResource(Resource):
             # Get recent actions from Redis
             actions_data = redis_client.lrange('actions', 0, 19)  # Get last 20 actions
             actions = []
-            
+
             for action_data in actions_data:
                 action = json.loads(action_data)
                 action['timestamp'] = action.get('timestamp', datetime.now().isoformat())
                 actions.append(action)
-            
+
             return {'actions': actions}, 200
-            
+
         except Exception as e:
             logger.error(f"Actions error: {str(e)}")
             return {'message': 'Failed to get actions'}, 500
@@ -395,13 +395,13 @@ class AlertsResource(Resource):
         try:
             alerts_data = redis_client.lrange('alerts', 0, 9)  # Get last 10 alerts
             alerts = []
-            
+
             for alert_data in alerts_data:
                 alert = json.loads(alert_data)
                 alerts.append(alert)
-            
+
             return {'alerts': alerts}, 200
-            
+
         except Exception as e:
             logger.error(f"Alerts error: {str(e)}")
             return {'message': 'Failed to get alerts'}, 500
@@ -415,11 +415,11 @@ class FeedbackResource(Resource):
             threat_id = data.get('threat_id')
             feedback = data.get('feedback')
             context = data.get('context', {})
-            
+
             threat_service.update_threat_feedback(threat_id, feedback, context)
-            
+
             return {'message': 'Feedback submitted successfully'}, 200
-            
+
         except Exception as e:
             logger.error(f"Feedback error: {str(e)}")
             return {'message': 'Failed to submit feedback'}, 500
@@ -454,4 +454,11 @@ def internal_error(error):
     return {'message': 'Internal server error'}, 500
 
 if __name__ == '__main__':
+    # Import blueprints
+    from routes.deep_learning_routes import deep_learning_blueprint
+    from routes.similarity_routes import similarity_blueprint
+
+    # Enregistrer les blueprints
+    app.register_blueprint(deep_learning_blueprint, url_prefix='/api/deep-learning')
+    app.register_blueprint(similarity_blueprint, url_prefix='/api/similarity')
     app.run(host='0.0.0.0', port=8000, debug=True)

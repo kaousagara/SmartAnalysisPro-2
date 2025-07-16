@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,10 +56,47 @@ export default function SettingsPage() {
     cacheLifetime: 300,
     autoRefresh: true,
     dataRetention: 365,
-    exportFormat: 'json'
+    exportFormat: 'json',
+    
+    // Paramètres LLM
+    llmProvider: 'ollama',
+    ollamaUrl: 'http://localhost:11434',
+    ollamaModel: 'llama3',
+    openaiApiKey: '',
+    openaiModel: 'gpt-4',
+    openrouterApiKey: '',
+    openrouterModel: 'openai/gpt-4'
   });
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  
+  // Charger la configuration LLM au démarrage
+  useEffect(() => {
+    const loadLLMConfig = async () => {
+      try {
+        // Charger depuis localStorage
+        const savedConfig = localStorage.getItem('llm_config');
+        if (savedConfig) {
+          const config = JSON.parse(savedConfig);
+          setSettings(prev => ({
+            ...prev,
+            llmProvider: config.provider || 'ollama',
+            ollamaUrl: config.ollama?.url || 'http://localhost:11434',
+            ollamaModel: config.ollama?.model || 'llama3',
+            openaiApiKey: config.openai?.apiKey || '',
+            openaiModel: config.openai?.model || 'gpt-4',
+            openrouterApiKey: config.openrouter?.apiKey || '',
+            openrouterModel: config.openrouter?.model || 'openai/gpt-4'
+          }));
+        }
+        console.log('Configuration LLM chargée');
+      } catch (error) {
+        console.error('Erreur lors du chargement de la configuration LLM:', error);
+      }
+    };
+    
+    loadLLMConfig();
+  }, []);
 
   const handleSettingChange = (key: string, value: any) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -69,10 +106,38 @@ export default function SettingsPage() {
     setSaveStatus('saving');
     
     try {
-      // TODO: Implement API call to save settings
-      console.log('Saving settings:', settings);
+      // Save LLM configuration to localStorage for now
+      const llmConfig = {
+        provider: settings.llmProvider,
+        ollama: {
+          url: settings.ollamaUrl,
+          model: settings.ollamaModel
+        },
+        openai: {
+          apiKey: settings.openaiApiKey,
+          model: settings.openaiModel
+        },
+        openrouter: {
+          apiKey: settings.openrouterApiKey,
+          model: settings.openrouterModel
+        }
+      };
       
-      // Simulate API call
+      // Store in localStorage
+      localStorage.setItem('llm_config', JSON.stringify(llmConfig));
+      
+      // TODO: When admin routes are fixed, save to backend
+      // const response = await fetch('/api/admin/config', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`
+      //   },
+      //   body: JSON.stringify(llmConfig)
+      // });
+      
+      // Simulate API call for other settings
+      console.log('Saving other settings:', settings);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSaveStatus('success');
@@ -447,6 +512,173 @@ export default function SettingsPage() {
                 checked={settings.autoRefresh}
                 onCheckedChange={(checked) => handleSettingChange('autoRefresh', checked)}
               />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* LLM Configuration */}
+      <Card className="bg-dark-surface border-dark-border">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            <Monitor className="w-5 h-5 mr-2" />
+            Configuration IA (LLM)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-gray-300">Fournisseur LLM</Label>
+              <Select value={settings.llmProvider || 'ollama'} onValueChange={(value) => handleSettingChange('llmProvider', value)}>
+                <SelectTrigger className="bg-dark-elevated border-dark-border text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-dark-surface border-dark-border">
+                  <SelectItem value="ollama">Ollama (Local)</SelectItem>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="openrouter">OpenRouter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ollama Configuration */}
+            {settings.llmProvider === 'ollama' && (
+              <div className="space-y-3 p-4 bg-dark-elevated rounded-lg border border-dark-border">
+                <h4 className="text-white font-medium">Configuration Ollama</h4>
+                <div>
+                  <Label className="text-gray-300">URL du serveur</Label>
+                  <Input
+                    type="text"
+                    value={settings.ollamaUrl || 'http://localhost:11434'}
+                    onChange={(e) => handleSettingChange('ollamaUrl', e.target.value)}
+                    className="bg-dark-surface border-dark-border text-white"
+                    placeholder="http://localhost:11434"
+                  />
+                </div>
+                <div>
+                  <Label className="text-gray-300">Modèle</Label>
+                  <Input
+                    type="text"
+                    value={settings.ollamaModel || 'llama3'}
+                    onChange={(e) => handleSettingChange('ollamaModel', e.target.value)}
+                    className="bg-dark-surface border-dark-border text-white"
+                    placeholder="llama3"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* OpenAI Configuration */}
+            {settings.llmProvider === 'openai' && (
+              <div className="space-y-3 p-4 bg-dark-elevated rounded-lg border border-dark-border">
+                <h4 className="text-white font-medium">Configuration OpenAI</h4>
+                <div>
+                  <Label className="text-gray-300">Clé API</Label>
+                  <Input
+                    type="password"
+                    value={settings.openaiApiKey || ''}
+                    onChange={(e) => handleSettingChange('openaiApiKey', e.target.value)}
+                    className="bg-dark-surface border-dark-border text-white"
+                    placeholder="sk-..."
+                  />
+                </div>
+                <div>
+                  <Label className="text-gray-300">Modèle</Label>
+                  <Select value={settings.openaiModel || 'gpt-4'} onValueChange={(value) => handleSettingChange('openaiModel', value)}>
+                    <SelectTrigger className="bg-dark-surface border-dark-border text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-dark-elevated border-dark-border">
+                      <SelectItem value="gpt-4">GPT-4</SelectItem>
+                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                      <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* OpenRouter Configuration */}
+            {settings.llmProvider === 'openrouter' && (
+              <div className="space-y-3 p-4 bg-dark-elevated rounded-lg border border-dark-border">
+                <h4 className="text-white font-medium">Configuration OpenRouter</h4>
+                <div>
+                  <Label className="text-gray-300">Clé API</Label>
+                  <Input
+                    type="password"
+                    value={settings.openrouterApiKey || ''}
+                    onChange={(e) => handleSettingChange('openrouterApiKey', e.target.value)}
+                    className="bg-dark-surface border-dark-border text-white"
+                    placeholder="or-..."
+                  />
+                </div>
+                <div>
+                  <Label className="text-gray-300">Modèle</Label>
+                  <Input
+                    type="text"
+                    value={settings.openrouterModel || 'openai/gpt-4'}
+                    onChange={(e) => handleSettingChange('openrouterModel', e.target.value)}
+                    className="bg-dark-surface border-dark-border text-white"
+                    placeholder="openai/gpt-4"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4">
+              <Button variant="outline" onClick={async () => {
+                const provider = settings.llmProvider || 'ollama';
+                const config: any = {};
+                
+                if (provider === 'ollama') {
+                  config.ollama = {
+                    base_url: settings.ollamaUrl,
+                    model: settings.ollamaModel
+                  };
+                } else if (provider === 'openai') {
+                  config.openai = {
+                    api_key: settings.openaiApiKey,
+                    model: settings.openaiModel
+                  };
+                } else if (provider === 'openrouter') {
+                  config.openrouter = {
+                    api_key: settings.openrouterApiKey,
+                    model: settings.openrouterModel
+                  };
+                }
+
+                try {
+                  const response = await fetch('/api/test-llm', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('local_auth_token')}`
+                    },
+                    body: JSON.stringify({
+                      provider,
+                      config
+                    })
+                  });
+                  
+                  const result = await response.json();
+                  if (result.success) {
+                    alert(`Connexion ${provider} réussie! ${result.message}`);
+                  } else {
+                    alert(`Erreur: ${result.error}`);
+                  }
+                } catch (error) {
+                  alert(`Erreur de connexion: ${error}`);
+                }
+              }}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Tester la connexion
+              </Button>
+              <Alert className="flex-1 ml-4 bg-blue-950 border-blue-800 py-2">
+                <Info className="h-4 w-4 text-blue-400" />
+                <AlertDescription className="text-blue-300 text-sm">
+                  Ollama est le fournisseur par défaut pour l'analyse locale des données.
+                </AlertDescription>
+              </Alert>
             </div>
           </div>
         </CardContent>

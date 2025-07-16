@@ -234,20 +234,44 @@ export default function ThreatFlow() {
     let matchesTime = true;
     
     if (timeFilter === 'custom' && (startDate || endDate)) {
-      const threatDate = threat.last_updated ? new Date(threat.last_updated) : null;
+      const threatDate = threat.last_updated ? (() => {
+        try {
+          return new Date(threat.last_updated);
+        } catch (e) {
+          return null;
+        }
+      })() : null;
       if (threatDate) {
         if (startDate && endDate) {
-          matchesTime = isAfter(threatDate, new Date(startDate)) && isBefore(threatDate, new Date(endDate));
+          try {
+            matchesTime = isAfter(threatDate, new Date(startDate)) && isBefore(threatDate, new Date(endDate));
+          } catch (e) {
+            matchesTime = false;
+          }
         } else if (startDate) {
-          matchesTime = isAfter(threatDate, new Date(startDate));
+          try {
+            matchesTime = isAfter(threatDate, new Date(startDate));
+          } catch (e) {
+            matchesTime = false;
+          }
         } else if (endDate) {
-          matchesTime = isBefore(threatDate, new Date(endDate));
+          try {
+            matchesTime = isBefore(threatDate, new Date(endDate));
+          } catch (e) {
+            matchesTime = false;
+          }
         }
       }
     } else if (timeFilter !== 'all') {
       const timeFilterDate = getTimeFilterDate(timeFilter);
       matchesTime = timeFilterDate === null || 
-        (threat.last_updated && isAfter(new Date(threat.last_updated), timeFilterDate));
+        (threat.last_updated && (() => {
+          try {
+            return isAfter(new Date(threat.last_updated), timeFilterDate);
+          } catch (e) {
+            return false;
+          }
+        })());
     }
     
     return matchesSearch && matchesTime;
@@ -415,7 +439,9 @@ export default function ThreatFlow() {
                   timeFilter === 'custom' ? 
                     (() => {
                       try {
-                        return `${startDate ? `du ${format(new Date(startDate), 'dd/MM/yyyy HH:mm')}` : ''}${startDate && endDate ? ' ' : ''}${endDate ? `au ${format(new Date(endDate), 'dd/MM/yyyy HH:mm')}` : ''}`;
+                        const startFormatted = startDate ? `du ${format(new Date(startDate), 'dd/MM/yyyy HH:mm')}` : '';
+                        const endFormatted = endDate ? `au ${format(new Date(endDate), 'dd/MM/yyyy HH:mm')}` : '';
+                        return `${startFormatted}${startDate && endDate ? ' ' : ''}${endFormatted}`;
                       } catch (e) {
                         return 'plage personnalisée';
                       }
@@ -704,7 +730,13 @@ export default function ThreatFlow() {
                         {action.timestamp && (
                           <div className="flex items-center space-x-1">
                             <Clock className="w-3 h-3" />
-                            <span>{new Date(action.timestamp).toLocaleString()}</span>
+                            <span>{(() => {
+                              try {
+                                return new Date(action.timestamp).toLocaleString();
+                              } catch (error) {
+                                return 'Date invalide';
+                              }
+                            })()}</span>
                           </div>
                         )}
                       </div>

@@ -17,6 +17,7 @@ import {
   Activity
 } from "lucide-react";
 import { Link } from "wouter";
+import { safeFormatDate, safeFormatTimeAgo } from "@/lib/date-utils";
 
 interface PrescriptionSummary {
   total: number;
@@ -134,29 +135,8 @@ export function PrescriptionSummary() {
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
-    try {
-      if (!dateString) return 'Date inconnue';
-      
-      const date = new Date(dateString);
-      
-      // Vérifier si la date est valide
-      if (isNaN(date.getTime())) {
-        return 'Date invalide';
-      }
-      
-      const now = new Date();
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-      
-      if (diffInMinutes < 1) return 'À l\'instant';
-      if (diffInMinutes < 60) return `${diffInMinutes}min`;
-      if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-      return `${Math.floor(diffInMinutes / 1440)}j`;
-    } catch (error) {
-      console.error('Error formatting time:', error, dateString);
-      return 'Date invalide';
-    }
-  };
+  // Using the safe date formatting utility
+  const formatTimeAgo = safeFormatTimeAgo;
 
   if (loading) {
     return (
@@ -305,16 +285,7 @@ export function PrescriptionSummary() {
                                 <Calendar className="w-4 h-4 text-gray-400" />
                                 <span className="text-gray-400">Créé le:</span>
                                 <span className="text-white">
-                                  {prescriptionDetails.created_at ? 
-                                    (() => {
-                                      try {
-                                        return new Date(prescriptionDetails.created_at).toLocaleDateString('fr-FR');
-                                      } catch (error) {
-                                        return 'Date invalide';
-                                      }
-                                    })() : 
-                                    'Non définie'
-                                  }
+                                  {safeFormatDate(prescriptionDetails.created_at)}
                                 </span>
                               </div>
                             </div>
@@ -328,16 +299,7 @@ export function PrescriptionSummary() {
                                 <Target className="w-4 h-4 text-gray-400" />
                                 <span className="text-gray-400">Échéance:</span>
                                 <span className="text-white">
-                                  {prescriptionDetails.due_date ? 
-                                    (() => {
-                                      try {
-                                        return new Date(prescriptionDetails.due_date).toLocaleDateString('fr-FR');
-                                      } catch (error) {
-                                        return 'Date invalide';
-                                      }
-                                    })() : 
-                                    'Non définie'
-                                  }
+                                  {safeFormatDate(prescriptionDetails.due_date, 'fr-FR', 'Non définie')}
                                 </span>
                               </div>
                             </div>

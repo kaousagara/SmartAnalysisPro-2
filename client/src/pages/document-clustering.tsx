@@ -391,7 +391,13 @@ export default function DocumentClustering() {
                           <Badge variant="outline">{doc.source}</Badge>
                         </div>
                         <span className="text-xs text-gray-500">
-                          {new Date(doc.created_at).toLocaleDateString()}
+                          {(() => {
+                            try {
+                              return doc.created_at ? new Date(doc.created_at).toLocaleDateString() : 'Date inconnue';
+                            } catch (error) {
+                              return 'Date invalide';
+                            }
+                          })()}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 truncate">

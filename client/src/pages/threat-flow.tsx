@@ -64,6 +64,7 @@ export default function ThreatFlow() {
   const [threats, setThreats] = useState<Threat[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [actions, setActions] = useState<any[]>([]);
   const [selectedThreat, setSelectedThreat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,10 +74,11 @@ export default function ThreatFlow() {
 
   const fetchFlowData = async () => {
     try {
-      const [threatsResponse, predictionsResponse, prescriptionsResponse] = await Promise.all([
+      const [threatsResponse, predictionsResponse, prescriptionsResponse, actionsResponse] = await Promise.all([
         fetch('/api/threats/realtime'),
         fetch('/api/prescriptions/trends'),
-        fetch('/api/prescriptions')
+        fetch('/api/prescriptions'),
+        fetch('/api/actions')
       ]);
 
       if (threatsResponse.ok) {
@@ -136,6 +138,11 @@ export default function ThreatFlow() {
         setPrescriptions(prescriptionsData.prescriptions || []);
       }
 
+      if (actionsResponse.ok) {
+        const actionsData = await actionsResponse.json();
+        setActions(actionsData.actions || []);
+      }
+
     } catch (error) {
       console.error('Error fetching flow data:', error);
     } finally {
@@ -185,6 +192,12 @@ export default function ThreatFlow() {
   const selectedThreatData = threats.find(t => t.id === selectedThreat);
   const relatedPrediction = selectedThreat ? predictions[selectedThreat] : null;
   const relatedPrescriptions = prescriptions.filter(p => p.threat_id === selectedThreat);
+  const relatedActions = actions.filter(a => 
+    // Liens directs ou via description/type
+    a.threat_id === selectedThreat || 
+    relatedPrescriptions.some(p => p.id === a.prescription_id) ||
+    (selectedThreatData && a.description && a.description.toLowerCase().includes(selectedThreatData.name.toLowerCase().split(' ')[0]))
+  );
 
   if (loading) {
     return (
@@ -246,7 +259,7 @@ export default function ThreatFlow() {
 
       {/* Flux de traitement hiérarchique horizontal */}
       {selectedThreatData && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Étape 1: QUOI - Menace actuelle */}
           <Card className="bg-slate-800 border-slate-700 relative">
             <CardHeader>
@@ -374,7 +387,7 @@ export default function ThreatFlow() {
           </Card>
 
           {/* Étape 3: QUE FAIRE - Prescriptions */}
-          <Card className="bg-slate-800 border-slate-700">
+          <Card className="bg-slate-800 border-slate-700 relative">
             <CardHeader>
               <CardTitle className="text-white flex items-center text-lg">
                 <Shield className="w-6 h-6 mr-2 text-green-400" />
@@ -442,8 +455,155 @@ export default function ThreatFlow() {
                 </div>
               )}
             </CardContent>
+            
+            {/* Flèche vers la droite */}
+            <div className="absolute -right-3 top-1/2 transform -translate-y-1/2 hidden lg:block">
+              <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center border-2 border-slate-600">
+                <ArrowRight className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+          </Card>
+
+          {/* Étape 4: COMMENT - Actions concrètes */}
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center text-lg">
+                <Activity className="w-6 h-6 mr-2 text-purple-400" />
+                4. COMMENT
+              </CardTitle>
+              <div className="text-sm text-gray-400">Actions Concrètes</div>
+            </CardHeader>
+            <CardContent>
+              {relatedActions.length > 0 ? (
+                <div className="space-y-3">
+                  {relatedActions.slice(0, 4).map((action, index) => (
+                    <div key={index} className="p-3 bg-slate-700 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(action.status)}
+                          <span className="text-white text-sm font-medium">{action.type || 'Action'}</span>
+                        </div>
+                        <Badge className={action.status === 'completed' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-blue-500 bg-opacity-20 text-blue-400'}>
+                          {action.status === 'completed' ? 'Terminé' : 'En cours'}
+                        </Badge>
+                      </div>
+                      
+                      <p className="text-gray-400 text-xs mb-2">{action.description}</p>
+                      
+                      <div className="flex items-center space-x-4 text-xs text-gray-400 mt-2">
+                        <div className="flex items-center space-x-1">
+                          <Badge variant="outline" className="text-xs">
+                            {action.priority}
+                          </Badge>
+                        </div>
+                        
+                        {action.timestamp && (
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{new Date(action.timestamp).toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {action.id && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          ID: {action.id}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {relatedActions.length > 4 && (
+                    <div className="text-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-slate-600 text-gray-400 hover:bg-slate-700"
+                      >
+                        Voir {relatedActions.length - 4} autres actions
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  Aucune action en cours
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Tableau de bord des liens */}
+      {selectedThreatData && (
+        <Card className="bg-slate-800 border-slate-700 mt-6">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <Target className="w-5 h-5 mr-2 text-orange-400" />
+              Tableau de Bord des Liens
+            </CardTitle>
+            <div className="text-sm text-gray-400">Connections entre les éléments du flux</div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Résumé Menace */}
+              <div className="p-4 bg-slate-700 rounded-lg">
+                <h4 className="text-white font-medium mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-red-400 rounded-full mr-2"></div>
+                  Menace Sélectionnée
+                </h4>
+                <p className="text-gray-400 text-sm">{selectedThreatData.name}</p>
+                <p className="text-xs text-gray-500 mt-1">Score: {selectedThreatData.score.toFixed(2)}</p>
+              </div>
+
+              {/* Résumé Prédiction */}
+              <div className="p-4 bg-slate-700 rounded-lg">
+                <h4 className="text-white font-medium mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
+                  Prédiction Liée
+                </h4>
+                {relatedPrediction ? (
+                  <>
+                    <p className="text-gray-400 text-sm">Score prédit: {relatedPrediction.predicted_score.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Tendance: {relatedPrediction.trend}</p>
+                  </>
+                ) : (
+                  <p className="text-gray-500 text-sm">Aucune prédiction</p>
+                )}
+              </div>
+
+              {/* Résumé Prescriptions */}
+              <div className="p-4 bg-slate-700 rounded-lg">
+                <h4 className="text-white font-medium mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                  Prescriptions Liées
+                </h4>
+                <p className="text-gray-400 text-sm">{relatedPrescriptions.length} prescription(s)</p>
+                {relatedPrescriptions.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Priorité max: {relatedPrescriptions[0].priority}
+                  </p>
+                )}
+              </div>
+
+              {/* Résumé Actions */}
+              <div className="p-4 bg-slate-700 rounded-lg">
+                <h4 className="text-white font-medium mb-2 flex items-center">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full mr-2"></div>
+                  Actions Liées
+                </h4>
+                <p className="text-gray-400 text-sm">{relatedActions.length} action(s)</p>
+                {relatedActions.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Terminées: {relatedActions.filter(a => a.status === 'completed').length}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

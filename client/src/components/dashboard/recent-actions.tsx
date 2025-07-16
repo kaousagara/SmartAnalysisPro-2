@@ -123,7 +123,14 @@ export function RecentActions() {
                     </h4>
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-400">
-                        {formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}
+                        {action.timestamp ? (() => {
+                          try {
+                            const date = new Date(action.timestamp);
+                            return isNaN(date.getTime()) ? 'Date invalide' : formatDistanceToNow(date, { addSuffix: true });
+                          } catch (e) {
+                            return 'Date invalide';
+                          }
+                        })() : 'Pas de date'}
                       </span>
                       <Eye className="w-4 h-4 text-gray-400" />
                     </div>

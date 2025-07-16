@@ -50,31 +50,73 @@ class OptimizedDatabase:
     def execute_query(self, query: str, params: tuple = None, fetch_one: bool = False, fetch_all: bool = False):
         """Exécuter une requête avec gestion optimisée des connexions"""
         conn = None
-        try:
-            conn = self.get_connection()
-            if conn is None:
-                return None
+        retries = 3
+        
+        for attempt in range(retries):
+            try:
+                conn = self.get_connection()
+                if conn is None:
+                    # Essayer de recréer le pool de connexions
+                    self.init_connection_pool(2, 10)
+                    conn = self.get_connection()
+                    if conn is None:
+                        return None
 
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(query, params)
+                # Tester la connexion
+                if conn.closed:
+                    print(f"Connexion fermée, tentative {attempt + 1}/{retries}")
+                    if conn:
+                        self.return_connection(conn)
+                    continue
+                
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(query, params)
 
-                if fetch_one:
-                    result = cursor.fetchone()
-                    return dict(result) if result else None
-                elif fetch_all:
-                    results = cursor.fetchall()
-                    return [dict(row) for row in results]
+                    if fetch_one:
+                        result = cursor.fetchone()
+                        return dict(result) if result else None
+                    elif fetch_all:
+                        results = cursor.fetchall()
+                        return [dict(row) for row in results]
+                    else:
+                        conn.commit()
+                        return cursor.rowcount
+                        
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                print(f"Erreur de connexion (tentative {attempt + 1}/{retries}): {e}")
+                if conn:
+                    try:
+                        self.return_connection(conn)
+                    except:
+                        pass
+                    conn = None
+                
+                if attempt < retries - 1:
+                    # Recréer le pool de connexions
+                    self.init_connection_pool(2, 10)
+                    continue
                 else:
-                    conn.commit()
-                    return cursor.rowcount
-        except Exception as e:
-            print(f"Erreur lors de l'exécution de la requête: {e}")
-            if conn:
-                conn.rollback()
-            return None
-        finally:
-            if conn:
-                self.return_connection(conn)
+                    return None
+                    
+            except Exception as e:
+                print(f"Erreur lors de l'exécution de la requête: {e}")
+                if conn:
+                    try:
+                        conn.rollback()
+                    except:
+                        pass
+                return None
+            finally:
+                if conn:
+                    try:
+                        self.return_connection(conn)
+                    except:
+                        pass
+            
+            # Si on arrive ici, la requête a réussi
+            break
+        
+        return None
 
     def init_tables(self):
         """Initialiser les tables avec requêtes optimisées"""

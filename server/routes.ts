@@ -114,29 +114,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
-    fetch(url, {
-      method: req.method,
-      headers,
-      body
-    })
-    .then(response => {
-      res.status(response.status);
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return response.json();
-      } else {
-        return response.text();
+    // Use axios for better error handling and retry logic
+    const axiosWithRetry = async (retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const axiosConfig: any = {
+            method: req.method,
+            url: url,
+            headers: headers,
+            timeout: 30000, // 30 seconds timeout
+            validateStatus: () => true // Accept all status codes
+          };
+          
+          if (body) {
+            if (req.headers['content-type']?.includes('application/json')) {
+              axiosConfig.data = body; // body is already stringified JSON
+            } else {
+              axiosConfig.data = body;
+            }
+          }
+          
+          const response = await axios(axiosConfig);
+          
+          res.status(response.status);
+          
+          // Check if response is JSON based on content type
+          if (response.headers['content-type']?.includes('application/json')) {
+            res.json(response.data);
+          } else {
+            res.send(response.data);
+          }
+          return;
+          
+        } catch (error: any) {
+          log(`Proxy attempt ${i + 1} failed for ${url}: ${error.message}`, 'proxy');
+          if (i === retries - 1) {
+            throw error;
+          }
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
       }
-    })
-    .then(data => {
-      if (typeof data === 'string') {
-        res.send(data);
-      } else {
-        res.json(data);
-      }
-    })
-    .catch(error => {
+    };
+
+    axiosWithRetry().catch(error => {
       log(`Proxy error for ${url}: ${error.message}`, 'proxy');
       log(`Request body: ${JSON.stringify(req.body)}`, 'proxy');
       log(`Request headers: ${JSON.stringify(req.headers)}`, 'proxy');

@@ -1,0 +1,165 @@
+GET
+https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/threats/evolution?filter=24H
+[HTTP/1.1 401 Unauthorized 194ms]
+
+	
+GET
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/threats/evolution?filter=24H
+État
+401
+Unauthorized
+VersionHTTP/1.1
+Transfert412 o (taille 31 o)
+Politique de référentstrict-origin-when-cross-origin
+Résolution DNSSystème
+
+	
+Content-Length
+	31
+Content-Type
+	application/json; charset=utf-8
+Date
+	Wed, 16 Jul 2025 18:27:45 GMT
+Etag
+	W/"1f-6T8SuiyuESL4tLZhmCq5npGX4XM"
+Replit-Cluster
+	janeway
+X-Powered-By
+	Express
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3
+Connection
+	keep-alive
+Host
+	2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev
+Priority
+	u=4
+Referer
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/dashboard
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0
+XHRGET
+https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/prescriptions/statistics
+[HTTP/1.1 401 Unauthorized 371ms]
+
+	
+GET
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/prescriptions/statistics
+État
+401
+Unauthorized
+VersionHTTP/1.1
+Transfert412 o (taille 31 o)
+Politique de référentstrict-origin-when-cross-origin
+Résolution DNSSystème
+
+	
+Content-Length
+	31
+Content-Type
+	application/json; charset=utf-8
+Date
+	Wed, 16 Jul 2025 18:27:45 GMT
+Etag
+	W/"1f-6T8SuiyuESL4tLZhmCq5npGX4XM"
+Replit-Cluster
+	janeway
+X-Powered-By
+	Express
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3
+Connection
+	keep-alive
+Host
+	2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev
+Priority
+	u=4
+Referer
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/dashboard
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0
+XHRGET
+https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/prescriptions
+[HTTP/1.1 401 Unauthorized 359ms]
+
+	
+GET
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/api/prescriptions
+État
+401
+Unauthorized
+VersionHTTP/1.1
+Transfert412 o (taille 31 o)
+Politique de référentstrict-origin-when-cross-origin
+Résolution DNSSystème
+
+	
+Content-Length
+	31
+Content-Type
+	application/json; charset=utf-8
+Date
+	Wed, 16 Jul 2025 18:27:45 GMT
+Etag
+	W/"1f-6T8SuiyuESL4tLZhmCq5npGX4XM"
+Replit-Cluster
+	janeway
+X-Powered-By
+	Express
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+X-Robots-Tag
+	none, noindex, noarchive, nofollow, nositelinkssearchbox, noimageindex
+	
+Accept
+	*/*
+Accept-Encoding
+	gzip, deflate, br, zstd
+Accept-Language
+	fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3
+Connection
+	keep-alive
+Host
+	2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev
+Priority
+	u=4
+Referer
+	https://2b031cf2-1185-43f9-94c3-6b61d3e7240d-00-14xjkwvdchgd1.janeway.replit.dev/dashboard
+Sec-Fetch-Dest
+	empty
+Sec-Fetch-Mode
+	cors
+Sec-Fetch-Site
+	same-origin
+User-Agent
+	Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0

@@ -348,7 +348,7 @@ def get_prescriptions():
         if cached_prescriptions:
             return jsonify({'prescriptions': cached_prescriptions})
 
-        prescriptions = prescription_service.get_all_prescriptions()
+        prescriptions = prescription_service.get_prescriptions()
 
         if prescriptions:
             cache_manager.set(cache_key, prescriptions, 180)  # Cache 3 minutes

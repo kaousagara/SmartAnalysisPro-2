@@ -14,6 +14,7 @@ function getAuthHeaders(): HeadersInit {
   };
   
   if (token) {
+    // Flask backend expects token without Bearer prefix
     headers.Authorization = `Bearer ${token}`;
   }
   

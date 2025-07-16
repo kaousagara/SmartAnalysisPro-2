@@ -132,14 +132,14 @@ export function TopBar({ title = 'Threat Detection Dashboard' }: TopBarProps) {
               <DropdownMenuSeparator className="bg-dark-border" />
               <DropdownMenuItem 
                 className="text-gray-300 hover:text-white hover:bg-dark-elevated cursor-pointer"
-                onClick={() => {/* TODO: Add profile settings */}}
+                onClick={() => window.location.href = '/profile'}
               >
                 <User className="mr-2 h-4 w-4" />
                 <span>Profil</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="text-gray-300 hover:text-white hover:bg-dark-elevated cursor-pointer"
-                onClick={() => {/* TODO: Add settings */}}
+                onClick={() => window.location.href = '/settings'}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Paramètres</span>

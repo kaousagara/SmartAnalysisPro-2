@@ -22,6 +22,8 @@ import Admin from "@/pages/admin";
 import ThreatFlow from "@/pages/threat-flow";
 import DocumentClustering from "@/pages/document-clustering";
 import ThreatEvaluationPage from "@/pages/ThreatEvaluationPage";
+import Profile from "@/pages/profile";
+import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -132,6 +134,16 @@ function Router() {
       <Route path="/threat-evaluation">
         <ProtectedRoute>
           <ThreatEvaluationPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/settings">
+        <ProtectedRoute>
+          <Settings />
         </ProtectedRoute>
       </Route>
       <Route path="/">

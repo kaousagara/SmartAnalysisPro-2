@@ -363,7 +363,7 @@ export function RealtimeThreats() {
                 </div>
               </div>
 
-              {/* Informations détaillées - Amélioré */}
+              {/* Informations détaillées - Utilise les données dynamiques */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-slate-800 border border-slate-600 rounded-xl p-5">
                   <h4 className="font-semibold text-white mb-4 flex items-center text-lg">
@@ -377,14 +377,23 @@ export function RealtimeThreats() {
                         {formatDistanceToNow(new Date(selectedThreat.timestamp), { addSuffix: true })}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-700">
-                      <span className="text-gray-300 font-medium">Dernière mise à jour:</span>
-                      <span className="text-white">Il y a 2 minutes</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-300 font-medium">Évolution du score:</span>
-                      <span className="text-green-400 font-bold">↗ +0.15 (+12%)</span>
-                    </div>
+                    {selectedThreat.metadata?.processing_time && (
+                      <div className="flex justify-between items-center py-2 border-b border-slate-700">
+                        <span className="text-gray-300 font-medium">Dernière mise à jour:</span>
+                        <span className="text-white">
+                          {formatDistanceToNow(new Date(selectedThreat.metadata.processing_time), { addSuffix: true })}
+                        </span>
+                      </div>
+                    )}
+                    {selectedThreat.evolution_prediction && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-300 font-medium">Évolution prédite:</span>
+                        <span className={`font-bold ${selectedThreat.evolution_prediction.trend === 'increasing' ? 'text-red-400' : 'text-green-400'}`}>
+                          {selectedThreat.evolution_prediction.trend === 'increasing' ? '↗' : '↘'} 
+                          {selectedThreat.evolution_prediction.trend === 'increasing' ? 'Croissante' : 'Décroissante'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -396,97 +405,119 @@ export function RealtimeThreats() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-slate-700">
                       <span className="text-gray-300 font-medium">Type de menace:</span>
-                      <span className="text-white">Activité Suspecte</span>
+                      <span className="text-white">{selectedThreat.name || 'Non classifié'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-700">
-                      <span className="text-gray-300 font-medium">Zone géographique:</span>
-                      <span className="text-white">Mali Nord</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-300 font-medium">Niveau de confiance:</span>
-                      <span className="text-yellow-400 font-bold">78%</span>
-                    </div>
+                    {selectedThreat.raw_data?.location && (
+                      <div className="flex justify-between items-center py-2 border-b border-slate-700">
+                        <span className="text-gray-300 font-medium">Zone géographique:</span>
+                        <span className="text-white">{selectedThreat.raw_data.location}</span>
+                      </div>
+                    )}
+                    {selectedThreat.metadata?.confidence && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-300 font-medium">Niveau de confiance:</span>
+                        <span className="text-yellow-400 font-bold">
+                          {Math.round(selectedThreat.metadata.confidence * 100)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Indicateurs de menace - Amélioré */}
-              <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
-                <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
-                  <AlertTriangle className="w-5 h-5 mr-3 text-orange-400" />
-                  Indicateurs de Menace
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { label: 'Communications cryptées', value: 85, color: 'text-red-400', bg: 'bg-red-500' },
-                    { label: 'Mouvement de véhicules', value: 72, color: 'text-yellow-400', bg: 'bg-yellow-500' },
-                    { label: 'Activité réseau', value: 60, color: 'text-yellow-400', bg: 'bg-yellow-500' },
-                    { label: 'Patterns temporels', value: 45, color: 'text-green-400', bg: 'bg-green-500' }
-                  ].map((indicator, index) => (
-                    <div key={index} className="p-3 bg-slate-700 rounded-lg">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-300 font-medium">{indicator.label}</span>
-                        <span className={`text-sm font-bold ${indicator.color}`}>{indicator.value}%</span>
-                      </div>
-                      <div className="w-full bg-slate-600 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${indicator.bg}`}
-                          style={{ width: `${indicator.value}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
+              {/* Indicateurs de menace - Utilise les données réelles si disponibles */}
+              {selectedThreat.deep_learning_analysis?.threat_indicators && (
+                <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+                  <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
+                    <AlertTriangle className="w-5 h-5 mr-3 text-orange-400" />
+                    Indicateurs de Menace
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(selectedThreat.deep_learning_analysis.threat_indicators).map(([key, value], index) => {
+                      const percentage = typeof value === 'number' ? Math.round(value * 100) : 0;
+                      const color = percentage >= 75 ? 'text-red-400' : percentage >= 50 ? 'text-yellow-400' : 'text-green-400';
+                      const bgColor = percentage >= 75 ? 'bg-red-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-green-500';
+                      
+                      return (
+                        <div key={index} className="p-3 bg-slate-700 rounded-lg">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-300 font-medium capitalize">{key.replace('_', ' ')}</span>
+                            <span className={`text-sm font-bold ${color}`}>{percentage}%</span>
+                          </div>
+                          <div className="w-full bg-slate-600 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${bgColor}`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Sources et contexte - Amélioré */}
-              <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
-                <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
-                  <Eye className="w-5 h-5 mr-3 text-purple-400" />
-                  Sources d'Intelligence
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { type: 'SIGINT', source: 'Station d\'écoute GA-Alpha', reliability: '95%', color: 'bg-blue-500' },
-                    { type: 'HUMINT', source: 'Agent terrain KI-7', reliability: '82%', color: 'bg-green-500' },
-                    { type: 'IMINT', source: 'Surveillance satellite', reliability: '88%', color: 'bg-purple-500' }
-                  ].map((source, index) => (
-                    <div key={index} className="p-4 bg-slate-700 rounded-lg border border-slate-600">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className={`text-xs px-2 py-1 ${source.color} bg-opacity-20`}>
-                          {source.type}
-                        </Badge>
-                        <span className="text-xs text-gray-400">{source.reliability}</span>
+              {/* Sources et contexte - Utilise les données réelles si disponibles */}
+              {selectedThreat.raw_data?.sources && (
+                <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
+                  <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
+                    <Eye className="w-5 h-5 mr-3 text-purple-400" />
+                    Sources d'Intelligence
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {selectedThreat.raw_data.sources.map((source, index) => (
+                      <div key={index} className="p-4 bg-slate-700 rounded-lg border border-slate-600">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="outline" className="text-xs px-2 py-1 bg-blue-500 bg-opacity-20">
+                            {source.type || 'UNKNOWN'}
+                          </Badge>
+                          <span className="text-xs text-gray-400">
+                            {source.reliability ? `${Math.round(source.reliability * 100)}%` : 'N/A'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-300 font-medium">{source.name || 'Source non identifiée'}</p>
                       </div>
-                      <p className="text-sm text-gray-300 font-medium">{source.source}</p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Actions recommandées - Amélioré */}
+              {/* Actions recommandées - Section simplifiée pour les données dynamiques */}
               <div className="bg-slate-800 border border-slate-600 rounded-xl p-6">
                 <h4 className="font-semibold text-white mb-5 flex items-center text-lg">
                   <Activity className="w-5 h-5 mr-3 text-orange-400" />
-                  Actions Recommandées
+                  Informations de Traitement
                 </h4>
                 <div className="space-y-3">
-                  {[
-                    { action: 'Intensifier la surveillance SIGINT sur la zone', priority: 'URGENT', color: 'bg-red-500' },
-                    { action: 'Déploiement d\'agents HUMINT supplémentaires', priority: 'HAUTE', color: 'bg-orange-500' },
-                    { action: 'Coordination avec les forces locales', priority: 'MOYENNE', color: 'bg-yellow-500' },
-                    { action: 'Alerte aux unités de patrouille', priority: 'HAUTE', color: 'bg-orange-500' }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 ${item.color} rounded-full`}></div>
-                        <span className="text-sm text-gray-300 font-medium">{item.action}</span>
-                      </div>
-                      <Badge variant="outline" className={`text-xs px-2 py-1 ${item.color} bg-opacity-20`}>
-                        {item.priority}
-                      </Badge>
+                  <div className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-300 font-medium">ID de menace</span>
                     </div>
-                  ))}
+                    <span className="text-xs text-gray-400 font-mono">{selectedThreat.id}</span>
+                  </div>
+                  
+                  {selectedThreat.metadata?.model_version && (
+                    <div className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span className="text-sm text-gray-300 font-medium">Version du modèle</span>
+                      </div>
+                      <span className="text-sm text-white">{selectedThreat.metadata.model_version}</span>
+                    </div>
+                  )}
+                  
+                  {selectedThreat.metadata?.quality_score && (
+                    <div className="flex items-center justify-between p-3 bg-slate-700 rounded-lg border border-slate-600">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm text-gray-300 font-medium">Score de qualité</span>
+                      </div>
+                      <span className="text-sm text-white">
+                        {Math.round(selectedThreat.metadata.quality_score * 100)}%
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

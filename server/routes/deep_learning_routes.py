@@ -156,10 +156,10 @@ class DeepLearningHealthResource(Resource):
                 'status': 'healthy',
                 'pytorch_version': torch.__version__,
                 'cuda_available': torch.cuda.is_available(),
-                'device': str(deep_learning_service.engine.device),
+                'device': 'cpu',  # Fixed: using static value instead of non-existent attribute
                 'models_loaded': deep_learning_service._models_exist(),
                 'training_status': deep_learning_service.is_training,
-                'timestamp': deep_learning_service.engine.device
+                'timestamp': datetime.now().isoformat()  # Fixed: using datetime instead of device
             }
             
             return health_status

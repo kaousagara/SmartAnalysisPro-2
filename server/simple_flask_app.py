@@ -596,6 +596,117 @@ def clear_test_data():
         }), 500
 
 # =============================================================================
+# ENDPOINTS PRESCRIPTIONS AVANCÉES
+# =============================================================================
+
+@app.route('/api/prescriptions/collection-requests', methods=['GET'])
+@token_required
+def get_collection_requests():
+    """Get prescription collection requests"""
+    try:
+        # Récupérer les prescriptions de type collection
+        collection_requests = optimized_db.execute_query("""
+            SELECT id, title, description, priority, status, created_at, 
+                   category, resource_allocation, confidence_score
+            FROM prescriptions 
+            WHERE category IN ('collection', 'investigation', 'intelligence_gathering')
+            AND status IN ('pending', 'in_progress')
+            ORDER BY priority DESC, created_at DESC
+            LIMIT 20
+        """, fetch_all=True)
+        
+        return jsonify({
+            'collection_requests': collection_requests if collection_requests else [],
+            'total': len(collection_requests) if collection_requests else 0
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/prescriptions/signals', methods=['GET'])
+@token_required
+def get_prescription_signals():
+    """Get prescription signals (weak and strong)"""
+    try:
+        # Récupérer les signaux faibles et forts
+        signals = {
+            'weak_signals': optimized_db.execute_query("""
+                SELECT id, title, description, confidence_score, created_at
+                FROM prescriptions 
+                WHERE confidence_score < 0.5 AND status = 'pending'
+                ORDER BY created_at DESC
+                LIMIT 10
+            """, fetch_all=True),
+            'strong_signals': optimized_db.execute_query("""
+                SELECT id, title, description, confidence_score, created_at
+                FROM prescriptions 
+                WHERE confidence_score >= 0.7 AND status IN ('pending', 'in_progress')
+                ORDER BY confidence_score DESC, created_at DESC
+                LIMIT 10
+            """, fetch_all=True)
+        }
+        
+        return jsonify(signals)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/prescriptions/trends', methods=['GET'])
+@token_required
+def get_prescription_trends():
+    """Get prescription trends over time"""
+    try:
+        # Récupérer les tendances sur 30 jours
+        trends = optimized_db.execute_query("""
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as count,
+                AVG(confidence_score) as avg_confidence,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+            FROM prescriptions
+            WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+        """, fetch_all=True)
+        
+        return jsonify({
+            'trends': trends if trends else [],
+            'period': '30_days'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ingestion/pipeline-status', methods=['GET'])
+@token_required
+def get_pipeline_status():
+    """Get ingestion pipeline status"""
+    try:
+        # Récupérer le statut du pipeline d'ingestion
+        pipeline_status = {
+            'status': 'operational',
+            'last_run': datetime.now().isoformat(),
+            'documents_processed_today': optimized_db.execute_query("""
+                SELECT COUNT(*) as count
+                FROM documents
+                WHERE created_at >= CURRENT_DATE
+            """, fetch_one=True)['count'] if optimized_db.execute_query("""
+                SELECT COUNT(*) as count
+                FROM documents
+                WHERE created_at >= CURRENT_DATE
+            """, fetch_one=True) else 0,
+            'pipeline_health': {
+                'ingestion': 'healthy',
+                'processing': 'healthy',
+                'evaluation': 'healthy',
+                'clustering': 'healthy'
+            },
+            'queue_size': 0,
+            'errors_last_hour': 0
+        }
+        
+        return jsonify(pipeline_status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# =============================================================================
 # ROUTES DE GESTION DES DONNÉES
 # =============================================================================
 

@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Activity, 
   TrendingUp, 
@@ -16,8 +18,14 @@ import {
   Zap,
   CheckCircle,
   Clock,
-  Users
+  Users,
+  Search,
+  Filter,
+  Calendar,
+  CalendarDays,
+  X
 } from "lucide-react";
+import { formatDistanceToNow, isAfter, isBefore, subHours, subDays, subWeeks, subMonths, format } from 'date-fns';
 
 interface Threat {
   id: string;
@@ -67,6 +75,13 @@ export default function ThreatFlow() {
   const [actions, setActions] = useState<any[]>([]);
   const [selectedThreat, setSelectedThreat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // États pour les filtres
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [showCustomDateRange, setShowCustomDateRange] = useState<boolean>(false);
 
   useEffect(() => {
     fetchFlowData();
@@ -150,6 +165,24 @@ export default function ThreatFlow() {
     }
   };
 
+  const getTimeFilterDate = (filter: string) => {
+    const now = new Date();
+    switch (filter) {
+      case '1h':
+        return subHours(now, 1);
+      case '6h':
+        return subHours(now, 6);
+      case '24h':
+        return subDays(now, 1);
+      case '7d':
+        return subWeeks(now, 1);
+      case '30d':
+        return subMonths(now, 1);
+      default:
+        return null;
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
       case 'critical': return 'bg-red-500 bg-opacity-20 text-red-400';
@@ -188,6 +221,37 @@ export default function ThreatFlow() {
       default: return <Eye className="w-4 h-4 text-gray-400" />;
     }
   };
+
+  // Filtrer les menaces selon le terme de recherche et l'intervalle de temps
+  const filteredThreats = threats.filter((threat) => {
+    // Filtrage par texte
+    const matchesSearch = searchTerm === '' || 
+      threat.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      threat.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      threat.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filtrage par temps
+    let matchesTime = true;
+    
+    if (timeFilter === 'custom' && (startDate || endDate)) {
+      const threatDate = threat.last_updated ? new Date(threat.last_updated) : null;
+      if (threatDate) {
+        if (startDate && endDate) {
+          matchesTime = isAfter(threatDate, new Date(startDate)) && isBefore(threatDate, new Date(endDate));
+        } else if (startDate) {
+          matchesTime = isAfter(threatDate, new Date(startDate));
+        } else if (endDate) {
+          matchesTime = isBefore(threatDate, new Date(endDate));
+        }
+      }
+    } else if (timeFilter !== 'all') {
+      const timeFilterDate = getTimeFilterDate(timeFilter);
+      matchesTime = timeFilterDate === null || 
+        (threat.last_updated && isAfter(new Date(threat.last_updated), timeFilterDate));
+    }
+    
+    return matchesSearch && matchesTime;
+  });
 
   const selectedThreatData = threats.find(t => t.id === selectedThreat);
   const relatedPrediction = selectedThreat ? predictions[selectedThreat] : null;
@@ -230,29 +294,169 @@ export default function ThreatFlow() {
           <CardTitle className="text-white text-sm">Sélectionner une Menace</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {threats.map((threat) => (
-              <div
-                key={threat.id}
-                onClick={() => setSelectedThreat(threat.id)}
-                className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                  selectedThreat === threat.id 
-                    ? 'bg-slate-600 border-2 border-blue-500' 
-                    : 'bg-slate-700 hover:bg-slate-600'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-white text-sm font-medium">{threat.name}</span>
-                  <Badge className={getSeverityColor(threat.severity)}>
-                    {threat.severity}
-                  </Badge>
+          {/* Filtres pour les menaces */}
+          <div className="mb-4 space-y-3">
+            {/* Recherche par nom */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Filtrer par nom de menace..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-blue-500"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-gray-400 hover:text-white"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Filtre par temps */}
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-400">Période:</span>
+              <Select value={timeFilter} onValueChange={(value) => {
+                setTimeFilter(value);
+                if (value !== 'custom') {
+                  setStartDate('');
+                  setEndDate('');
+                  setShowCustomDateRange(false);
+                } else {
+                  setShowCustomDateRange(true);
+                }
+              }}>
+                <SelectTrigger className="w-40 bg-slate-700 border-slate-600 text-white">
+                  <SelectValue placeholder="Sélectionner..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-700 border-slate-600">
+                  <SelectItem value="all">Toutes les menaces</SelectItem>
+                  <SelectItem value="1h">Dernière heure</SelectItem>
+                  <SelectItem value="6h">6 dernières heures</SelectItem>
+                  <SelectItem value="24h">24 dernières heures</SelectItem>
+                  <SelectItem value="7d">7 derniers jours</SelectItem>
+                  <SelectItem value="30d">30 derniers jours</SelectItem>
+                  <SelectItem value="custom">Plage personnalisée</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {timeFilter !== 'all' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                  onClick={() => {
+                    setTimeFilter('all');
+                    setStartDate('');
+                    setEndDate('');
+                    setShowCustomDateRange(false);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Sélection des dates personnalisées */}
+            {showCustomDateRange && (
+              <div className="flex items-center space-x-2 p-3 bg-slate-800 rounded-lg border border-slate-600">
+                <CalendarDays className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-400">De:</label>
+                  <Input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-48 bg-slate-700 border-slate-600 text-white text-sm"
+                  />
                 </div>
-                <div className="text-xs text-gray-400 mb-2">
-                  Score: {threat.score.toFixed(2)}
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-400">À:</label>
+                  <Input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-48 bg-slate-700 border-slate-600 text-white text-sm"
+                  />
                 </div>
-                <Progress value={threat.score * 100} className="h-2" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-            ))}
+            )}
+          </div>
+
+          {/* Indicateur de filtrage */}
+          {(searchTerm || timeFilter !== 'all') && (
+            <div className="mb-3 flex items-center space-x-2 text-sm text-gray-400">
+              <Filter className="w-4 h-4" />
+              <span>
+                {filteredThreats.length} résultat{filteredThreats.length > 1 ? 's' : ''}
+                {searchTerm && ` pour "${searchTerm}"`}
+                {timeFilter !== 'all' && ` (${
+                  timeFilter === '1h' ? 'dernière heure' :
+                  timeFilter === '6h' ? '6 dernières heures' :
+                  timeFilter === '24h' ? '24 dernières heures' :
+                  timeFilter === '7d' ? '7 derniers jours' :
+                  timeFilter === '30d' ? '30 derniers jours' :
+                  timeFilter === 'custom' ? 
+                    (() => {
+                      try {
+                        return `${startDate ? `du ${format(new Date(startDate), 'dd/MM/yyyy HH:mm')}` : ''}${startDate && endDate ? ' ' : ''}${endDate ? `au ${format(new Date(endDate), 'dd/MM/yyyy HH:mm')}` : ''}`;
+                      } catch (e) {
+                        return 'plage personnalisée';
+                      }
+                    })() : ''
+                })`}
+              </span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {filteredThreats.length === 0 ? (
+              <div className="col-span-full text-center py-8 text-gray-400">
+                {searchTerm || timeFilter !== 'all' ? 
+                  'Aucune menace trouvée pour les filtres appliqués' : 
+                  'Aucune menace disponible'
+                }
+              </div>
+            ) : (
+              filteredThreats.map((threat) => (
+                <div
+                  key={threat.id}
+                  onClick={() => setSelectedThreat(threat.id)}
+                  className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                    selectedThreat === threat.id 
+                      ? 'bg-slate-600 border-2 border-blue-500' 
+                      : 'bg-slate-700 hover:bg-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">{threat.name}</span>
+                    <Badge className={getSeverityColor(threat.severity)}>
+                      {threat.severity}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-gray-400 mb-2">
+                    Score: {threat.score.toFixed(2)}
+                  </div>
+                  <Progress value={threat.score * 100} className="h-2" />
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

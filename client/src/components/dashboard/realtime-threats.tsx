@@ -4,16 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
-import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter, Calendar, X } from 'lucide-react';
-import { formatDistanceToNow, isAfter, isBefore, subHours, subDays, subWeeks, subMonths, startOfDay, endOfDay } from 'date-fns';
+import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter, Calendar, X, CalendarDays } from 'lucide-react';
+import { formatDistanceToNow, isAfter, isBefore, subHours, subDays, subWeeks, subMonths, startOfDay, endOfDay, format } from 'date-fns';
 import { useState } from 'react';
 
 export function RealtimeThreats() {
   const [selectedThreat, setSelectedThreat] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [showCustomDateRange, setShowCustomDateRange] = useState<boolean>(false);
   
   const { data: threatsData, isLoading } = useQuery({
     queryKey: ['/api/threats/realtime'],
@@ -91,9 +95,24 @@ export function RealtimeThreats() {
       threat.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filtrage par temps
-    const timeFilterDate = getTimeFilterDate(timeFilter);
-    const matchesTime = timeFilterDate === null || 
-      (threat.timestamp && isAfter(new Date(threat.timestamp), timeFilterDate));
+    let matchesTime = true;
+    
+    if (timeFilter === 'custom' && (startDate || endDate)) {
+      const threatDate = threat.timestamp ? new Date(threat.timestamp) : null;
+      if (threatDate) {
+        if (startDate && endDate) {
+          matchesTime = isAfter(threatDate, new Date(startDate)) && isBefore(threatDate, new Date(endDate));
+        } else if (startDate) {
+          matchesTime = isAfter(threatDate, new Date(startDate));
+        } else if (endDate) {
+          matchesTime = isBefore(threatDate, new Date(endDate));
+        }
+      }
+    } else if (timeFilter !== 'all') {
+      const timeFilterDate = getTimeFilterDate(timeFilter);
+      matchesTime = timeFilterDate === null || 
+        (threat.timestamp && isAfter(new Date(threat.timestamp), timeFilterDate));
+    }
     
     return matchesSearch && matchesTime;
   });
@@ -137,7 +156,16 @@ export function RealtimeThreats() {
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-gray-400">Période:</span>
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
+            <Select value={timeFilter} onValueChange={(value) => {
+              setTimeFilter(value);
+              if (value !== 'custom') {
+                setStartDate('');
+                setEndDate('');
+                setShowCustomDateRange(false);
+              } else {
+                setShowCustomDateRange(true);
+              }
+            }}>
               <SelectTrigger className="w-40 bg-slate-700 border-slate-600 text-white">
                 <SelectValue placeholder="Sélectionner..." />
               </SelectTrigger>
@@ -148,6 +176,7 @@ export function RealtimeThreats() {
                 <SelectItem value="24h">24 dernières heures</SelectItem>
                 <SelectItem value="7d">7 derniers jours</SelectItem>
                 <SelectItem value="30d">30 derniers jours</SelectItem>
+                <SelectItem value="custom">Plage personnalisée</SelectItem>
               </SelectContent>
             </Select>
             
@@ -156,12 +185,53 @@ export function RealtimeThreats() {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0 text-gray-400 hover:text-white"
-                onClick={() => setTimeFilter('all')}
+                onClick={() => {
+                  setTimeFilter('all');
+                  setStartDate('');
+                  setEndDate('');
+                  setShowCustomDateRange(false);
+                }}
               >
                 <X className="w-4 h-4" />
               </Button>
             )}
           </div>
+          
+          {/* Sélection des dates personnalisées */}
+          {showCustomDateRange && (
+            <div className="flex items-center space-x-2 p-3 bg-slate-800 rounded-lg border border-slate-600">
+              <CalendarDays className="w-4 h-4 text-gray-400" />
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-gray-400">De:</label>
+                <Input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-48 bg-slate-700 border-slate-600 text-white text-sm"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-gray-400">À:</label>
+                <Input
+                  type="datetime-local"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-48 bg-slate-700 border-slate-600 text-white text-sm"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Indicateur de filtrage */}
@@ -176,7 +246,15 @@ export function RealtimeThreats() {
                 timeFilter === '6h' ? '6 dernières heures' :
                 timeFilter === '24h' ? '24 dernières heures' :
                 timeFilter === '7d' ? '7 derniers jours' :
-                timeFilter === '30d' ? '30 derniers jours' : ''
+                timeFilter === '30d' ? '30 derniers jours' :
+                timeFilter === 'custom' ? 
+                  (() => {
+                    try {
+                      return `${startDate ? `du ${format(new Date(startDate), 'dd/MM/yyyy HH:mm')}` : ''}${startDate && endDate ? ' ' : ''}${endDate ? `au ${format(new Date(endDate), 'dd/MM/yyyy HH:mm')}` : ''}`;
+                    } catch (e) {
+                      return 'plage personnalisée';
+                    }
+                  })() : ''
               })`}
             </span>
           </div>
@@ -189,6 +267,16 @@ export function RealtimeThreats() {
                 'Aucune menace trouvée pour les filtres appliqués' : 
                 'Aucune menace active détectée'
               }
+              {timeFilter === 'custom' && (startDate || endDate) && (
+                <div className="mt-2 text-sm text-gray-500">
+                  {startDate && endDate ? 
+                    `Période recherchée: du ${format(new Date(startDate), 'dd/MM/yyyy HH:mm')} au ${format(new Date(endDate), 'dd/MM/yyyy HH:mm')}` :
+                    startDate ? 
+                      `Période recherchée: à partir du ${format(new Date(startDate), 'dd/MM/yyyy HH:mm')}` :
+                      `Période recherchée: jusqu'au ${format(new Date(endDate), 'dd/MM/yyyy HH:mm')}`
+                  }
+                </div>
+              )}
             </div>
           ) : (
             filteredThreats.map((threat) => (

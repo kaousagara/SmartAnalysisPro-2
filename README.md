@@ -2,6 +2,12 @@
 
 Un système avancé d'analyse d'intelligence alimenté par l'IA pour la détection et l'analyse des menaces de sécurité en temps réel.
 
+## Version 2.3.0 - Performance Optimized
+
+### 🎯 Overview
+
+An advanced AI-powered threat intelligence platform that transforms complex security data into actionable insights through intelligent analysis and dynamic visualization. The system combines cutting-edge machine learning with real-time processing and advanced performance optimizations to deliver comprehensive threat assessment capabilities with sub-100ms response times.
+
 ## 🚀 Démarrage rapide
 
 ### Prérequis

@@ -3,15 +3,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
-import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Clock, Eye, AlertTriangle, Shield, Activity, Search, Filter, Calendar, X } from 'lucide-react';
+import { formatDistanceToNow, isAfter, isBefore, subHours, subDays, subWeeks, subMonths, startOfDay, endOfDay } from 'date-fns';
 import { useState } from 'react';
 
 export function RealtimeThreats() {
   const [selectedThreat, setSelectedThreat] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [timeFilter, setTimeFilter] = useState<string>('all');
   
   const { data: threatsData, isLoading } = useQuery({
     queryKey: ['/api/threats/realtime'],
@@ -39,6 +41,24 @@ export function RealtimeThreats() {
     return 'text-gray-400';
   };
 
+  const getTimeFilterDate = (filter: string) => {
+    const now = new Date();
+    switch (filter) {
+      case '1h':
+        return subHours(now, 1);
+      case '6h':
+        return subHours(now, 6);
+      case '24h':
+        return subDays(now, 1);
+      case '7d':
+        return subWeeks(now, 1);
+      case '30d':
+        return subMonths(now, 1);
+      default:
+        return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="bg-slate-800 border-slate-700">
@@ -62,12 +82,21 @@ export function RealtimeThreats() {
 
   const threats = threatsData?.threats || [];
 
-  // Filtrer les menaces selon le terme de recherche
-  const filteredThreats = threats.filter((threat) =>
-    threat.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    threat.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    threat.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrer les menaces selon le terme de recherche et l'intervalle de temps
+  const filteredThreats = threats.filter((threat) => {
+    // Filtrage par texte
+    const matchesSearch = searchTerm === '' || 
+      threat.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      threat.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      threat.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filtrage par temps
+    const timeFilterDate = getTimeFilterDate(timeFilter);
+    const matchesTime = timeFilterDate === null || 
+      (threat.timestamp && isAfter(new Date(threat.timestamp), timeFilterDate));
+    
+    return matchesSearch && matchesTime;
+  });
 
   return (
     <Card className="bg-slate-800 border-slate-700">
@@ -82,7 +111,8 @@ export function RealtimeThreats() {
       </CardHeader>
       <CardContent>
         {/* Barre de recherche/filtre */}
-        <div className="mb-4">
+        <div className="mb-4 space-y-3">
+          {/* Recherche par nom */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -102,14 +132,52 @@ export function RealtimeThreats() {
               </Button>
             )}
           </div>
+          
+          {/* Filtre par temps */}
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-400">Période:</span>
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-40 bg-slate-700 border-slate-600 text-white">
+                <SelectValue placeholder="Sélectionner..." />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600">
+                <SelectItem value="all">Toutes les menaces</SelectItem>
+                <SelectItem value="1h">Dernière heure</SelectItem>
+                <SelectItem value="6h">6 dernières heures</SelectItem>
+                <SelectItem value="24h">24 dernières heures</SelectItem>
+                <SelectItem value="7d">7 derniers jours</SelectItem>
+                <SelectItem value="30d">30 derniers jours</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {timeFilter !== 'all' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                onClick={() => setTimeFilter('all')}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Indicateur de filtrage */}
-        {searchTerm && (
+        {(searchTerm || timeFilter !== 'all') && (
           <div className="mb-3 flex items-center space-x-2 text-sm text-gray-400">
             <Filter className="w-4 h-4" />
             <span>
-              {filteredThreats.length} résultat{filteredThreats.length > 1 ? 's' : ''} pour "{searchTerm}"
+              {filteredThreats.length} résultat{filteredThreats.length > 1 ? 's' : ''}
+              {searchTerm && ` pour "${searchTerm}"`}
+              {timeFilter !== 'all' && ` (${
+                timeFilter === '1h' ? 'dernière heure' :
+                timeFilter === '6h' ? '6 dernières heures' :
+                timeFilter === '24h' ? '24 dernières heures' :
+                timeFilter === '7d' ? '7 derniers jours' :
+                timeFilter === '30d' ? '30 derniers jours' : ''
+              })`}
             </span>
           </div>
         )}
@@ -117,7 +185,10 @@ export function RealtimeThreats() {
         <div className="space-y-4">
           {filteredThreats.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              {searchTerm ? 'Aucune menace trouvée pour ce filtre' : 'Aucune menace active détectée'}
+              {searchTerm || timeFilter !== 'all' ? 
+                'Aucune menace trouvée pour les filtres appliqués' : 
+                'Aucune menace active détectée'
+              }
             </div>
           ) : (
             filteredThreats.map((threat) => (

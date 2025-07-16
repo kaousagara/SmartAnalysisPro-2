@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Application Flask optimisée pour le système d'analyse d'intelligence
-Version 2.3.0 - Optimisations de performance
+Version 2.3.0 - Code source nettoyé et optimisé
 """
 
 import os

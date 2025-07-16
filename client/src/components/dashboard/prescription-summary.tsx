@@ -2,13 +2,19 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Clipboard, 
   AlertTriangle, 
   Clock, 
   CheckCircle, 
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  Eye,
+  User,
+  Calendar,
+  Target,
+  Activity
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -31,6 +37,9 @@ interface PrescriptionSummary {
 export function PrescriptionSummary() {
   const [summary, setSummary] = useState<PrescriptionSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+  const [prescriptionDetails, setPrescriptionDetails] = useState<any>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     fetchPrescriptionSummary();
@@ -73,6 +82,26 @@ export function PrescriptionSummary() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPrescriptionDetails = async (prescriptionId: string) => {
+    setDetailsLoading(true);
+    try {
+      const response = await fetch(`/api/prescriptions/${prescriptionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPrescriptionDetails(data);
+      }
+    } catch (error) {
+      console.error('Error fetching prescription details:', error);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleViewDetails = (prescription: any) => {
+    setSelectedPrescription(prescription);
+    fetchPrescriptionDetails(prescription.id);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -196,6 +225,131 @@ export function PrescriptionSummary() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(prescription)}
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl bg-slate-800 border-slate-700 text-white">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center space-x-2">
+                          <span className="text-lg">{getCategoryIcon(selectedPrescription?.category)}</span>
+                          <span>Détails de la Prescription</span>
+                        </DialogTitle>
+                      </DialogHeader>
+                      
+                      {detailsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : prescriptionDetails ? (
+                        <div className="space-y-6">
+                          {/* En-tête de la prescription */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-semibold text-white">
+                                {prescriptionDetails.title}
+                              </h3>
+                              <p className="text-sm text-gray-300 mt-1">
+                                {prescriptionDetails.description}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end space-y-2">
+                              <Badge className={`${getPriorityColor(prescriptionDetails.priority)}`}>
+                                {prescriptionDetails.priority?.toUpperCase()}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {prescriptionDetails.category}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Informations générales */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 text-sm">
+                                <User className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-400">Assigné à:</span>
+                                <span className="text-white">{prescriptionDetails.assigned_to || 'Non assigné'}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-400">Créé le:</span>
+                                <span className="text-white">
+                                  {new Date(prescriptionDetails.created_at).toLocaleDateString('fr-FR')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Activity className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-400">Statut:</span>
+                                <span className="text-white">{prescriptionDetails.status}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Target className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-400">Échéance:</span>
+                                <span className="text-white">
+                                  {prescriptionDetails.due_date ? 
+                                    new Date(prescriptionDetails.due_date).toLocaleDateString('fr-FR') : 
+                                    'Non définie'
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          {prescriptionDetails.actions && prescriptionDetails.actions.length > 0 && (
+                            <div className="space-y-3">
+                              <h4 className="text-sm font-medium text-gray-300">Actions requises</h4>
+                              <div className="space-y-2">
+                                {prescriptionDetails.actions.map((action: any, index: number) => (
+                                  <div key={index} className="flex items-center space-x-3 p-3 bg-slate-700 rounded-lg">
+                                    <div className={`w-2 h-2 rounded-full ${action.completed ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                                    <div className="flex-1">
+                                      <p className="text-sm text-white">{action.description}</p>
+                                      <p className="text-xs text-gray-400 mt-1">
+                                        Estimé: {action.estimated_time} | Ressources: {action.resources}
+                                      </p>
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                      {action.completed ? 'Terminé' : 'En attente'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Progression */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-400">Progression</span>
+                              <span className="text-white">{prescriptionDetails.progress || 0}%</span>
+                            </div>
+                            <div className="w-full bg-slate-700 rounded-full h-2">
+                              <div 
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${prescriptionDetails.progress || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-400">
+                          <p>Impossible de charger les détails de la prescription</p>
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                  
                   {prescription.status === 'pending' && (
                     <Clock className="w-4 h-4 text-yellow-400" />
                   )}

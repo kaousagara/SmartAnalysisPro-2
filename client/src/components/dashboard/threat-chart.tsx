@@ -34,7 +34,7 @@ export function ThreatChart() {
   
   const { data: chartData, isLoading, error } = useQuery({
     queryKey: ['/api/threats/evolution', timeFilter],
-    queryFn: dashboardApi.getThreatEvolution,
+    queryFn: () => fetch(`/api/threats/evolution?filter=${timeFilter}`).then(res => res.json()),
     refetchInterval: 30000,
   });
 
@@ -77,74 +77,7 @@ export function ThreatChart() {
     },
   };
 
-  // Générer des données basées sur le filtre temporel
-  const generateTimeBasedData = (filter: TimeFilter) => {
-    let dataPoints: number;
-    let labels: string[];
-    
-    switch (filter) {
-      case '24H':
-        dataPoints = 24;
-        labels = Array.from({ length: 24 }, (_, i) => {
-          const hour = String(i).padStart(2, '0');
-          return `${hour}:00`;
-        });
-        break;
-      case '7J':
-        dataPoints = 7;
-        labels = Array.from({ length: 7 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (6 - i));
-          return date.toLocaleDateString('fr-FR', { weekday: 'short' });
-        });
-        break;
-      case '30J':
-        dataPoints = 30;
-        labels = Array.from({ length: 30 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (29 - i));
-          return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-        });
-        break;
-    }
-    
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Score de Menace',
-          data: Array.from({ length: dataPoints }, (_, i) => {
-            // Simulation de données plus réalistes selon le filtre
-            const base = 0.4 + Math.sin(i * 0.5) * 0.2;
-            const noise = (Math.random() - 0.5) * 0.1;
-            return Math.max(0, Math.min(1, base + noise));
-          }),
-          borderColor: '#FF6B35',
-          backgroundColor: 'rgba(255, 107, 53, 0.1)',
-          fill: true,
-          tension: 0.4
-        },
-        {
-          label: 'Seuil Critique',
-          data: Array.from({ length: dataPoints }, () => 0.75),
-          borderColor: '#DC2626',
-          backgroundColor: 'transparent',
-          borderDash: [5, 5],
-          fill: false
-        },
-        {
-          label: 'Baseline',
-          data: Array.from({ length: dataPoints }, () => 0.5),
-          borderColor: '#424242',
-          backgroundColor: 'transparent',
-          borderDash: [5, 5],
-          fill: false
-        }
-      ]
-    };
-  };
 
-  const defaultData = generateTimeBasedData(timeFilter);
 
   if (isLoading) {
     return (
@@ -204,8 +137,8 @@ export function ThreatChart() {
     );
   }
 
-  // Utiliser les données reçues ou les données par défaut
-  const data = chartData && chartData.datasets && Array.isArray(chartData.datasets) ? chartData : defaultData;
+  // Utiliser les données reçues de l'API ou afficher une erreur
+  const data = chartData && chartData.datasets && Array.isArray(chartData.datasets) ? chartData : null;
 
   return (
     <Card className="bg-slate-800 border-slate-700">
@@ -229,7 +162,13 @@ export function ThreatChart() {
       </CardHeader>
       <CardContent>
         <div className="h-64">
-          <Line data={data} options={options} />
+          {data ? (
+            <Line data={data} options={options} />
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400">
+              <p>Aucune donnée disponible pour le graphique</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

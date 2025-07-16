@@ -227,7 +227,7 @@ export default function ThreatFlow() {
     // Filtrage par texte
     const matchesSearch = searchTerm === '' || 
       threat.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      threat.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      threat.id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
       threat.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filtrage par temps

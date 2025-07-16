@@ -160,9 +160,9 @@ export default function IngestionPipeline() {
                   <Database className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{pipelineStatus?.pipeline_metrics.total_processed_today || 0}</div>
+                  <div className="text-2xl font-bold">{pipelineStatus?.pipeline_metrics?.total_processed_today || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    +{pipelineStatus?.pipeline_metrics.deep_learning_enhanced || 0} avec DL
+                    +{pipelineStatus?.pipeline_metrics?.deep_learning_enhanced || 0} avec DL
                   </p>
                 </CardContent>
               </Card>
@@ -173,9 +173,9 @@ export default function IngestionPipeline() {
                   <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{pipelineStatus?.pipeline_metrics.anomalies_flagged || 0}</div>
+                  <div className="text-2xl font-bold">{pipelineStatus?.pipeline_metrics?.anomalies_flagged || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    {pipelineStatus?.pipeline_metrics.critical_threats_detected || 0} critiques
+                    {pipelineStatus?.pipeline_metrics?.critical_threats_detected || 0} critiques
                   </p>
                 </CardContent>
               </Card>
@@ -186,9 +186,9 @@ export default function IngestionPipeline() {
                   <Zap className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{pipelineStatus?.pipeline_metrics.processing_speed || 'N/A'}</div>
+                  <div className="text-2xl font-bold">{pipelineStatus?.pipeline_metrics?.processing_speed || 'N/A'}</div>
                   <p className="text-xs text-muted-foreground">
-                    État: {pipelineStatus?.pipeline_metrics.queue_health || 'unknown'}
+                    État: {pipelineStatus?.pipeline_metrics?.queue_health || 'unknown'}
                   </p>
                 </CardContent>
               </Card>

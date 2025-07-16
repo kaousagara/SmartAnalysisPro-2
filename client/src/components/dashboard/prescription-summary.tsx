@@ -135,14 +135,27 @@ export function PrescriptionSummary() {
   };
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'À l\'instant';
-    if (diffInMinutes < 60) return `${diffInMinutes}min`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-    return `${Math.floor(diffInMinutes / 1440)}j`;
+    try {
+      if (!dateString) return 'Date inconnue';
+      
+      const date = new Date(dateString);
+      
+      // Vérifier si la date est valide
+      if (isNaN(date.getTime())) {
+        return 'Date invalide';
+      }
+      
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 1) return 'À l\'instant';
+      if (diffInMinutes < 60) return `${diffInMinutes}min`;
+      if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+      return `${Math.floor(diffInMinutes / 1440)}j`;
+    } catch (error) {
+      console.error('Error formatting time:', error, dateString);
+      return 'Date invalide';
+    }
   };
 
   if (loading) {
@@ -292,7 +305,16 @@ export function PrescriptionSummary() {
                                 <Calendar className="w-4 h-4 text-gray-400" />
                                 <span className="text-gray-400">Créé le:</span>
                                 <span className="text-white">
-                                  {new Date(prescriptionDetails.created_at).toLocaleDateString('fr-FR')}
+                                  {prescriptionDetails.created_at ? 
+                                    (() => {
+                                      try {
+                                        return new Date(prescriptionDetails.created_at).toLocaleDateString('fr-FR');
+                                      } catch (error) {
+                                        return 'Date invalide';
+                                      }
+                                    })() : 
+                                    'Non définie'
+                                  }
                                 </span>
                               </div>
                             </div>
@@ -307,7 +329,13 @@ export function PrescriptionSummary() {
                                 <span className="text-gray-400">Échéance:</span>
                                 <span className="text-white">
                                   {prescriptionDetails.due_date ? 
-                                    new Date(prescriptionDetails.due_date).toLocaleDateString('fr-FR') : 
+                                    (() => {
+                                      try {
+                                        return new Date(prescriptionDetails.due_date).toLocaleDateString('fr-FR');
+                                      } catch (error) {
+                                        return 'Date invalide';
+                                      }
+                                    })() : 
                                     'Non définie'
                                   }
                                 </span>

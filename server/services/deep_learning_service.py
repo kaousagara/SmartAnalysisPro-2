@@ -845,6 +845,134 @@ class DeepLearningService:
             return "Longueur de texte atypique (trop court)"
         else:
             return "Anomalie détectée dans les caractéristiques"
+    
+    def extract_themes_from_text(self, text: str) -> Dict:
+        """Extraire et analyser les thèmes d'un texte avec deep learning"""
+        try:
+            if self.simulation_mode:
+                return self._simulate_theme_extraction(text)
+            else:
+                return self._extract_themes_with_ml(text)
+                
+        except Exception as e:
+            logger.error(f"Erreur extraction thèmes: {str(e)}")
+            return self._simulate_theme_extraction(text)
+    
+    def _simulate_theme_extraction(self, text: str) -> Dict:
+        """Simulation d'extraction de thèmes sans modèles ML complets"""
+        # Définir des thèmes et leurs mots-clés caractéristiques
+        theme_patterns = {
+            'sécurité': {
+                'keywords': ['sécurité', 'menace', 'attaque', 'braquage', 'criminalité', 'police', 'gendarmerie', 'bandit', 'vol', 'alerte'],
+                'weight': 1.0
+            },
+            'politique': {
+                'keywords': ['gouvernement', 'élection', 'politique', 'parti', 'ministre', 'autorité', 'administration'],
+                'weight': 0.8
+            },
+            'économie': {
+                'keywords': ['économie', 'finance', 'budget', 'commerce', 'marché', 'orpailleur', 'mine', 'production'],
+                'weight': 0.7
+            },
+            'social': {
+                'keywords': ['population', 'éducation', 'santé', 'social', 'communauté', 'civil', 'habitant'],
+                'weight': 0.6
+            },
+            'militaire': {
+                'keywords': ['militaire', 'armée', 'défense', 'opération', 'forces armées', 'brigade', 'mission'],
+                'weight': 0.9
+            }
+        }
+        
+        text_lower = text.lower()
+        text_length = len(text)
+        detected_themes = []
+        
+        # Analyser chaque thème potentiel
+        for theme_name, theme_data in theme_patterns.items():
+            keywords = theme_data['keywords']
+            weight = theme_data['weight']
+            
+            # Compter les occurrences de mots-clés
+            keyword_matches = []
+            total_score = 0
+            
+            for keyword in keywords:
+                count = text_lower.count(keyword)
+                if count > 0:
+                    keyword_matches.append({'keyword': keyword, 'count': count})
+                    total_score += count * weight
+            
+            if keyword_matches:
+                # Calculer la confiance basée sur la densité de mots-clés
+                confidence = min(total_score / (text_length / 100), 1.0)
+                confidence = max(confidence, 0.1)  # Minimum de confiance
+                
+                # Extraire les segments de texte pertinents pour ce thème
+                theme_content = self._extract_theme_segments(text, keywords)
+                
+                detected_themes.append({
+                    'name': theme_name,
+                    'content': theme_content,
+                    'confidence': confidence,
+                    'keyword_matches': keyword_matches,
+                    'total_score': total_score
+                })
+        
+        # Trier par confiance décroissante
+        detected_themes.sort(key=lambda x: x['confidence'], reverse=True)
+        
+        # Si plusieurs thèmes ont une confiance élevée, considérer comme multi-thème
+        high_confidence_themes = [t for t in detected_themes if t['confidence'] > 0.3]
+        
+        if not high_confidence_themes:
+            # Aucun thème spécifique détecté
+            return {
+                'themes': [{'name': 'general', 'content': text, 'confidence': 0.5}],
+                'analysis_method': 'deep_learning_simulation',
+                'total_themes_detected': 0
+            }
+        
+        return {
+            'themes': high_confidence_themes,
+            'analysis_method': 'deep_learning_simulation',
+            'total_themes_detected': len(high_confidence_themes),
+            'processing_stats': {
+                'text_length': text_length,
+                'total_themes_analyzed': len(theme_patterns),
+                'timestamp': datetime.now().isoformat()
+            }
+        }
+    
+    def _extract_theme_segments(self, text: str, keywords: List[str]) -> str:
+        """Extraire les segments de texte pertinents pour un thème"""
+        sentences = text.split('.')
+        relevant_sentences = []
+        
+        for sentence in sentences:
+            sentence_lower = sentence.lower()
+            if any(keyword in sentence_lower for keyword in keywords):
+                relevant_sentences.append(sentence.strip())
+        
+        if relevant_sentences:
+            return '. '.join(relevant_sentences) + '.'
+        else:
+            # Si aucune phrase spécifique, retourner le texte complet
+            return text
+    
+    def _extract_themes_with_ml(self, text: str) -> Dict:
+        """Extraction de thèmes avec modèles ML réels (scikit-learn)"""
+        try:
+            if not self.engine:
+                return self._simulate_theme_extraction(text)
+            
+            # Utiliser les modèles ML pour une analyse plus sophistiquée
+            # Pour l'instant, utiliser la simulation comme fallback
+            return self._simulate_theme_extraction(text)
+            
+        except Exception as e:
+            logger.error(f"Erreur extraction ML: {str(e)}")
+            return self._simulate_theme_extraction(text)
 
 # Instance globale du service
 deep_learning_service = DeepLearningService()

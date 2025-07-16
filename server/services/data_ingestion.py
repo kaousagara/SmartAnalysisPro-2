@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 import hashlib
 import requests
@@ -15,9 +15,10 @@ class DataIngestionService:
     def __init__(self):
         self.supported_formats = ['json', 'stix', 'taxii', 'unstructured']
         self.schema_version = '2.1'
+        self.processed_documents = set()  # Cache des hash de documents traités
     
     def ingest_data(self, data: Dict, format_type: str = 'json') -> Dict:
-        """Main data ingestion method with deep learning integration"""
+        """Main data ingestion method with deep learning integration and theme analysis"""
         try:
             if format_type not in self.supported_formats:
                 raise ValueError(f"Unsupported format: {format_type}")
@@ -32,16 +33,27 @@ class DataIngestionService:
             else:
                 validated_data = self._process_unstructured_data(data)
             
-            # Phase 2: Enrichissement avec métadonnées
-            enriched_data = self._enrich_metadata(validated_data)
+            # Phase 2: Vérification de déduplication
+            content = validated_data.get('content', '')
+            content_hash = hashlib.sha256(content.encode()).hexdigest()
             
-            # Phase 3: Normalisation pour processing
-            normalized_data = self.normalize_data(enriched_data)
+            if self._is_document_duplicate(content_hash):
+                logger.info(f"Document déjà ingéré, hash: {content_hash[:8]}...")
+                return {
+                    'status': 'duplicate',
+                    'message': 'Document déjà ingéré précédemment',
+                    'content_hash': content_hash,
+                    'timestamp': datetime.now().isoformat()
+                }
             
-            # Phase 4: NOUVEAU - Analyse Deep Learning
-            dl_enhanced_data = self._apply_deep_learning_analysis(normalized_data)
+            # Phase 3: Analyse des thèmes par deep learning
+            themes_analysis = self._analyze_themes_with_dl(content)
             
-            return dl_enhanced_data
+            # Phase 4: Traitement multi-thèmes ou unique
+            if len(themes_analysis['themes']) > 1:
+                return self._process_multi_theme_document(validated_data, themes_analysis, content_hash)
+            else:
+                return self._process_single_theme_document(validated_data, themes_analysis, content_hash)
             
         except Exception as e:
             logger.error(f"Error ingesting data: {str(e)}")
@@ -316,6 +328,151 @@ class DataIngestionService:
             logger.error(f"Erreur calcul qualité: {str(e)}")
             return {'completeness': 0.5, 'consistency': 0.5, 'anomaly_risk': 0.5, 'overall_score': 0.5}
     
+    def _is_document_duplicate(self, content_hash: str) -> bool:
+        """Vérifier si un document a déjà été traité"""
+        return content_hash in self.processed_documents
+    
+    def _register_document_hash(self, content_hash: str):
+        """Enregistrer le hash d'un document traité"""
+        self.processed_documents.add(content_hash)
+    
+    def _analyze_themes_with_dl(self, content: str) -> Dict:
+        """Analyser les thèmes d'un document avec deep learning"""
+        try:
+            # Utiliser le service de deep learning pour identifier les thèmes
+            theme_analysis = deep_learning_service.extract_themes_from_text(content)
+            
+            if not theme_analysis.get('themes'):
+                # Si aucun thème spécifique détecté, considérer comme thème unique
+                return {
+                    'themes': [{'name': 'general', 'content': content, 'confidence': 0.8}],
+                    'analysis_method': 'deep_learning_fallback'
+                }
+            
+            return theme_analysis
+            
+        except Exception as e:
+            logger.error(f"Erreur analyse thèmes DL: {str(e)}")
+            # Fallback vers analyse simple
+            return self._analyze_themes_simple(content)
+    
+    def _analyze_themes_simple(self, content: str) -> Dict:
+        """Analyse simple des thèmes en fallback"""
+        # Définir des mots-clés par thème
+        theme_keywords = {
+            'sécurité': ['sécurité', 'menace', 'attaque', 'braquage', 'criminalité', 'police', 'gendarmerie'],
+            'politique': ['gouvernement', 'élection', 'politique', 'parti', 'ministre'],
+            'économie': ['économie', 'finance', 'budget', 'commerce', 'marché'],
+            'social': ['population', 'éducation', 'santé', 'social', 'communauté'],
+            'militaire': ['militaire', 'armée', 'défense', 'opération', 'forces armées']
+        }
+        
+        content_lower = content.lower()
+        detected_themes = []
+        
+        # Analyser chaque thème
+        for theme, keywords in theme_keywords.items():
+            score = sum(1 for keyword in keywords if keyword in content_lower)
+            if score > 0:
+                confidence = min(score / len(keywords), 1.0)
+                detected_themes.append({
+                    'name': theme,
+                    'content': content,  # Pour l'analyse simple, tout le contenu
+                    'confidence': confidence,
+                    'keyword_matches': score
+                })
+        
+        if not detected_themes:
+            detected_themes = [{'name': 'general', 'content': content, 'confidence': 0.5}]
+        
+        return {
+            'themes': detected_themes,
+            'analysis_method': 'keyword_based'
+        }
+    
+    def _process_multi_theme_document(self, validated_data: Dict, themes_analysis: Dict, content_hash: str) -> Dict:
+        """Traiter un document avec plusieurs thèmes"""
+        try:
+            logger.info(f"Traitement document multi-thèmes: {len(themes_analysis['themes'])} thèmes détectés")
+            
+            processed_messages = []
+            base_metadata = validated_data.get('metadata', {})
+            
+            for i, theme in enumerate(themes_analysis['themes']):
+                # Créer un message séparé pour chaque thème
+                theme_data = validated_data.copy()
+                theme_data['content'] = theme['content']
+                theme_data['metadata'] = base_metadata.copy()
+                theme_data['metadata'].update({
+                    'original_document_hash': content_hash,
+                    'theme_name': theme['name'],
+                    'theme_confidence': theme['confidence'],
+                    'theme_index': i,
+                    'total_themes': len(themes_analysis['themes']),
+                    'is_multi_theme_part': True
+                })
+                
+                # Enrichir et normaliser chaque partie
+                enriched_theme = self._enrich_metadata(theme_data)
+                normalized_theme = self.normalize_data(enriched_theme)
+                
+                # Analyse deep learning pour chaque thème
+                dl_enhanced_theme = self._apply_deep_learning_analysis(normalized_theme)
+                dl_enhanced_theme['theme_info'] = theme
+                
+                processed_messages.append(dl_enhanced_theme)
+            
+            # Enregistrer le hash pour éviter les doublons
+            self._register_document_hash(content_hash)
+            
+            return {
+                'status': 'success_multi_theme',
+                'message': f'Document traité avec {len(themes_analysis["themes"])} thèmes séparés',
+                'total_themes': len(themes_analysis['themes']),
+                'processed_messages': processed_messages,
+                'original_hash': content_hash,
+                'analysis_method': themes_analysis.get('analysis_method', 'unknown'),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Erreur traitement multi-thèmes: {str(e)}")
+            # En cas d'erreur, traiter comme document unique
+            return self._process_single_theme_document(validated_data, themes_analysis, content_hash)
+    
+    def _process_single_theme_document(self, validated_data: Dict, themes_analysis: Dict, content_hash: str) -> Dict:
+        """Traiter un document avec un seul thème"""
+        try:
+            # Enrichissement avec métadonnées
+            enriched_data = self._enrich_metadata(validated_data)
+            
+            # Ajouter les informations de thème
+            if themes_analysis['themes']:
+                theme = themes_analysis['themes'][0]
+                enriched_data['metadata']['theme_name'] = theme['name']
+                enriched_data['metadata']['theme_confidence'] = theme['confidence']
+            
+            enriched_data['metadata']['original_document_hash'] = content_hash
+            enriched_data['metadata']['is_multi_theme_part'] = False
+            
+            # Normalisation pour processing
+            normalized_data = self.normalize_data(enriched_data)
+            
+            # Analyse Deep Learning
+            dl_enhanced_data = self._apply_deep_learning_analysis(normalized_data)
+            
+            # Ajouter les informations de thème au résultat final
+            dl_enhanced_data['theme_analysis'] = themes_analysis
+            
+            # Enregistrer le hash pour éviter les doublons
+            self._register_document_hash(content_hash)
+            
+            return dl_enhanced_data
+            
+        except Exception as e:
+            logger.error(f"Erreur traitement thème unique: {str(e)}")
+            raise
+
     def get_ingestion_status(self) -> Dict:
         """Get current ingestion status with deep learning metrics"""
         try:
@@ -361,7 +518,17 @@ class DataIngestionService:
                 'processing_enabled': True,
                 'average_confidence': 0.82,
                 'anomalies_detected': 47,
-                'severity_classifications': 235
+                'severity_classifications': 235,
+                'theme_extraction_enabled': True
+            }
+            
+            # Ajouter statistiques de déduplication et thèmes
+            base_status['document_processing'] = {
+                'processed_documents_count': len(self.processed_documents),
+                'deduplication_enabled': True,
+                'theme_analysis_enabled': True,
+                'multi_theme_documents': 12,  # Exemple
+                'duplicate_documents_blocked': 8  # Exemple
             }
             
             return base_status

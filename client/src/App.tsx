@@ -20,6 +20,7 @@ import Reports from "@/pages/reports";
 import CollectionRequests from "@/pages/collection-requests";
 import Admin from "@/pages/admin";
 import ThreatFlow from "@/pages/threat-flow";
+import DocumentClustering from "@/pages/document-clustering";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -120,6 +121,11 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute>
           <Admin />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/document-clustering">
+        <ProtectedRoute>
+          <DocumentClustering />
         </ProtectedRoute>
       </Route>
       <Route path="/">

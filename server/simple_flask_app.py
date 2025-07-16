@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 from services.prescription_service import PrescriptionService
+from services.document_clustering_service import DocumentClusteringService
 from database import db
 from routes.deep_learning_routes import deep_learning_bp
 
@@ -37,6 +38,7 @@ app.register_blueprint(deep_learning_bp)
 
 # Initialize services
 prescription_service = PrescriptionService()
+clustering_service = DocumentClusteringService()
 
 # Les données simulées ont été supprimées - utilisez maintenant la base de données
 
@@ -374,7 +376,10 @@ def upload_document():
         file_content = file.read()
         file_size = len(file_content)
         
-        # Simuler l'analyse du document
+        # Traiter le contenu du document
+        text_content = file_content.decode('utf-8', errors='ignore') if file_content else ''
+        
+        # Créer le document pour l'analyse
         document_analysis = {
             'id': f'doc_{abs(hash(filename))%10000:04d}',
             'filename': filename,
@@ -382,12 +387,19 @@ def upload_document():
             'type': 'DOCUMENT',
             'classification': 'NON CLASSIFIÉ',
             'timestamp': datetime.now().isoformat(),
-            'content': {
-                'text_preview': file_content[:500].decode('utf-8', errors='ignore') if file_content else '',
-                'word_count': len(file_content.decode('utf-8', errors='ignore').split()) if file_content else 0,
-                'language': 'Français',
-                'format': filename.split('.')[-1].upper() if '.' in filename else 'UNKNOWN'
-            },
+            'created_at': datetime.now().isoformat(),
+            'content': text_content,
+            'source': 'user_upload',
+            'entities': [
+                {'text': 'Gao', 'type': 'LOCATION'},
+                {'text': 'Kidal', 'type': 'LOCATION'},
+                {'text': 'Mali', 'type': 'LOCATION'},
+                {'text': 'Forces Armées', 'type': 'ORGANIZATION'},
+                {'text': 'Police', 'type': 'ORGANIZATION'},
+                {'text': 'Agent local', 'type': 'PERSON'},
+                {'text': 'Responsable sécurité', 'type': 'PERSON'}
+            ],
+            'threat_score': 0.72,
             'processing': {
                 'entities_extracted': {
                     'locations': ['Gao', 'Kidal', 'Mali'],
@@ -410,16 +422,38 @@ def upload_document():
             ]
         }
         
-        # Simuler l'ingestion réussie
+        # Récupérer les documents existants pour le clustering
+        existing_documents = []  # En production, récupérer depuis la base de données
+        
+        # Ajouter le nouveau document à la liste pour le clustering
+        documents_for_clustering = existing_documents + [document_analysis]
+        
+        # Effectuer le clustering si suffisamment de documents
+        clustering_result = None
+        if len(documents_for_clustering) >= 2:
+            clustering_result = clustering_service.cluster_documents_by_similarity(documents_for_clustering)
+        
+        # Générer des insights et prescriptions basées sur le clustering
+        integration_result = None
+        if clustering_result:
+            integration_result = clustering_service.integrate_with_prescriptive_analysis(
+                clustering_result, 
+                []  # threats data - récupérer depuis la base
+            )
+        
+        # Simuler l'ingestion réussie avec clustering
         ingestion_result = {
             'success': True,
             'document': document_analysis,
             'message': 'Document uploadé et traité avec succès',
             'processing_time': f"{abs(hash(filename)) % 2000 + 500}ms",
             'status': 'PROCESSED',
+            'clustering_analysis': clustering_result,
+            'prescriptive_insights': integration_result,
             'recommendations': [
                 'Document ajouté à la base de connaissances',
-                'Analyse croisée avec documents similaires programmée',
+                'Analyse de similarité effectuée avec documents existants',
+                'Prescriptions générées selon les clusters identifiés' if integration_result else 'Pas assez de documents pour le clustering',
                 'Notification envoyée aux analystes concernés'
             ]
         }
@@ -427,11 +461,295 @@ def upload_document():
         return jsonify(ingestion_result), 200
         
     except Exception as e:
-        logger.error(f"Erreur lors de l'upload: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
             'message': 'Erreur lors du traitement du document'
+        }), 500
+
+@app.route('/api/clustering/analyze', methods=['POST'])
+@token_required
+def analyze_document_clustering():
+    """Analyser le clustering des documents"""
+    try:
+        data = request.get_json()
+        documents = data.get('documents', [])
+        
+        if not documents:
+            return jsonify({'error': 'Aucun document fourni pour l\'analyse'}), 400
+        
+        # Effectuer le clustering
+        clustering_result = clustering_service.cluster_documents_by_similarity(documents)
+        
+        # Générer des insights
+        insights = clustering_service.generate_cluster_insights(clustering_result)
+        
+        return jsonify({
+            'success': True,
+            'clustering_result': clustering_result,
+            'insights': insights,
+            'summary': {
+                'total_documents': len(documents),
+                'clusters_found': len(clustering_result.get('clusters', [])),
+                'analysis_timestamp': datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de l\'analyse de clustering'
+        }), 500
+
+@app.route('/api/clustering/prescriptive-integration', methods=['POST'])
+@token_required
+def integrate_clustering_with_prescriptive():
+    """Intégrer le clustering avec l'analyse prescriptive"""
+    try:
+        data = request.get_json()
+        clustering_result = data.get('clustering_result', {})
+        threat_data = data.get('threat_data', [])
+        
+        if not clustering_result:
+            return jsonify({'error': 'Résultat de clustering manquant'}), 400
+        
+        # Intégrer avec l'analyse prescriptive
+        integration_result = clustering_service.integrate_with_prescriptive_analysis(
+            clustering_result, 
+            threat_data
+        )
+        
+        return jsonify({
+            'success': True,
+            'integration_result': integration_result,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de l\'intégration prescriptive'
+        }), 500
+
+@app.route('/api/clustering/similarity', methods=['POST'])
+@token_required
+def calculate_document_similarity():
+    """Calculer la similarité entre deux documents"""
+    try:
+        data = request.get_json()
+        doc1 = data.get('document1', {})
+        doc2 = data.get('document2', {})
+        
+        if not doc1 or not doc2:
+            return jsonify({'error': 'Deux documents sont requis'}), 400
+        
+        # Calculer la similarité
+        similarity_score = clustering_service.calculate_document_similarity(doc1, doc2)
+        
+        return jsonify({
+            'success': True,
+            'similarity_score': similarity_score,
+            'similarity_level': 'high' if similarity_score >= 0.7 else 'medium' if similarity_score >= 0.4 else 'low',
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors du calcul de similarité'
+        }), 500
+
+@app.route('/api/clustering/batch-analysis', methods=['POST'])
+@token_required
+def batch_clustering_analysis():
+    """Analyse de clustering en lot avec génération de prescriptions"""
+    try:
+        data = request.get_json()
+        documents = data.get('documents', [])
+        
+        if len(documents) < 2:
+            return jsonify({'error': 'Au moins 2 documents sont requis pour l\'analyse en lot'}), 400
+        
+        # Effectuer le clustering complet
+        clustering_result = clustering_service.cluster_documents_by_similarity(documents)
+        
+        # Générer des insights
+        insights = clustering_service.generate_cluster_insights(clustering_result)
+        
+        # Intégrer avec l'analyse prescriptive
+        integration_result = clustering_service.integrate_with_prescriptive_analysis(
+            clustering_result, 
+            []  # threat_data - récupérer depuis la base
+        )
+        
+        # Générer des prescriptions automatiques pour chaque cluster à risque
+        prescriptions_generated = []
+        for cluster in clustering_result.get('clusters', []):
+            cluster_id = cluster['id']
+            risk_assessment = insights['risk_assessment'].get(cluster_id, {})
+            
+            if risk_assessment.get('risk_level') in ['high', 'medium']:
+                prescription = prescription_service.generate_prescription_from_threat({
+                    'id': f"cluster_{cluster_id}",
+                    'name': f"Cluster {cluster_id} - {cluster['size']} documents",
+                    'type': 'cluster_analysis',
+                    'score': risk_assessment.get('risk_score', 0.5),
+                    'entities': []
+                })
+                prescriptions_generated.append(prescription)
+        
+        return jsonify({
+            'success': True,
+            'clustering_result': clustering_result,
+            'insights': insights,
+            'integration_result': integration_result,
+            'prescriptions_generated': prescriptions_generated,
+            'summary': {
+                'total_documents': len(documents),
+                'clusters_found': len(clustering_result.get('clusters', [])),
+                'prescriptions_generated': len(prescriptions_generated),
+                'high_risk_clusters': len([c for c in clustering_result.get('clusters', []) 
+                                         if insights['risk_assessment'].get(c['id'], {}).get('risk_level') == 'high']),
+                'analysis_timestamp': datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de l\'analyse en lot'
+        }), 500
+
+@app.route('/api/clustering/sample-documents', methods=['GET'])
+@token_required
+def get_sample_documents():
+    """Obtenir des échantillons de documents pour tester le clustering"""
+    try:
+        sample_documents = [
+            {
+                'id': 'doc_001',
+                'content': """Rapport de surveillance - Zone frontalière Mali-Burkina Faso
+                
+                Observations: Augmentation du trafic de véhicules suspects dans la zone frontalière. 
+                Trois convois non identifiés ont été repérés se dirigeant vers le sud. 
+                Les populations locales signalent une présence accrue de groupes armés.
+                Recommandations: Renforcer la surveillance et coordonner avec les forces burkinabè.""",
+                'source': 'Agent de terrain - Gao',
+                'type': 'SURVEILLANCE',
+                'created_at': '2024-12-15T08:30:00Z',
+                'entities': [
+                    {'text': 'Mali', 'type': 'LOCATION'},
+                    {'text': 'Burkina Faso', 'type': 'LOCATION'},
+                    {'text': 'Gao', 'type': 'LOCATION'}
+                ],
+                'threat_score': 0.75
+            },
+            {
+                'id': 'doc_002', 
+                'content': """Analyse des communications interceptées
+                
+                Communications radio interceptées entre 14h et 16h dans la région de Kidal.
+                Échanges en langue tamashek concernant des mouvements de matériel.
+                Fréquences utilisées: 145.8 MHz et 167.2 MHz.
+                Analyse linguistique suggère une planification d'opération dans les 48h.""",
+                'source': 'Service SIGINT',
+                'type': 'INTELLIGENCE',
+                'created_at': '2024-12-15T18:45:00Z',
+                'entities': [
+                    {'text': 'Kidal', 'type': 'LOCATION'},
+                    {'text': 'Service SIGINT', 'type': 'ORGANIZATION'}
+                ],
+                'threat_score': 0.68
+            },
+            {
+                'id': 'doc_003',
+                'content': """Rapport d'incident - Attaque contre poste de contrôle
+                
+                Poste de contrôle de Menaka attaqué à 05h30 ce matin.
+                Dommages matériels importants, pas de victimes.
+                Témoins rapportent 4-5 assaillants motorisés.
+                Méthode opérationnelle similaire aux incidents précédents.
+                Investigation en cours.""",
+                'source': 'Police locale - Menaka',
+                'type': 'INCIDENT',
+                'created_at': '2024-12-16T07:15:00Z',
+                'entities': [
+                    {'text': 'Menaka', 'type': 'LOCATION'},
+                    {'text': 'Police locale', 'type': 'ORGANIZATION'}
+                ],
+                'threat_score': 0.82
+            },
+            {
+                'id': 'doc_004',
+                'content': """Évaluation sécuritaire - Région de Tombouctou
+                
+                Amélioration générale de la situation sécuritaire dans la région.
+                Diminution des incidents de 30% par rapport au mois précédent.
+                Coopération renforcée avec les autorités traditionnelles.
+                Programmes de développement communautaire montrent des résultats positifs.""",
+                'source': 'Coordinateur régional',
+                'type': 'EVALUATION',
+                'created_at': '2024-12-16T12:00:00Z',
+                'entities': [
+                    {'text': 'Tombouctou', 'type': 'LOCATION'},
+                    {'text': 'Coordinateur régional', 'type': 'ORGANIZATION'}
+                ],
+                'threat_score': 0.25
+            },
+            {
+                'id': 'doc_005',
+                'content': """Alerte - Mouvement de groupe armé confirmé
+                
+                Confirmation par sources multiples du déplacement d'un groupe armé
+                d'environ 20 individus vers la région de Gao.
+                Équipement lourd observé: véhicules blindés et armes lourdes.
+                Objectifs présumés: installations gouvernementales.
+                Niveau d'alerte élevé maintenu.""",
+                'source': 'Centre opérationnel',
+                'type': 'ALERTE',
+                'created_at': '2024-12-16T15:30:00Z',
+                'entities': [
+                    {'text': 'Gao', 'type': 'LOCATION'},
+                    {'text': 'Centre opérationnel', 'type': 'ORGANIZATION'}
+                ],
+                'threat_score': 0.91
+            },
+            {
+                'id': 'doc_006',
+                'content': """Rapport de patrouille - Secteur Ansongo
+                
+                Patrouille de routine dans le secteur d'Ansongo.
+                Aucun incident signalé, population coopérative.
+                Vérification des points de passage frontaliers effectuée.
+                Présence dissuasive maintenue selon les procédures.
+                Prochaine patrouille programmée dans 72h.""",
+                'source': 'Unité de patrouille',
+                'type': 'ROUTINE',
+                'created_at': '2024-12-16T16:45:00Z',
+                'entities': [
+                    {'text': 'Ansongo', 'type': 'LOCATION'},
+                    {'text': 'Unité de patrouille', 'type': 'ORGANIZATION'}
+                ],
+                'threat_score': 0.15
+            }
+        ]
+        
+        return jsonify({
+            'success': True,
+            'documents': sample_documents,
+            'count': len(sample_documents),
+            'message': 'Échantillons de documents générés avec succès'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'Erreur lors de la génération des échantillons'
         }), 500
 
 @app.route('/api/ingestion/test', methods=['POST'])

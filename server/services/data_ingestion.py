@@ -465,6 +465,9 @@ class DataIngestionService:
             # Ajouter les informations de thème au résultat final
             dl_enhanced_data['theme_analysis'] = themes_analysis
             
+            # NOUVEAU: Déclencher la réévaluation automatique
+            self._trigger_automatic_reevaluation(dl_enhanced_data)
+            
             # Enregistrer le hash pour éviter les doublons
             self._register_document_hash(content_hash)
             
@@ -474,6 +477,20 @@ class DataIngestionService:
             logger.error(f"Erreur traitement thème unique: {str(e)}")
             raise
 
+    def _trigger_automatic_reevaluation(self, new_document: Dict):
+        """Déclencher la réévaluation automatique des menaces, prédictions et prescriptions"""
+        try:
+            from .clustering_reevaluation_service import ClusteringReevaluationService
+            
+            reevaluation_service = ClusteringReevaluationService()
+            reevaluation_result = reevaluation_service.process_new_document_insertion(new_document)
+            
+            logger.info(f"Réévaluation automatique déclenchée: {reevaluation_result.get('summary', {})}")
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la réévaluation automatique: {str(e)}")
+            # Ne pas faire échouer l'ingestion si la réévaluation échoue
+    
     def get_ingestion_status(self) -> Dict:
         """Get current ingestion status with deep learning metrics"""
         try:

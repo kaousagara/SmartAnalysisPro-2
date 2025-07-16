@@ -34,15 +34,15 @@ def token_required(f):
         token = None
         if 'Authorization' in request.headers:
             token = request.headers['Authorization'].replace('Bearer ', '')
-        
+
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
-        
+
         if not (token.startswith('local_token_') or token.startswith('db_token_')):
             return jsonify({'message': 'Token is invalid!'}), 401
-        
+
         return f(*args, **kwargs)
-    
+
     decorated.__name__ = f.__name__
     return decorated
 
@@ -82,13 +82,13 @@ def login():
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
-        
+
         # Vérifier les credentials depuis la base optimisée
         user = optimized_db.execute_query(
             "SELECT * FROM users WHERE username = %s AND is_active = TRUE",
             (username,), fetch_one=True
         )
-        
+
         if user and check_password_hash(user['password'], password):
             user_data = {
                 'id': user['id'],
@@ -104,7 +104,7 @@ def login():
             })
         else:
             return jsonify({'success': False, 'message': 'Identifiants invalides'}), 401
-            
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -115,19 +115,19 @@ def auth_login():
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
-        
+
         if not username or not password:
             return jsonify({'success': False, 'message': 'Nom d\'utilisateur et mot de passe requis'}), 400
-        
+
         # Vérification via la base de données optimisée
         user = optimized_db.execute_query(
             "SELECT * FROM users WHERE username = %s AND is_active = TRUE",
             (username,), fetch_one=True
         )
-        
+
         if user and check_password_hash(user['password'], password):
             token = f'db_token_{username}_{int(time.time())}'
-            
+
             return jsonify({
                 'success': True,
                 'user': {
@@ -141,7 +141,7 @@ def auth_login():
             })
         else:
             return jsonify({'success': False, 'message': 'Identifiants invalides'}), 401
-    
+
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erreur lors de la connexion: {str(e)}'}), 500
 
@@ -175,7 +175,7 @@ def dashboard_stats():
         stats['detection_rate'] = 94.2
         stats['false_positive_rate'] = 3.1
         stats['last_update'] = datetime.now().isoformat()
-        
+
         return jsonify({'stats': stats})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -186,14 +186,14 @@ def realtime_threats():
     """Get real-time threats with caching"""
     try:
         limit = int(request.args.get('limit', 10))
-        
+
         # Utiliser le cache pour les menaces
         cache_key = f"realtime_threats_limit_{limit}"
         cached_threats = cache_manager.get(cache_key)
-        
+
         if cached_threats:
             return jsonify({'threats': cached_threats})
-        
+
         threats = optimized_db.execute_query("""
             SELECT id, name, description, score, severity, status, 
                    created_at as timestamp, metadata
@@ -202,12 +202,12 @@ def realtime_threats():
             ORDER BY score DESC, created_at DESC
             LIMIT %s
         """, (limit,), fetch_all=True)
-        
+
         if threats:
             cache_manager.set(cache_key, threats, 60)  # Cache 1 minute
-        
+
         return jsonify({'threats': threats or []})
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -217,20 +217,20 @@ def threat_evolution():
     """Get threat evolution data with caching"""
     try:
         filter_period = request.args.get('filter', '24H')
-        
+
         cache_key = f"threat_evolution_{filter_period}"
         cached_evolution = cache_manager.get(cache_key)
-        
+
         if cached_evolution:
             return jsonify({'evolution': cached_evolution})
-        
+
         # Calculer les données d'évolution
         evolution_data = {
             'predictions': [],
             'scores': [],
             'timeline': []
         }
-        
+
         # Récupérer les données historiques
         threats = optimized_db.execute_query("""
             SELECT score, created_at
@@ -238,18 +238,18 @@ def threat_evolution():
             WHERE created_at >= NOW() - INTERVAL '1 day'
             ORDER BY created_at
         """, fetch_all=True)
-        
+
         if threats:
             for threat in threats:
                 evolution_data['scores'].append({
                     'timestamp': threat['created_at'].isoformat(),
                     'score': threat['score']
                 })
-        
+
         cache_manager.set(cache_key, evolution_data, 300)  # Cache 5 minutes
-        
+
         return jsonify({'evolution': evolution_data})
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -260,10 +260,10 @@ def get_scenarios():
     try:
         cache_key = "active_scenarios"
         cached_scenarios = cache_manager.get(cache_key)
-        
+
         if cached_scenarios:
             return jsonify({'scenarios': cached_scenarios})
-        
+
         scenarios = optimized_db.execute_query("""
             SELECT id, name, description, conditions, actions, 
                    status, priority, validity_window, created_at
@@ -271,12 +271,12 @@ def get_scenarios():
             WHERE status = 'active'
             ORDER BY priority ASC
         """, fetch_all=True)
-        
+
         if scenarios:
             cache_manager.set(cache_key, scenarios, 180)  # Cache 3 minutes
-        
+
         return jsonify({'scenarios': scenarios or []})
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -287,10 +287,10 @@ def get_actions():
     try:
         cache_key = "recent_actions"
         cached_actions = cache_manager.get(cache_key)
-        
+
         if cached_actions:
             return jsonify({'actions': cached_actions})
-        
+
         actions = optimized_db.execute_query("""
             SELECT id, type, description, priority, status, 
                    related_threat_id, created_at, metadata
@@ -298,12 +298,12 @@ def get_actions():
             ORDER BY created_at DESC
             LIMIT 50
         """, fetch_all=True)
-        
+
         if actions:
             cache_manager.set(cache_key, actions, 120)  # Cache 2 minutes
-        
+
         return jsonify({'actions': actions or []})
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -314,10 +314,10 @@ def get_alerts():
     try:
         cache_key = "active_alerts"
         cached_alerts = cache_manager.get(cache_key)
-        
+
         if cached_alerts:
             return jsonify({'alerts': cached_alerts})
-        
+
         alerts = optimized_db.execute_query("""
             SELECT id, type, severity, title, message, is_read, 
                    related_threat_id, created_at
@@ -326,12 +326,12 @@ def get_alerts():
             ORDER BY created_at DESC
             LIMIT 20
         """, fetch_all=True)
-        
+
         if alerts:
             cache_manager.set(cache_key, alerts, 60)  # Cache 1 minute
-        
+
         return jsonify({'alerts': alerts or []})
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -342,15 +342,15 @@ def get_prescriptions():
     try:
         cache_key = "prescriptions_all"
         cached_prescriptions = cache_manager.get(cache_key)
-        
+
         if cached_prescriptions:
             return jsonify({'prescriptions': cached_prescriptions})
-        
+
         prescriptions = prescription_service.get_all_prescriptions()
-        
+
         if prescriptions:
             cache_manager.set(cache_key, prescriptions, 180)  # Cache 3 minutes
-        
+
         return jsonify({'prescriptions': prescriptions or []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -362,15 +362,15 @@ def get_prescriptions_statistics():
     try:
         cache_key = "prescriptions_statistics"
         cached_stats = cache_manager.get(cache_key)
-        
+
         if cached_stats:
             return jsonify({'statistics': cached_stats})
-        
+
         statistics = prescription_service.get_prescription_statistics()
-        
+
         if statistics:
             cache_manager.set(cache_key, statistics, 120)  # Cache 2 minutes
-        
+
         return jsonify({'statistics': statistics or []})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -385,19 +385,50 @@ def get_database_documents():
     """Récupérer tous les documents de la base de données avec cache"""
     try:
         documents = optimized_db.get_all_documents_cached()
-        
+
         return jsonify({
             'success': True,
             'documents': documents,
             'count': len(documents),
             'message': f'{len(documents)} documents récupérés de la base de données'
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e),
             'message': 'Erreur lors de la récupération des documents'
+        }), 500
+
+@app.route('/api/clustering/reevaluate', methods=['POST'])
+@token_required
+def manual_reevaluation():
+    """Réévaluation manuelle des menaces et prescriptions"""
+    try:
+        data = request.get_json()
+        document_ids = data.get('document_ids', [])
+
+        from server.services.clustering_reevaluation_service import ClusteringReevaluationService
+        reevaluation_service = ClusteringReevaluationService()
+
+        results = []
+        for doc_id in document_ids:
+            # Récupérer le document
+            document = optimized_db.get_document_by_id(doc_id)
+            if document:
+                result = reevaluation_service.process_new_document_insertion(document)
+                results.append(result)
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 @app.route('/api/clustering/analyze', methods=['POST'])
@@ -407,19 +438,19 @@ def analyze_document_clustering():
     try:
         data = request.get_json()
         user_documents = data.get('documents', [])
-        
+
         # Récupérer tous les documents de la base avec cache
         db_documents = optimized_db.get_all_documents_cached()
-        
+
         # Combiner les documents
         all_documents = db_documents + user_documents
-        
+
         if len(all_documents) < 2:
             return jsonify({'error': 'Pas assez de documents pour l\'analyse (minimum 2 requis)'}), 400
-        
+
         # Effectuer le clustering avec cache intégré
         clustering_result = clustering_service.cluster_documents_by_similarity(all_documents)
-        
+
         # Générer des insights si pas d'erreur
         insights = {}
         if 'error' not in clustering_result:
@@ -427,7 +458,7 @@ def analyze_document_clustering():
                 insights = clustering_service.generate_cluster_insights(clustering_result)
             except Exception as e:
                 insights = {'error': f'Erreur lors de la génération des insights: {str(e)}'}
-        
+
         return jsonify({
             'success': True,
             'clustering_result': clustering_result,
@@ -442,7 +473,7 @@ def analyze_document_clustering():
                 'from_cache': clustering_result.get('from_cache', False)
             }
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -461,10 +492,10 @@ def system_performance():
     try:
         # Obtenir les métriques du moniteur
         performance_summary = performance_monitor.get_performance_summary()
-        
+
         # Ajouter les statistiques de cache
         cache_stats = optimized_db.get_cache_stats()
-        
+
         return jsonify({
             'performance': {
                 'response_times': performance_summary.get('response_times', {}),
@@ -474,7 +505,7 @@ def system_performance():
                 'cache_stats': cache_stats
             }
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -485,10 +516,10 @@ def ingestion_status():
     try:
         cache_key = "ingestion_status"
         cached_status = cache_manager.get(cache_key)
-        
+
         if cached_status:
             return jsonify(cached_status)
-        
+
         # Simuler des statistiques d'ingestion
         processing_stats = {
             'avg_processing_time': 150,
@@ -496,16 +527,16 @@ def ingestion_status():
             'errors': 5,
             'throughput': 8.5
         }
-        
+
         result = {
             'processing_stats': processing_stats,
             'last_update': datetime.now().isoformat()
         }
-        
+
         cache_manager.set(cache_key, result, 60)  # Cache 1 minute
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -514,7 +545,7 @@ def health_check():
     """Health check endpoint with system stats"""
     try:
         cache_stats = optimized_db.get_cache_stats()
-        
+
         return jsonify({
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
@@ -526,7 +557,7 @@ def health_check():
                 'disk_usage': psutil.disk_usage('/').percent
             }
         })
-        
+
     except Exception as e:
         return jsonify({
             'status': 'error',
@@ -544,7 +575,7 @@ def data_ingestion():
     """Handle data ingestion with processing"""
     try:
         data = request.get_json()
-        
+
         # Traiter les données d'ingestion
         processed_data = {
             'id': int(time.time()),
@@ -553,17 +584,17 @@ def data_ingestion():
             'data_type': data.get('type', 'unknown'),
             'processed_items': len(data.get('items', []))
         }
-        
+
         # Invalider les caches pertinents
         cache_manager.invalidate_pattern('threats')
         cache_manager.invalidate_pattern('dashboard')
-        
+
         return jsonify({
             'success': True,
             'processed_data': processed_data,
             'message': 'Données ingérées avec succès'
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -580,5 +611,5 @@ if __name__ == '__main__':
     print("📊 Monitoring des performances activé")
     print("🗄️  Base de données optimisée configurée")
     print("⚡ Cache manager initialisé")
-    
+
     app.run(host='0.0.0.0', port=8000, debug=True)

@@ -539,6 +539,62 @@ def health_check():
             'timestamp': datetime.now().isoformat()
         }), 500
 
+@app.route('/api/test-data/generate', methods=['POST'])
+@token_required
+def generate_test_data():
+    """Generate test data for the system"""
+    try:
+        # Utiliser le générateur de données spécialisé
+        from test_data_generator import TestDataGenerator
+        generator = TestDataGenerator()
+        
+        # Effacer et regénérer les données
+        generator.clear_test_data()
+        result = generator.generate_complete_test_data()
+        
+        # Invalider tous les caches pour forcer le rechargement
+        cache_manager.clear()
+        optimized_db.invalidate_cache(['*'])
+        
+        return jsonify({
+            'success': True,
+            'message': 'Données de test générées avec succès',
+            'data': result,
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/test-data/clear', methods=['POST'])
+@token_required
+def clear_test_data():
+    """Clear test data from the system"""
+    try:
+        # Utiliser la fonction clear_test_data de la base de données
+        result = optimized_db.clear_test_data()
+        
+        # Invalider tous les caches
+        cache_manager.clear()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Données de test supprimées avec succès',
+            'data': result,
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 # =============================================================================
 # ROUTES DE GESTION DES DONNÉES
 # =============================================================================

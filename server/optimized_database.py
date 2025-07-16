@@ -303,10 +303,11 @@ class OptimizedDatabase:
         """Récupérer les statistiques du dashboard avec cache"""
         cache_key = "dashboard_stats"
 
-        if not force_refresh:
-            cached_result = cache_manager.get(cache_key)
-            if cached_result:
-                return cached_result
+        # Toujours forcer refresh pour éviter les problèmes de cache
+        # if not force_refresh:
+        #     cached_result = cache_manager.get(cache_key)
+        #     if cached_result:
+        #         return cached_result
 
         # Requête optimisée pour les statistiques
         stats_query = """
@@ -449,6 +450,174 @@ class OptimizedDatabase:
     def get_performance_metrics(self) -> Dict:
         """Récupérer les métriques de performance"""
         return {}
+
+    def generate_test_data(self) -> Dict:
+        """Générer des données de test pour le système"""
+        try:
+            # Supprimer les données existantes (sauf users) dans l'ordre des dépendances
+            self.execute_query("DELETE FROM threat_scores")
+            self.execute_query("DELETE FROM alerts")
+            self.execute_query("DELETE FROM actions")
+            self.execute_query("DELETE FROM threats")
+            self.execute_query("DELETE FROM scenarios")
+            self.execute_query("DELETE FROM data_sources")
+            self.execute_query("DELETE FROM prescriptions")
+            self.execute_query("DELETE FROM document_analysis")
+            self.execute_query("DELETE FROM predictions")
+            
+            # Invalider le cache pour forcer la suppression
+            self.invalidate_cache(['*'])
+
+            # Insérer des sources de données de test
+            data_sources = [
+                ('SIGINT Collection Alpha', 'sigint', 'https://sigint.intel.gov/feed', 'active', '2024-01-15 10:30:00', 1250.5),
+                ('HUMINT Network Beta', 'humint', 'https://humint.intel.gov/reports', 'active', '2024-01-15 11:45:00', 850.3),
+                ('OSINT Crawler Gamma', 'osint', 'https://osint.intel.gov/api', 'active', '2024-01-15 09:15:00', 2100.7),
+                ('STIX/TAXII Feed Delta', 'stix', 'https://taxii.intel.gov/collections', 'active', '2024-01-15 08:20:00', 950.2),
+                ('COMINT Intercept Epsilon', 'comint', 'https://comint.intel.gov/stream', 'active', '2024-01-15 12:10:00', 1750.8),
+                ('IMINT Satellite Zeta', 'imint', 'https://imint.intel.gov/imagery', 'active', '2024-01-15 07:45:00', 3200.4),
+                ('Legacy System Theta', 'json', 'https://legacy.intel.gov/export', 'inactive', '2024-01-14 18:30:00', 125.1),
+                ('Emergency Feed Kappa', 'json', 'https://emergency.intel.gov/alerts', 'error', '2024-01-15 06:00:00', 0.0)
+            ]
+
+            source_ids = []
+            for name, type_, url, status, last_ingested, throughput in data_sources:
+                result = self.execute_query("""
+                    INSERT INTO data_sources (name, type, url, status, last_ingested, throughput)
+                    VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+                """, (name, type_, url, status, last_ingested, throughput), fetch_one=True)
+                if result:
+                    source_ids.append(result['id'])
+            
+            print(f"DEBUG: Created {len(source_ids)} data sources: {source_ids}")
+
+            # Vérifier les sources de données créées
+            actual_sources = self.execute_query("SELECT id FROM data_sources ORDER BY id", fetch_all=True)
+            actual_source_ids = [row['id'] for row in actual_sources] if actual_sources else []
+            print(f"DEBUG: Actual data sources from DB: {actual_source_ids}")
+            
+            # Insérer des menaces de test avec validation des IDs
+            threats = [
+                ('Activité réseau suspecte', 'Tentative d\'intrusion détectée sur infrastructure critique', 0.85, 'high', 'active', '{"ip": "192.168.1.100", "port": 22, "protocol": "ssh"}'),
+                ('Détection de malware', 'Logiciel malveillant identifié dans les communications', 0.92, 'critical', 'active', '{"hash": "a1b2c3d4", "type": "trojan", "family": "APT29"}'),
+                ('Tentative d\'accès non autorisé', 'Multiples tentatives de connexion échouées', 0.67, 'medium', 'resolved', '{"user": "admin", "attempts": 15, "source_ip": "203.0.113.0"}'),
+                ('Communication chiffrée anormale', 'Trafic chiffré inhabituel détecté', 0.78, 'high', 'active', '{"encryption": "AES-256", "frequency": "high", "destination": "unknown"}'),
+                ('Exfiltration de données suspectée', 'Volume de données sortant anormalement élevé', 0.89, 'critical', 'active', '{"size": "2.5GB", "destination": "external", "protocol": "https"}'),
+                ('Mouvement de personnel suspect', 'Mouvement inhabituel détecté par imagerie satellite', 0.73, 'medium', 'active', '{"location": "45.123,-73.456", "vehicles": 12, "personnel": 45}'),
+                ('Alerte système legacy', 'Alerte générée par système hérité', 0.45, 'low', 'archived', '{"system": "legacy", "alert_type": "maintenance"}'),
+                ('Panne de communication', 'Interruption des communications d\'urgence', 0.95, 'critical', 'active', '{"duration": "2h30m", "affected_units": 23, "cause": "unknown"}')
+            ]
+
+            threat_ids = []
+            for i, (name, desc, score, severity, status, metadata) in enumerate(threats):
+                if actual_source_ids:
+                    source_id = actual_source_ids[i % len(actual_source_ids)]
+                    result = self.execute_query("""
+                        INSERT INTO threats (name, description, score, severity, status, source_id, metadata)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb) RETURNING id
+                    """, (name, desc, score, severity, status, source_id, metadata), fetch_one=True)
+                    if result:
+                        threat_ids.append(result['id'])
+            
+            print(f"DEBUG: Created {len(threat_ids)} threats: {threat_ids}")
+
+            # Insérer des scénarios de test
+            scenarios = [
+                ('CYBER-INTRUSION-07', 'Détection d\'intrusion cybernétique', 
+                 '[{"type": "network_anomaly", "threshold": 0.8}, {"type": "multiple_failures", "count": 3}]',
+                 '[{"type": "SIGINT_COLLECTION", "description": "Renforcer la surveillance réseau"}, {"type": "INCIDENT_RESPONSE", "description": "Activer l\'équipe de réponse"}]',
+                 'active', 1, 'P1H'),
+                ('ATT-2024-MALI', 'Surveillance des menaces au Mali', 
+                 '[{"type": "geographic_alert", "region": "mali"}, {"type": "threat_level", "min": 0.7}]',
+                 '[{"type": "HUMINT_COLLECTION", "description": "Déployer agents sur le terrain"}, {"type": "SATELLITE_MONITORING", "description": "Surveillance par satellite"}]',
+                 'active', 2, 'P24H'),
+                ('PHISHING-CAMPAIGN-DETECT', 'Détection de campagne de phishing',
+                 '[{"type": "email_indicators", "value": "suspicious"}, {"type": "volume", "operator": ">", "value": 100}]',
+                 '[{"type": "EMAIL_FILTERING", "description": "Activer le filtrage email"}, {"type": "USER_NOTIFICATION", "description": "Notifier les utilisateurs"}]',
+                 'partial', 3, 'P12H')
+            ]
+
+            scenario_ids = []
+            for name, desc, conditions, actions, status, priority, validity in scenarios:
+                result = self.execute_query("""
+                    INSERT INTO scenarios (name, description, conditions, actions, status, priority, validity_window)
+                    VALUES (%s, %s, %s::jsonb, %s::jsonb, %s, %s, %s) RETURNING id
+                """, (name, desc, conditions, actions, status, priority, validity), fetch_one=True)
+                if result:
+                    scenario_ids.append(result['id'])
+            
+            print(f"DEBUG: Created {len(scenario_ids)} scenarios: {scenario_ids}")
+
+            # Insérer des actions de test
+            actions = [
+                ('sigint', 'Collection SIGINT intensifiée sur réseau cible', 'P1', 'in_progress', threat_ids[0] if threat_ids else None, scenario_ids[0] if scenario_ids else None, '{"target": "network_alpha", "duration": "72h"}'),
+                ('humint', 'Activation d\'agent sur terrain Mali', 'P2', 'pending', threat_ids[1] if len(threat_ids) > 1 else None, scenario_ids[1] if len(scenario_ids) > 1 else None, '{"agent_id": "H001", "location": "mali"}'),
+                ('collection', 'Surveillance renforcée communications', 'P1', 'completed', threat_ids[2] if len(threat_ids) > 2 else None, scenario_ids[0] if scenario_ids else None, '{"channels": ["radio", "satellite"], "priority": "high"}'),
+                ('alert', 'Alerte diffusée aux unités terrain', 'P3', 'completed', threat_ids[3] if len(threat_ids) > 3 else None, None, '{"units": ["alpha", "bravo"], "message": "threat_detected"}'),
+                ('imint', 'Analyse imagerie satellite zone sensible', 'P2', 'in_progress', threat_ids[4] if len(threat_ids) > 4 else None, scenario_ids[1] if len(scenario_ids) > 1 else None, '{"coordinates": "45.123,-73.456", "resolution": "0.5m"}'),
+                ('investigation', 'Enquête approfondie sur exfiltration', 'P1', 'pending', threat_ids[5] if len(threat_ids) > 5 else None, None, '{"lead_investigator": "I002", "estimated_duration": "48h"}')
+            ]
+
+            for type_, desc, priority, status, threat_id, scenario_id, metadata in actions:
+                self.execute_query("""
+                    INSERT INTO actions (type, description, priority, status, related_threat_id, related_scenario_id, metadata)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                """, (type_, desc, priority, status, threat_id, scenario_id, metadata))
+
+            # Insérer des alertes de test
+            alerts = [
+                ('threat', 'critical', 'Menace critique détectée', 'La menace "Détection de malware" a atteint un niveau critique (0.92)', False, threat_ids[1] if len(threat_ids) > 1 else None),
+                ('threat', 'warning', 'Nouvelle menace identifiée', 'Une nouvelle menace a été détectée: "Activité réseau suspecte"', False, threat_ids[0] if threat_ids else None),
+                ('system', 'error', 'Erreur de source de données', 'La source "Emergency Feed Kappa" ne répond plus', True, None),
+                ('data', 'info', 'Ingestion de données complétée', 'Ingestion réussie de 1,250 enregistrements depuis SIGINT Alpha', True, None),
+                ('threat', 'warning', 'Évolution de menace', 'Le score de menace "Communication chiffrée anormale" a augmenté', False, threat_ids[3] if len(threat_ids) > 3 else None)
+            ]
+
+            for type_, severity, title, message, is_read, threat_id in alerts:
+                self.execute_query("""
+                    INSERT INTO alerts (type, severity, title, message, is_read, related_threat_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (type_, severity, title, message, is_read, threat_id))
+
+            # Invalider tous les caches
+            self.invalidate_cache(['*'])
+
+            return {
+                'threats_created': len(threat_ids),
+                'scenarios_created': len(scenario_ids),
+                'actions_created': len(actions),
+                'alerts_created': len(alerts),
+                'data_sources_created': len(source_ids),
+                'timestamp': datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            print(f"Erreur génération données de test: {str(e)}")
+            raise e
+
+    def clear_test_data(self) -> Dict:
+        """Supprimer toutes les données de test (sauf utilisateurs)"""
+        try:
+            deleted_counts = {}
+            
+            # Supprimer les données dans l'ordre des dépendances
+            tables = ['threat_scores', 'alerts', 'actions', 'threats', 'scenarios', 'data_sources', 'prescriptions', 'document_analysis', 'predictions']
+            
+            for table in tables:
+                result = self.execute_query(f"DELETE FROM {table}")
+                deleted_counts[table] = result
+            
+            # Invalider tous les caches
+            self.invalidate_cache(['*'])
+            
+            return {
+                'deleted_counts': deleted_counts,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            print(f"Erreur suppression données de test: {str(e)}")
+            raise e
 
     def store_document(self, document_data: Dict) -> Dict:
         """Stocker un nouveau document dans la base de données"""

@@ -2147,5 +2147,104 @@ def get_deep_learning_models():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/ingestion/test-themes', methods=['POST'])
+def test_theme_analysis():
+    """Tester spécifiquement l'analyse thématique"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from services.data_ingestion import DataIngestionService
+        data_ingestion_service = DataIngestionService()
+        
+        # Document de test avec plusieurs thèmes
+        test_document = {
+            'content': '''
+            RAPPORT D'INCIDENT SÉCURITAIRE - MALI
+            
+            Incident de sécurité: Braquage de la chambre des orpailleurs
+            Les forces de police ont rapporté un braquage à Kita impliquant des individus armés.
+            L'alerte sécuritaire a été déclenchée immédiatement.
+            
+            Contexte économique:
+            L'exploitation minière représente 60% de l'activité économique locale.
+            Les orpailleurs constituent une part importante de l'économie régionale.
+            Le commerce de l'or génère des revenus significatifs pour la région.
+            
+            Analyse politique:
+            Les autorités locales ont organisé une réunion d'urgence.
+            Le gouvernement régional évalue les mesures de sécurité.
+            Une commission d'enquête politique sera mise en place.
+            
+            Situation militaire:
+            Déploiement de forces militaires supplémentaires dans la zone.
+            Les forces armées coordonnent avec les services de renseignement.
+            Une opération militaire préventive est en cours de planification.
+            ''',
+            'source': {
+                'type': 'field_report',
+                'reliability': 0.9,
+                'classification': 'CONFIDENTIEL'
+            },
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Tester l'analyse thématique
+        result = data_ingestion_service.ingest_data(test_document, 'json')
+        
+        # Ajouter des informations de test
+        result['test_analysis'] = {
+            'document_length': len(test_document['content']),
+            'expected_themes': ['sécurité', 'économie', 'politique', 'militaire'],
+            'theme_analysis_method': 'deep_learning_simulation',
+            'test_timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Erreur test analyse thématique: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ingestion/test-deduplication', methods=['POST'])
+def test_deduplication():
+    """Tester le système de déduplication"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        from services.data_ingestion import DataIngestionService
+        data_ingestion_service = DataIngestionService()
+        
+        # Document de test
+        test_document = {
+            'content': 'Document de test pour la déduplication. Contenu identique pour vérifier le hash.',
+            'source': {
+                'type': 'test_source',
+                'reliability': 0.8
+            },
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Premier envoi
+        result1 = data_ingestion_service.ingest_data(test_document, 'json')
+        
+        # Deuxième envoi (doit être détecté comme doublon)
+        result2 = data_ingestion_service.ingest_data(test_document, 'json')
+        
+        return jsonify({
+            'first_ingestion': result1,
+            'second_ingestion': result2,
+            'deduplication_test': {
+                'first_status': result1.get('status', 'unknown'),
+                'second_status': result2.get('status', 'unknown'),
+                'deduplication_working': result2.get('status') == 'duplicate',
+                'test_timestamp': datetime.now().isoformat()
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

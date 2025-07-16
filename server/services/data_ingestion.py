@@ -16,6 +16,7 @@ class DataIngestionService:
         self.supported_formats = ['json', 'stix', 'taxii', 'unstructured']
         self.schema_version = '2.1'
         self.processed_documents = set()  # Cache des hash de documents traités
+        self.document_hashes_db = {}  # Base de données des hash avec métadonnées
     
     def ingest_data(self, data: Dict, format_type: str = 'json') -> Dict:
         """Main data ingestion method with deep learning integration and theme analysis"""

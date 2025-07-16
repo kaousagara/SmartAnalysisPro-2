@@ -46,6 +46,28 @@ export default function Ingestion() {
     }
   });
 
+  // Mutation pour tester l'analyse thématique
+  const testThemeAnalysisMutation = useMutation({
+    mutationFn: () => apiRequest('/api/ingestion/test-themes', {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
+    onSuccess: (data) => {
+      setTestResult(data);
+    }
+  });
+
+  // Mutation pour tester la déduplication
+  const testDeduplicationMutation = useMutation({
+    mutationFn: () => apiRequest('/api/ingestion/test-deduplication', {
+      method: 'POST',
+      body: JSON.stringify({})
+    }),
+    onSuccess: (data) => {
+      setTestResult(data);
+    }
+  });
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'operational':
@@ -239,10 +261,11 @@ export default function Ingestion() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button 
                   onClick={() => testIngestionMutation.mutate()}
                   disabled={testIngestionMutation.isPending}
+                  className="w-full"
                 >
                   {testIngestionMutation.isPending ? (
                     <>
@@ -256,9 +279,50 @@ export default function Ingestion() {
                     </>
                   )}
                 </Button>
-                <p className="text-sm text-gray-600">
-                  Teste l'ingestion avec des documents SIGINT, HUMINT et OSINT réalistes
-                </p>
+                
+                <Button 
+                  onClick={() => testThemeAnalysisMutation.mutate()}
+                  disabled={testThemeAnalysisMutation.isPending}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {testThemeAnalysisMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Test en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Test Analyse Thématique
+                    </>
+                  )}
+                </Button>
+                
+                <Button 
+                  onClick={() => testDeduplicationMutation.mutate()}
+                  disabled={testDeduplicationMutation.isPending}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {testDeduplicationMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Test en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4 mr-2" />
+                      Test Déduplication
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              <div className="text-sm text-gray-600 space-y-1">
+                <p>• Test d'Ingestion : Traite des documents réalistes multi-sources</p>
+                <p>• Test Analyse Thématique : Divise un document en plusieurs thèmes</p>
+                <p>• Test Déduplication : Vérifie la détection des doublons</p>
               </div>
 
               {testResult && (

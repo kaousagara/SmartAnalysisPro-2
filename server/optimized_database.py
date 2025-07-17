@@ -19,15 +19,36 @@ class OptimizedDatabase:
     def init_connection_pool(self, min_connections, max_connections):
         """Initialiser le pool de connexions"""
         try:
-            self.connection_pool = SimpleConnectionPool(
-                min_connections,
-                max_connections,
-                host=os.getenv('PGHOST'),
-                database=os.getenv('PGDATABASE'),
-                user=os.getenv('PGUSER'),
-                password=os.getenv('PGPASSWORD'),
-                port=os.getenv('PGPORT')
-            )
+            # Utiliser DATABASE_URL si disponible, sinon utiliser les variables individuelles
+            database_url = os.getenv('DATABASE_URL')
+            
+            if database_url:
+                # Parser DATABASE_URL pour extraire les paramètres
+                from urllib.parse import urlparse
+                parsed = urlparse(database_url)
+                
+                self.connection_pool = SimpleConnectionPool(
+                    min_connections,
+                    max_connections,
+                    host=parsed.hostname,
+                    database=parsed.path[1:],  # Enlever le slash initial
+                    user=parsed.username,
+                    password=parsed.password,
+                    port=parsed.port or 5432,
+                    sslmode='require'  # Forcer SSL comme dans l'URL
+                )
+            else:
+                # Fallback sur les variables individuelles
+                self.connection_pool = SimpleConnectionPool(
+                    min_connections,
+                    max_connections,
+                    host=os.getenv('PGHOST', 'localhost'),
+                    database=os.getenv('PGDATABASE', 'postgres'),
+                    user=os.getenv('PGUSER', 'postgres'),
+                    password=os.getenv('PGPASSWORD', ''),
+                    port=int(os.getenv('PGPORT', '5432'))
+                )
+            
             print("Pool de connexions initialisé avec succès")
         except Exception as e:
             print(f"Erreur lors de l'initialisation du pool: {e}")

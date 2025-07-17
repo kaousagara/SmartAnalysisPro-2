@@ -4,6 +4,12 @@
 
 This is a comprehensive intelligence analysis system designed for threat detection and assessment. The application combines a modern React frontend with a Python Flask backend to provide real-time threat scoring, data ingestion, scenario management, and analytical capabilities. The system is built for intelligence professionals and features security-focused design with clearance levels and classification handling.
 
+## Recent Changes (July 17, 2025)
+
+- **Application Rebranding**: Changed application name from "Intelligence Analysis System" to "LAKANA ANALYSIS" throughout the interface and documentation
+- **Database Connection Fix**: Updated Flask database configuration to properly use DATABASE_URL for Gunicorn deployment
+- **Documentation**: Created GUNICORN_SETUP.md with deployment instructions for running the Flask app with Gunicorn
+
 ## Recent Changes
 
 ### Préparation Production Complète (July 16, 2025)

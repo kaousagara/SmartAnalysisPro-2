@@ -1,0 +1,81 @@
+gunicorn server.simple_flask_app:app --bind 0.0.0.0:8000
+[2025-07-17 17:10:34 +0000] [2342619] [INFO] Starting gunicorn 23.0.0
+[2025-07-17 17:10:34 +0000] [2342619] [INFO] Listening at: http://0.0.0.0:8000 (2342619)
+[2025-07-17 17:10:34 +0000] [2342619] [INFO] Using worker: sync
+[2025-07-17 17:10:34 +0000] [2342620] [INFO] Booting worker with pid: 2342620
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur lors de l'initialisation du pool: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'obtention de la connexion: 'NoneType' object has no attribute 'getconn'
+Erreur de connexion à la base de données: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Connexion fermée, reconnexion en cours...
+Erreur de connexion à la base de données: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de la vérification de la connexion: 'NoneType' object has no attribute 'cursor'
+Tentative de reconnexion...
+Erreur de connexion à la base de données: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'initialisation des tables: 'NoneType' object has no attribute 'cursor'
+Erreur de connexion à la base de données: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Connexion fermée, reconnexion en cours...
+Erreur de connexion à la base de données: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de la vérification de la connexion: 'NoneType' object has no attribute 'cursor'
+Tentative de reconnexion...
+Erreur de connexion à la base de données: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: No such file or directory
+	Is the server running locally and accepting connections on that socket?
+
+Erreur lors de l'initialisation des tables: 'NoneType' object has no attribute 'cursor'
+
+

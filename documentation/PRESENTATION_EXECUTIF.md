@@ -1,4 +1,4 @@
-# Présentation Exécutif - Système d'Intelligence Analysis
+# Présentation Exécutif - LAKANA ANALYSIS
 
 ## Résumé exécutif
 

@@ -1,4 +1,4 @@
-# Intelligence Analysis System
+# LAKANA ANALYSIS
 
 Un système avancé d'analyse d'intelligence alimenté par l'IA pour la détection et l'analyse des menaces de sécurité en temps réel.
 

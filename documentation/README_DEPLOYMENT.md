@@ -1,4 +1,4 @@
-# Déploiement - Système d'Intelligence Analysis
+# Déploiement - LAKANA ANALYSIS
 
 ## Instructions de déploiement
 

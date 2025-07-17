@@ -29,7 +29,7 @@ export function Sidebar() {
         <div className="flex items-center space-x-3 mb-8">
           <Brain className="text-blue-400 text-2xl" />
           <div>
-            <h1 className="text-lg font-semibold text-white">Analyse Intel</h1>
+            <h1 className="text-lg font-semibold text-white">LAKANA ANALYSIS</h1>
             <p className="text-xs text-gray-400">v2.0 Sécurisé</p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-# Système d'Intelligence Analysis
+# LAKANA ANALYSIS
 ## Documentation Technique et Descriptive
 
 ### Vue d'ensemble du projet

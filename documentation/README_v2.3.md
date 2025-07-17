@@ -1,4 +1,4 @@
-# Intelligence Analysis System
+# LAKANA ANALYSIS
 
 ## Version 2.3.0 - Performance Optimized
 

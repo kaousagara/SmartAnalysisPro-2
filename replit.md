@@ -4,6 +4,12 @@
 
 This is a comprehensive intelligence analysis system designed for threat detection and assessment. The application combines a modern React frontend with a Python Flask backend to provide real-time threat scoring, data ingestion, scenario management, and analytical capabilities. The system is built for intelligence professionals and features security-focused design with clearance levels and classification handling.
 
+## Recent Changes (July 21, 2025)
+
+- **Requirements.txt Update**: Comprehensive update of all Python dependencies for LAKANA ANALYSIS system
+- **Dependencies Added**: Added missing dependencies including TensorFlow, Keras, OpenAI, Pydantic, and Gunicorn
+- **Dependencies Optimized**: Removed standard library modules and corrected torch version to 2.0.1 for compatibility
+
 ## Recent Changes (July 17, 2025)
 
 - **Application Rebranding**: Changed application name from "Intelligence Analysis System" to "LAKANA ANALYSIS" throughout the interface and documentation

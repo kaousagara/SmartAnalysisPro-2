@@ -1,0 +1,41 @@
+GET
+http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/react-dom_client.js?v=1230ac6d
+NS_ERROR_CORRUPTED_CONTENT
+
+Loading module from “http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/react-dom_client.js?v=1230ac6d” was blocked because of a disallowed MIME type (“”).
+localhost:5000
+Loading failed for the module with source “http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/react-dom_client.js?v=1230ac6d”. main.tsx
+[vite] connecting... client:495:9
+Loading failed for the module with source “http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/chunk-QCHXOAYK.js?v=42cf16db”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/chunk-WOOG5QLI.js?v=42cf16db”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/wouter.js?v=9fdbb78f”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/@fs/home/lakana/Documents/LakanaCollect/node_modules/.vite/deps/@tanstack_react-query.js?v=8366ce9d”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/lib/queryClient.ts?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/scenario-modeling.tsx?t=1752084408383”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/components/ui/toaster.tsx?t=1752084408380”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/components/ui/tooltip.tsx?t=1752084408381”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/contexts/theme-context.tsx?t=1752084408381”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/contexts/user-context.tsx?t=1752084408381”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/hooks/useAuth.ts?t=1752084408381”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/network-graph.tsx?t=1752084408383”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/query-manager.tsx?t=1752084408383”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/reports.tsx?t=1752084408383”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/unprocessed-intelligence.tsx?t=1752084408384”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/user-management.tsx?t=1752084408384”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/settings.tsx?t=1752084408383”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/login.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/validation-dashboard.tsx?t=1752084408384”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/analyses-avancees.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/division.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/direction.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/analyse.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/not-found.tsx?t=1752084408383”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/components/layout/sidebar.tsx?t=1752084408376”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/components/layout/header.tsx?t=1752084408376”. localhost:5000
+[vite] connected. client:618:15
+Loading failed for the module with source “http://localhost:5000/src/pages/landing.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/pages/dashboard.tsx?t=1752084408382”. localhost:5000
+Loading failed for the module with source “http://localhost:5000/src/index.css?t=1752084408374&v=mVOIywnvz5Yx63Ju7ewYV”. localhost:5000
+
+​
+

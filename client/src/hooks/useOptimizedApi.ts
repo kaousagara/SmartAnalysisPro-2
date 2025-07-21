@@ -101,6 +101,7 @@ export const useOptimizedApi = <T>(
         setData(result);
         setLastFetch(now);
         setError(null);
+        setLoading(false);
       } catch (err) {
         attempts++;
         
@@ -109,9 +110,8 @@ export const useOptimizedApi = <T>(
           setTimeout(attemptFetch, retryDelay * Math.pow(2, attempts - 1));
         } else {
           setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+          setLoading(false);
         }
-      } finally {
-        setLoading(false);
       }
     };
 

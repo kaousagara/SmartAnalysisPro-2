@@ -79,6 +79,48 @@ cleanup_thread = threading.Thread(target=cleanup_cache_periodically, daemon=True
 cleanup_thread.start()
 
 # =============================================================================
+# FONCTIONS UTILITAIRES
+# =============================================================================
+
+def calculate_threat_score(data):
+    """Calcule un score de menace basé sur le contenu et la source"""
+    try:
+        content = str(data.get('content', '')).lower()
+        source = str(data.get('source', '')).lower()
+        
+        # Mots-clés de menace
+        threat_keywords = [
+            'attack', 'threat', 'danger', 'risk', 'vulnerability',
+            'exploit', 'malware', 'breach', 'intrusion', 'suspicious',
+            'critical', 'urgent', 'emergency', 'alert', 'warning'
+        ]
+        
+        # Compter les mots-clés
+        keyword_count = sum(1 for keyword in threat_keywords if keyword in content)
+        
+        # Score de base
+        base_score = min(keyword_count * 0.1, 0.5)
+        
+        # Bonus selon la source
+        source_bonus = 0
+        if 'intelligence' in source or 'security' in source:
+            source_bonus = 0.2
+        elif 'trusted' in source or 'verified' in source:
+            source_bonus = 0.1
+        
+        # Bonus selon la longueur (documents plus longs = plus d'info)
+        length_bonus = min(len(content) / 10000, 0.2)
+        
+        # Score final
+        final_score = min(base_score + source_bonus + length_bonus + 0.1, 1.0)
+        
+        return round(final_score, 2)
+        
+    except Exception as e:
+        print(f"Erreur calcul score de menace: {e}")
+        return 0.3  # Score par défaut
+
+# =============================================================================
 # ROUTES D'AUTHENTIFICATION
 # =============================================================================
 
@@ -517,6 +559,100 @@ def ingestion_status():
         return jsonify(result)
 
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ingestion/upload', methods=['POST'])
+@token_required
+def ingestion_upload():
+    """Handle file upload for data ingestion"""
+    try:
+        # Vérifier qu'un fichier a été envoyé
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Lire le contenu du fichier
+        content = file.read().decode('utf-8')
+        
+        # Traiter selon le type de fichier
+        if file.filename.endswith('.json'):
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError:
+                return jsonify({'error': 'Invalid JSON format'}), 400
+        else:
+            # Pour les fichiers texte, créer une structure JSON
+            data = {
+                'title': file.filename,
+                'content': content,
+                'source': 'file_upload',
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        # Créer un document pour l'ingestion
+        document = {
+            'id': f'doc_{datetime.now().strftime("%Y%m%d%H%M%S")}_{hash(file.filename) % 10000}',
+            'title': data.get('title', file.filename),
+            'content': data.get('content', str(data)),
+            'source': data.get('source', 'file_upload'),
+            'timestamp': datetime.now().isoformat(),
+            'metadata': {
+                'filename': file.filename,
+                'size': len(content),
+                'upload_time': datetime.now().isoformat()
+            }
+        }
+        
+        # Calculer le score de menace
+        threat_score = calculate_threat_score({
+            'content': document['content'],
+            'source': document['source']
+        })
+        
+        document['threat_score'] = threat_score
+        document['threat_level'] = 'critical' if threat_score > 0.8 else 'high' if threat_score > 0.6 else 'medium' if threat_score > 0.4 else 'low'
+        
+        # Ajouter à la base de données
+        conn = optimized_db.get_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO documents (id, title, content, source, threat_score, threat_level, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    document['id'],
+                    document['title'],
+                    document['content'],
+                    document['source'],
+                    document['threat_score'],
+                    document['threat_level'],
+                    datetime.now()
+                ))
+                conn.commit()
+                cursor.close()
+                
+                # Invalider le cache
+                cache_manager.invalidate_pattern("documents_*")
+                cache_manager.invalidate_pattern("ingestion_*")
+                
+            except Exception as db_error:
+                conn.rollback()
+                print(f"Erreur base de données: {db_error}")
+            finally:
+                conn.close()
+        
+        return jsonify({
+            'success': True,
+            'document': document,
+            'message': f'File {file.filename} uploaded and processed successfully'
+        })
+        
+    except Exception as e:
+        print(f"Erreur upload: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/test-llm', methods=['POST'])

@@ -9,6 +9,9 @@ This is a comprehensive intelligence analysis system designed for threat detecti
 - **Requirements.txt Update**: Comprehensive update of all Python dependencies for LAKANA ANALYSIS system
 - **Dependencies Added**: Added missing dependencies including TensorFlow, Keras, OpenAI, Pydantic, and Gunicorn
 - **Dependencies Optimized**: Removed standard library modules and corrected torch version to 2.0.1 for compatibility
+- **Installation Documentation**: Created complete installation guide with script for automated setup
+- **Optional Dependencies**: Documented procedures for installing optional components (TensorFlow, Keras, Gunicorn)
+- **Test Script**: Added comprehensive test_installation.py to verify all dependencies
 
 ## Recent Changes (July 17, 2025)
 

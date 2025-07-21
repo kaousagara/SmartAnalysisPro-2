@@ -11,6 +11,23 @@ cd server
 pip install -r requirements.txt
 ```
 
+## Installation Complète avec Script Automatisé
+
+Pour une installation complète incluant toutes les dépendances optionnelles :
+
+```bash
+cd server
+chmod +x install_dependencies.sh
+./install_dependencies.sh
+```
+
+Le script d'installation :
+- Crée un environnement virtuel Python
+- Installe toutes les dépendances principales
+- Tente d'installer les dépendances optionnelles
+- Télécharge les ressources NLTK
+- Exécute les tests de vérification
+
 ## Dependency Categories
 
 ### 1. Flask Web Framework
